@@ -595,26 +595,31 @@
       top: 50%;
       width: 180px;
       height: 180px;
-      transform: translate(-50%, -50%) scale(0.86);
-      opacity: 0;
-      transition: transform 0.22s ease, opacity 0.16s ease;
+      transform: translate(-50%, -50%);
+      opacity: 1;
       overflow: visible;
       z-index: 2;
       pointer-events: none;
     }
     .node:hover { z-index: 8; }
-    .node:hover .ring-wrap {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
+    .ring {
+      display: block;
+      width: 180px;
+      height: 180px;
+      overflow: visible;
+      transform: scale(0.5);
+      transform-origin: 50% 50%;
+      transition: transform 0.22s ease;
     }
-    .ring { display: block; width: 180px; height: 180px; overflow: visible; }
+    .node:hover .ring { transform: scale(1); }
     .seg {
       fill: none;
       stroke-width: 8;
+      vector-effect: non-scaling-stroke;
       pointer-events: none;
       transition: stroke-width 0.12s ease, filter 0.12s ease;
     }
-    .seg-hit { fill: none; stroke: transparent; stroke-width: 22; pointer-events: stroke; cursor: pointer; }
+    .seg-hit { fill: none; stroke: transparent; stroke-width: 22; vector-effect: non-scaling-stroke; pointer-events: stroke; cursor: pointer; }
     .seg-group { pointer-events: none; }
     .node:hover .seg-group { pointer-events: auto; }
     .seg-group:hover .seg { stroke-width: 12; }
@@ -637,19 +642,19 @@
     .seg-label {
       position: absolute;
       left: 0;
-      top: -90px;
+      top: -40px;
       transform: translateX(-50%);
       font-size: 12px;
       font-weight: 650;
       line-height: 1;
       white-space: nowrap;
-      opacity: 0;
+      opacity: 1;
       pointer-events: none;
       text-shadow: 0 0 4px #e8eaee, 0 0 4px #e8eaee, 0 1px 1px #fff;
-      transition: opacity 0.16s ease;
+      transition: top 0.22s ease;
     }
     .seg-label.is-flip { transform: translateX(-50%) rotate(180); }
-    .node:hover .seg-label { opacity: 1; }
+    .node:hover .seg-label { top: -90px; }
     .mark {
       position: relative;
       z-index: 3;
