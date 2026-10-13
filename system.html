@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>智能监管系统</title>
+  <style>
+    :root {
+      --ink: #16324f;
+      --muted: #6d7f95;
+      --line: #e4ebf5;
+      --blue: #1f6feb;
+      --blue-deep: #0e3d78;
+      --blue-soft: #eaf2ff;
+      --blue-mist: #f3f7fc;
+      --panel: #e7eef8;
+      --risk: #e23d4e;
+      --card: #ffffff;
+      --shadow: 0 10px 30px rgba(22, 62, 112, 0.06);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 14px 16px 16px;
+      color: var(--ink);
+      font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(900px 320px at 100% -10%, rgba(122, 120, 240, 0.16), transparent 55%),
+        linear-gradient(180deg, #f5f8fd 0%, #eef3f9 100%);
+    }
+
+    button, input { font-family: inherit; }
+    button { cursor: pointer; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex: none;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .logo {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 650;
+      letter-spacing: 0.04em;
+    }
+
+    .time-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #5e7088;
+      font-size: 13px;
+    }
+    .time-field select {
+      height: 36px;
+      min-width: 168px;
+      border: 1px solid #d5e2f2;
+      border-radius: 6px;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' fill='none' stroke='%235e7088' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+      padding: 0 34px 0 12px;
+      color: var(--blue-deep);
+      font-size: 13px;
+      font-weight: 600;
+      appearance: none;
+      cursor: pointer;
+    }
+    .time-field select:focus {
+      outline: 2px solid rgba(31, 111, 235, 0.25);
+      border-color: var(--blue);
+    }
+
+    .banner {
+      flex: none;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .kpi {
+      position: relative;
+      overflow: hidden;
+      border: 0;
+      border-radius: 8px;
+      min-height: 108px;
+      padding: 18px 16px 16px 18px;
+      display: flex;
+      align-items: center;
+      text-align: left;
+      color: #3d4e64;
+    }
+    .kpi.tone-blue {
+      background: linear-gradient(to top right, #D0DEFB 0%, rgba(208, 222, 251, 0.25) 100%);
+      border: 1px solid #D0DEFB;
+    }
+    .kpi.tone-orange {
+      background: linear-gradient(to top right, #FBE1D0 0%, rgba(251, 225, 208, 0.25) 100%);
+      border: 1px solid #FBE1D0;
+    }
+    .kpi.tone-violet {
+      background: linear-gradient(to top right, #E9D0FB 0%, rgba(233, 208, 251, 0.25) 100%);
+      border: 1px solid #E9D0FB;
+    }
+    .kpi.tone-rose {
+      background: linear-gradient(to top right, #D0F0E9 0%, rgba(208, 240, 233, 0.25) 100%);
+      border: 1px solid #D0F0E9;
+    }
+    .kpi.tone-green {
+      background: linear-gradient(to top right, #FCD1AF 0%, rgba(252, 209, 175, 0.25) 100%);
+      border: 1px solid #FCD1AF;
+    }
+    .kpi.is-on { border-width: 2px; }
+    .kpi.tone-blue.is-on { border-color: #4E7AD0; }
+    .kpi.tone-orange.is-on { border-color: #E08A58; }
+    .kpi.tone-violet.is-on { border-color: #B06ED6; }
+    .kpi.tone-rose.is-on { border-color: #3AAD96; }
+    .kpi.tone-green.is-on { border-color: #E88945; }
+    .kpi-copy {
+      position: relative;
+      z-index: 1;
+      min-width: 0;
+      padding-right: 62px;
+    }
+    .kpi-head {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-width: 0;
+    }
+    .kpi-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #3d4e64;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .kpi-tag {
+      flex: none;
+      font-size: 12px;
+      color: #8ea0b5;
+    }
+    .kpi-value {
+      margin-top: 10px;
+      font-size: 30px;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: #1f66e0;
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi-value span {
+      margin-left: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0;
+      color: #7d92aa;
+    }
+    .kpi-art {
+      position: absolute;
+      right: 12px;
+      top: 10px;
+      width: 56px;
+      height: 56px;
+      pointer-events: none;
+    }
+    .kpi-art img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .kpi .kpi-label,
+    .kpi .kpi-tag,
+    .kpi .kpi-value { color: #3d4e64; }
+    .kpi .kpi-tag { color: #8ea0b5; }
+    .kpi .kpi-value { color: #1f66e0; }
+    .kpi .kpi-value span { color: #7d92aa; }
+
+    .board {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1.65fr) minmax(340px, 0.9fr);
+      gap: 12px;
+    }
+
+    .column {
+      min-height: 0;
+      min-width: 0;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 16px 16px 14px;
+      display: flex;
+      flex-direction: column;
+    }
+    .module-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 12px;
+      flex: none;
+    }
+    .module-head h2 {
+      margin: 0;
+      min-width: 0;
+      font-size: 15px;
+      font-weight: 650;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .module-search {
+      flex: none;
+      width: 168px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 10px;
+      border: 1px solid #d5e2f2;
+      border-radius: 6px;
+      background: #fff;
+      color: #8b97a6;
+    }
+    .column > .module-head .module-search { width: 200px; }
+    .module-search input {
+      width: 100%;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      padding: 0;
+      background: transparent;
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .module-search input:focus { outline: none; }
+    .module-foot {
+      flex: none;
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+    .more {
+      color: var(--blue);
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .more:hover { text-decoration: underline; }
+
+    .list, .sublist {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .row {
+      width: 100%;
+      border: 0;
+      background: #f5f8fc;
+      border-radius: 6px;
+      min-height: 48px;
+      padding: 0 8px 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      color: var(--ink);
+      transition: background 0.15s ease;
+    }
+    .row:hover { background: #eaf2ff; }
+    .name {
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .project-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+    }
+    .project-scroll .list { overflow: visible; }
+    .prow {
+      display: grid;
+      grid-template-columns: minmax(180px, 1.6fr) minmax(108px, 1fr) minmax(120px, 1fr) minmax(132px, 1.05fr) 76px 96px 48px;
+      gap: 10px;
+      align-items: center;
+      min-width: 920px;
+    }
+    .prow.head {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      padding: 0 16px 8px;
+      background: #fff;
+      color: #6d7f95;
+      font-size: 12px;
+    }
+    .prow.row {
+      display: grid;
+      padding: 0 16px;
+    }
+    .cell {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      color: #3d5168;
+    }
+    .cell.title {
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 550;
+    }
+    .leader {
+      flex: 1;
+      min-width: 16px;
+    }
+    .risk {
+      color: var(--risk);
+      font-size: 13px;
+      font-weight: 600;
+      flex: none;
+    }
+    .view {
+      flex: none;
+      color: var(--blue);
+      font-size: 13px;
+      height: 32px;
+      padding: 0 10px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .row:hover .view { background: rgba(31, 111, 235, 0.1); }
+
+    .empty {
+      height: 180px;
+      border-radius: 6px;
+      background: #f7f9fc;
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+    }
+
+    .side {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+    }
+
+    .panel {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 16px 14px 14px;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel.grow { flex: 1; }
+    .panel.grow .sublist { flex: 1; overflow: auto; }
+
+    .metrics {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .metrics.three { grid-template-columns: repeat(3, 1fr); }
+    .metrics.two { grid-template-columns: repeat(2, 1fr); margin-bottom: 0; }
+
+    .metric {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      border-radius: 6px;
+      padding: 6px 4px 8px;
+    }
+    .metric:hover, .metric.is-on { background: rgba(255, 255, 255, 0.55); }
+    .metric b {
+      display: block;
+      font-size: 36px;
+      line-height: 1;
+      font-weight: 650;
+      letter-spacing: -0.04em;
+      color: var(--blue-deep);
+      font-variant-numeric: tabular-nums;
+    }
+    .metric.is-on b { color: var(--blue); }
+    .metric span {
+      display: block;
+      margin-top: 8px;
+      font-size: 13px;
+      color: #5d6e84;
+    }
+
+    .sublist {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .sublist .row {
+      background: #fff;
+      min-height: 44px;
+      padding-left: 12px;
+    }
+    .sublist .name { font-size: 13px; }
+
+    .drawer-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(14, 32, 58, 0.28);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 20;
+    }
+    .drawer-mask.show { opacity: 1; pointer-events: auto; }
+
+    .drawer {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: min(460px, calc(100% - 32px));
+      max-height: min(78vh, 620px);
+      overflow: auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 24px 60px rgba(16, 42, 84, 0.18);
+      transform: translate(-50%, -46%);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.22s ease, opacity 0.22s ease;
+      z-index: 21;
+      padding: 26px 26px 28px;
+    }
+    .drawer.show {
+      transform: translate(-50%, -50%);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .drawer-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .kicker {
+      margin: 0 0 6px;
+      color: var(--blue);
+      font-size: 12px;
+      letter-spacing: 0.12em;
+    }
+    .drawer h3 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.45;
+      font-weight: 650;
+    }
+    .close {
+      border: 0;
+      background: #f3f6fb;
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      color: #4d6178;
+      font-size: 18px;
+      line-height: 1;
+      flex: none;
+    }
+    .badge {
+      display: inline-flex;
+      margin-top: 14px;
+      color: var(--risk);
+      background: #fff1f3;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .facts {
+      margin: 22px 0 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .facts li {
+      display: grid;
+      grid-template-columns: 84px 1fr;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+    .facts em {
+      font-style: normal;
+      color: var(--muted);
+      flex: none;
+    }
+    .note {
+      margin-top: 18px;
+      background: var(--blue-mist);
+      border-radius: 6px;
+      padding: 14px 16px;
+      color: #35506f;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .people {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .person {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f5f8fc;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 1100px) {
+      body { height: auto; overflow: auto; }
+      .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .board { grid-template-columns: 1fr; }
+      .column, .panel.grow { min-height: 420px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <a href="cockpit.html" title="返回驾驶舱"><img class="logo" src="logo.png" alt="工程交易" /></a>
+      <h1>智能监管系统</h1>
+    </div>
+    <label class="time-field">
+      时间
+      <select id="timeSelect" aria-label="时间">
+        <option value="all" selected>全部时间（默认）</option>
+        <option value="30">近 30 天</option>
+        <option value="90">近 90 天</option>
+        <option value="year">本年度</option>
+      </select>
+    </label>
+  </header>
+
+  <section class="banner">
+    <div class="kpis" id="stats"></div>
+  </section>
+
+  <main class="board">
+    <section class="column">
+      <div class="module-head">
+        <h2 id="projectTitle">全部项目预警</h2>
+        <label class="module-search">
+          <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          <input id="projectSearch" type="search" placeholder="搜索项目" aria-label="搜索项目" />
+        </label>
+      </div>
+      <div class="project-scroll">
+        <div class="prow head">
+          <span>项目名称</span>
+          <span>招标人</span>
+          <span>招标代理</span>
+          <span>监管部门</span>
+          <span>预警等级</span>
+          <span>预警时间</span>
+          <span></span>
+        </div>
+        <div class="list" id="projectList"></div>
+      </div>
+      <div class="module-foot"><a class="more" href="warnings.html?tab=project">查看更多</a></div>
+    </section>
+    <aside class="column side">
+      <section class="panel grow">
+        <div class="module-head">
+          <h2 id="companyTitle">全部企业预警</h2>
+          <label class="module-search">
+            <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            <input id="companySearch" type="search" placeholder="搜索企业" aria-label="搜索企业" />
+          </label>
+        </div>
+        <div class="metrics three" id="companyStats"></div>
+        <div class="sublist" id="companyList"></div>
+        <div class="module-foot"><a class="more" href="warnings.html?tab=agency">查看更多</a></div>
+      </section>
+      <section class="panel">
+        <div class="module-head">
+          <h2 id="peopleTitle">全部专家及其他人员预警</h2>
+          <label class="module-search">
+            <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            <input id="peopleSearch" type="search" placeholder="搜索人员" aria-label="搜索人员" />
+          </label>
+        </div>
+        <div class="metrics two" id="peopleStats"></div>
+        <div class="module-foot"><a class="more" href="warnings.html?tab=expert">查看更多</a></div>
+      </section>
+    </aside>
+  </main>
+
+  <div class="drawer-mask" id="mask"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <p class="kicker" id="drawerKicker">预警详情</p>
+        <h3 id="drawerTitle"></h3>
+        <div class="badge">高风险</div>
+      </div>
+      <button class="close" type="button" id="closeDrawer" aria-label="关闭">×</button>
+    </div>
+    <ul class="facts" id="drawerFacts"></ul>
+    <div class="note" id="drawerNote"></div>
+    <div class="people" id="drawerPeople"></div>
+  </aside>
+
+  <script src="mock-data.js?v=129"></script>
+  <script>
+    const projectNotes = [
+      "投标文件异常一致，多家投标人存在人员与设备交叉，建议核查围标串标线索。",
+      "报价梯度明显，且与历史项目投标组合高度重合，建议复核竞争性。",
+      "关键岗位人员社保与业绩材料不一致，建议开展资质符合性复核。",
+      "评分办法对特定业绩指向较强，建议核查招标文件公平性。",
+      "中标候选人与招标代理存在历史高频合作，建议关注利益关联。",
+      "保证金缴纳账户存在关联，建议比对投标人股权与资金往来。",
+      "技术方案文本相似度偏高，建议抽样比对编制痕迹。",
+      "受让意向人资质材料集中补正，建议复核资格条件设置。",
+      "工期与报价偏离市场区间，建议对照同类项目造价指标。"
+    ];
+
+    const projectRows = [
+      ["福建省厦门第二东通道（翔安大桥）工程", "工程建设", "交通运输", "厦门市交通运输局", "厦门招标咨询中心", "厦门市公共资源交易中心"],
+      ["重庆市两江新区云计算数据中心建设项目", "工程建设", "信息技术", "重庆两江新区建设局", "重庆市政府采购中心", "重庆市公共资源交易中心"],
+      ["内蒙古呼和浩特新机场航站区工程施工", "工程建设", "交通运输", "内蒙古机场集团", "中航招标有限公司", "呼和浩特市公共资源交易中心"],
+      ["甘肃省兰州中川国际机场三期扩建工程", "工程建设", "交通运输", "甘肃省民航机场集团", "甘肃工程建设招标代理", "兰州市公共资源交易中心"],
+      ["河北省雄安新区启动区市政道路工程EPC", "工程建设", "市政公用", "雄安新区管委会", "河北公共资源交易中心", "雄安新区公共服务局"],
+      ["四川省成都天府国际机场货运区工程", "工程建设", "交通运输", "四川省机场集团", "四川国际招标有限公司", "成都市公共资源交易中心"],
+      ["广东省深圳前海综合交通枢纽工程", "工程建设", "交通运输", "深圳市交通局", "深圳交易咨询集团", "深圳市公共资源交易中心"],
+      ["江苏省南京江北新区中央商务区道路工程", "工程建设", "市政公用", "南京江北新区管委会", "江苏国际招标公司", "南京市公共资源交易中心"],
+      ["湖北省武汉长江新城起步区市政工程", "工程建设", "市政公用", "武汉市城市建设投资", "湖北招标股份有限公司", "武汉市公共资源交易中心"],
+      ["陕西省西安高铁新城基础设施工程", "工程建设", "市政公用", "西安市轨道建设集团", "陕西采购招标有限公司", "西安市公共资源交易中心"],
+      ["河南省郑州航空港区综合管廊工程", "工程建设", "市政公用", "郑州航空港投资集团", "河南工程招标代理", "郑州市公共资源交易中心"],
+      ["安徽省合肥滨湖新区水环境治理工程", "工程建设", "市政公用", "合肥市重点工程局", "安徽公共资源交易集团", "合肥市公共资源交易中心"],
+      ["云南省昆明长水机场配套路网工程", "工程建设", "交通运输", "云南机场集团", "云南招标股份有限公司", "昆明市公共资源交易中心"],
+      ["浙江省杭州西站枢纽综合配套工程招标", "政府采购", "市政公用", "杭州市交通投资集团", "浙江省成套招标代理", "杭州市公共资源交易中心"],
+      ["山东省青岛胶东国际机场配套工程招标", "政府采购", "交通运输", "青岛机场建设指挥部", "山东招标股份有限公司", "青岛市公共资源交易中心"],
+      ["北京市城市副中心行政办公区设备采购", "政府采购", "信息技术", "北京市城市副中心管委会", "北京国际招标有限公司", "北京市公共资源交易中心"],
+      ["上海市浦东新区智慧校园设备采购", "政府采购", "信息技术", "浦东新区教育局", "上海机电设备招标公司", "上海市公共资源交易中心"],
+      ["天津市滨海新区医疗设备采购项目", "政府采购", "医疗卫生", "天津市滨海新区卫健委", "天津国际招标有限公司", "天津市公共资源交易中心"],
+      ["吉林省长春市公共交通车辆采购", "政府采购", "交通运输", "长春市交通运输局", "吉林采购招标集团", "长春市公共资源交易中心"],
+      ["江西省南昌VR产业基地基础设施工程", "国有产权", "信息技术", "南昌市城市建设投资", "江西省招标咨询集团", "南昌市公共资源交易中心"],
+      ["广东省深圳市前海股权交易中心产权转让", "国有产权", "金融", "深圳市前海管理局", "深圳联合产权交易所", "深圳市公共资源交易中心"],
+      ["江苏省苏州市工业园区厂房产权挂牌", "国有产权", "工业", "苏州工业园区管委会", "苏州产权交易中心", "苏州市公共资源交易中心"],
+      ["山东省济南市城投资产包转让项目", "国有产权", "市政公用", "济南城市投资集团", "山东产权交易中心", "济南市公共资源交易中心"],
+      ["湖南省长沙市公交集团股权转让", "国有产权", "交通运输", "长沙市国资委", "湖南联合产权交易所", "长沙市公共资源交易中心"],
+      ["福建省福州市水务集团产权公开转让", "国有产权", "市政公用", "福州市国资委", "福建产权交易中心", "福州市公共资源交易中心"],
+      ["辽宁省沈阳市热力集团增资项目", "国有产权", "能源", "沈阳市国资委", "辽宁产权交易所", "沈阳市公共资源交易中心"],
+      ["新疆乌鲁木齐国际陆港区基础设施EPC", "其他", "物流仓储", "乌鲁木齐陆港集团", "新疆招标有限公司", "乌鲁木齐市公共资源交易中心"],
+      ["广西壮族自治区南宁国际铁路港物流项目", "其他", "物流仓储", "南宁国际铁路港投资", "广西招标中心", "南宁市公共资源交易中心"],
+      ["贵州省贵阳市大数据产业园配套项目", "其他", "信息技术", "贵阳大数据产业集团", "贵州公共资源交易集团", "贵阳市公共资源交易中心"],
+      ["海南省海口江东新区起步区项目", "其他", "市政公用", "海口江东新区管理局", "海南省招标股份有限公司", "海口市公共资源交易中心"],
+      ["青海省西宁市南绕城高速连接线项目", "其他", "交通运输", "青海省交通控股集团", "青海省招标有限公司", "西宁市公共资源交易中心"],
+      ["宁夏银川阅海湾中央商务区项目", "其他", "市政公用", "银川市城市建设投资", "宁夏招标咨询集团", "银川市公共资源交易中心"],
+      ["西藏拉萨市柳梧新区基础设施项目", "其他", "市政公用", "拉萨市城关区建设局", "西藏自治区招标中心", "拉萨市公共资源交易中心"],
+      ["黑龙江省哈尔滨市临空经济区项目", "其他", "物流仓储", "哈尔滨临空经济区管委会", "黑龙江招标公司", "哈尔滨市公共资源交易中心"],
+      ["山西省太原市晋阳湖片区综合开发项目", "其他", "市政公用", "太原市城市更新中心", "山西招标股份有限公司", "太原市公共资源交易中心"]
+    ];
+
+    const projects = projectRows.map((row, index) => {
+      const day = new Date("2026-09-23T00:00:00");
+      day.setDate(day.getDate() - (index % 28));
+      const month = String(day.getMonth() + 1).padStart(2, "0");
+      const date = String(day.getDate()).padStart(2, "0");
+      return {
+        name: row[0],
+        cat: row[1],
+        industry: row[2],
+        bidder: row[3],
+        agency: row[4],
+        regulator: row[5],
+        level: index % 5 === 4 ? "中风险" : "高风险",
+        date: "2026-" + month + "-" + date,
+        note: projectNotes[index % projectNotes.length]
+      };
+    });
+
+    const companyNotes = {
+      "招标人": "近一年作为招标人的项目中，高风险预警集中在同一代理机构。",
+      "招标代理": "代理项目中标率异常集中，建议核查代理过程留痕。",
+      "投标人": "与其他投标人存在共同股东及联系方式重合，报价呈固定价差。"
+    };
+
+    function makeCompanies(role, names, cats) {
+      return names.map((name, index) => ({
+        name: name,
+        role: role,
+        cat: cats[index],
+        note: companyNotes[role]
+      }));
+    }
+
+    const companies = makeCompanies("招标人", [
+      "中国电子科技集团有限公司",
+      "国家能源投资集团有限责任公司"
+    ], ["工程建设", "政府采购"]).concat(makeCompanies("招标代理", [
+      "中招国际招标有限公司",
+      "国信招标集团股份有限公司",
+      "中化商务有限公司",
+      "中国远东国际招标有限公司",
+      "北京国际招标有限公司",
+      "上海机电设备招标有限公司",
+      "广东省机电设备招标中心",
+      "浙江省成套招标代理有限公司",
+      "江苏国际招标公司",
+      "山东招标股份有限公司",
+      "四川国际招标有限责任公司",
+      "湖北省成套招标股份有限公司",
+      "陕西采购招标有限责任公司"
+    ], [
+      "工程建设", "工程建设", "工程建设", "工程建设", "工程建设",
+      "政府采购", "政府采购", "政府采购",
+      "国有产权", "国有产权", "国有产权",
+      "其他", "其他"
+    ])).concat(makeCompanies("投标人", [
+      "北京城建集团有限责任公司", "上海建工集团股份有限公司", "广州市政集团有限公司", "深圳路桥集团股份有限公司",
+      "天津城建集团有限公司", "重庆建工集团股份有限公司", "成都建工集团有限公司", "武汉桥工股份有限公司",
+      "南京市市政工程有限公司", "杭州园林工程有限公司", "苏州工业设备安装公司", "青岛港湾工程有限公司",
+      "大连船舶重工集团", "沈阳市政集团有限公司", "长春建工集团有限公司", "哈尔滨城建投资集团",
+      "西安市政建设集团", "郑州一建集团有限公司", "济南城建集团有限公司", "合肥建工集团有限公司",
+      "福州建工集团有限公司", "厦门路桥建设集团", "南昌市政工程公司", "长沙市城市建设投资",
+      "南宁建宁水务集团", "海口城建集团有限公司", "贵阳建筑勘察设计", "昆明建设投资控股",
+      "兰州城投建设集团", "西宁城市投资公司", "银川市政产业集团", "乌鲁木齐城建集团",
+      "石家庄市建设集团", "太原市政工程公司", "呼和浩特城发集团", "中铁建工集团有限公司",
+      "中交路桥建设有限公司", "中国建筑一局集团", "中国建筑第八工程局", "中国电建市政集团",
+      "中国能建葛洲坝集团", "中国中铁电气化局", "中国铁建大桥工程局", "中国化学工程集团",
+      "北京住总集团有限公司", "上海隧道工程公司", "广东水电二局股份", "浙江交工集团股份",
+      "江苏交通工程集团", "山东高速路桥集团", "四川路桥建设集团", "湖北路桥集团有限公司",
+      "陕西建工集团股份", "河南五建建设集团", "安徽建工集团控股", "福建建工集团有限公司"
+    ], [
+      "工程建设", "工程建设", "工程建设", "工程建设", "工程建设", "工程建设", "工程建设", "工程建设", "工程建设", "工程建设",
+      "工程建设", "工程建设", "工程建设", "工程建设", "工程建设", "工程建设", "工程建设", "工程建设", "工程建设", "工程建设",
+      "政府采购", "政府采购", "政府采购", "政府采购", "政府采购", "政府采购", "政府采购", "政府采购",
+      "政府采购", "政府采购", "政府采购", "政府采购", "政府采购", "政府采购", "政府采购", "政府采购",
+      "国有产权", "国有产权", "国有产权", "国有产权", "国有产权", "国有产权", "国有产权", "国有产权",
+      "国有产权", "国有产权", "国有产权", "国有产权",
+      "其他", "其他", "其他", "其他", "其他", "其他", "其他", "其他"
+    ]));
+
+    const experts = ["专家 01", "专家 02", "专家 03", "专家 04", "专家 05"];
+    const staff = ["工作人员 01", "工作人员 02"];
+    if (window.GUIZHOU) {
+      projects.splice(0, projects.length, ...GUIZHOU.indexProjects);
+      companies.splice(0, companies.length, ...GUIZHOU.companies);
+      experts.splice(0, experts.length, ...GUIZHOU.experts);
+      staff.splice(0, staff.length, ...GUIZHOU.staffNames);
+    }
+
+    const fieldOrder = ["建设工程", "政府采购", "国企采购"];
+    const seenFields = [];
+    projects.forEach((item) => {
+      if (item.cat && seenFields.indexOf(item.cat) < 0) seenFields.push(item.cat);
+    });
+    seenFields.sort((a, b) => (fieldOrder.indexOf(a) < 0 ? 99 : fieldOrder.indexOf(a)) - (fieldOrder.indexOf(b) < 0 ? 99 : fieldOrder.indexOf(b)));
+    const fieldTones = ["orange", "violet", "rose", "green"];
+    const fieldIcons = ["icon-card-peach.png", "icon-card-purple.png", "icon-card-mint.png", "icon-card-lime.png"];
+    const bannerMetrics = [{ key: "全部项目预警", label: "全部项目预警", tone: "blue", icon: "icon-card-blue.png" }].concat(seenFields.map((name, index) => ({
+      key: name,
+      label: name + "预警",
+      tone: fieldTones[index % fieldTones.length],
+      icon: fieldIcons[index % fieldIcons.length]
+    })));
+    const roleOrder = ["招标人", "招标代理", "投标人"];
+
+    const state = { cat: "全部项目预警", time: "all", role: "all" };
+    const today = new Date("2026-09-24T00:00:00");
+
+    const statsEl = document.getElementById("stats");
+    const projectList = document.getElementById("projectList");
+    const companyStats = document.getElementById("companyStats");
+    const companyList = document.getElementById("companyList");
+    const peopleStats = document.getElementById("peopleStats");
+
+    function withinTime(dateStr) {
+      if (state.time === "all" || state.time === "year") return true;
+      const date = new Date(dateStr + "T00:00:00");
+      const days = (today - date) / 86400000;
+      return days >= 0 && days <= Number(state.time);
+    }
+
+    function visibleProjects() {
+      return projects.filter((item) => {
+        const catOk = state.cat === "全部项目预警" || item.cat === state.cat;
+        return catOk && withinTime(item.date);
+      });
+    }
+
+    function row(item, kind) {
+      const button = document.createElement("button");
+      button.type = "button";
+      if (kind === "project") {
+        button.className = "row prow";
+        ["title", "bidder", "agency", "regulator", "level", "date"].forEach((key) => {
+          const span = document.createElement("span");
+          span.className = "cell" + (key === "title" ? " title" : "") + (key === "level" ? " risk" : "");
+          span.textContent = key === "title" ? item.name : key === "level" ? item.level : (item[key] || "—");
+          if (key === "level" && item.level === "中风险") span.style.color = "#d97706";
+          if (key === "level" && item.level === "低风险") span.style.color = "#15803d";
+          button.appendChild(span);
+        });
+        const view = document.createElement("span");
+        view.className = "view";
+        view.textContent = "查看";
+        view.addEventListener("click", (event) => {
+          event.stopPropagation();
+          openInsight(kind, item);
+        });
+        button.appendChild(view);
+      } else {
+        button.className = "row";
+        button.innerHTML = '<span class="name"></span><span class="leader"></span><span class="risk">高风险</span><span class="view">查看</span>';
+        button.querySelector(".name").textContent = item.name;
+        const risk = button.querySelector(".risk");
+        risk.textContent = item.level || "高风险";
+        if (item.level === "中风险") risk.style.color = "#d97706";
+        if (item.level === "低风险") risk.style.color = "#15803d";
+        button.querySelector(".view").addEventListener("click", (event) => {
+          event.stopPropagation();
+          openInsight(kind, item);
+        });
+      }
+      button.addEventListener("click", () => openDetail(kind, item));
+      return button;
+    }
+
+    function openInsight(kind, item) {
+      const params = new URLSearchParams();
+      params.set("from", kind);
+      params.set("name", item.name);
+      if (kind === "project") {
+        ["bidder", "agency", "regulator", "level", "date", "cat"].forEach((key) => {
+          if (item[key]) params.set(key, item[key]);
+        });
+      } else {
+        if (item.role) params.set("role", item.role);
+        if (item.cat) params.set("cat", item.cat);
+      }
+      if (kind === "company" && item.role === "招标代理") params.set("agency", item.name);
+      params.set("view", "layers");
+      location.href = "insight.html?" + params.toString();
+    }
+
+    function applyModuleTitles() {
+      const prefix = state.cat === "全部项目预警" ? "全部" : state.cat;
+      document.getElementById("projectTitle").textContent = prefix + "项目预警";
+      document.getElementById("companyTitle").textContent = prefix + "企业预警";
+      document.getElementById("peopleTitle").textContent = prefix + "专家及其他人员预警";
+    }
+
+    function renderProjects() {
+      applyModuleTitles();
+      statsEl.innerHTML = "";
+      bannerMetrics.forEach((item) => {
+        const button = document.createElement("button");
+        button.className = "kpi tone-" + item.tone + (state.cat === item.key ? " is-on" : "");
+        button.type = "button";
+        button.innerHTML = '<div class="kpi-copy"><div class="kpi-head"><span class="kpi-label"></span></div><div class="kpi-value"></div></div><span class="kpi-art" aria-hidden="true"></span>';
+        button.querySelector(".kpi-label").textContent = item.label;
+        const count = item.key === "全部项目预警" ? projects.length : projects.filter((project) => project.cat === item.key).length;
+        button.querySelector(".kpi-value").innerHTML = count + "<span>项</span>";
+        const icon = document.createElement("img");
+        icon.alt = "";
+        icon.src = item.icon;
+        button.querySelector(".kpi-art").appendChild(icon);
+        button.addEventListener("click", () => {
+          state.cat = item.key;
+          renderProjects();
+          renderCompanies();
+        });
+        statsEl.appendChild(button);
+      });
+
+      const projectQuery = document.getElementById("projectSearch").value.trim();
+      const list = visibleProjects().filter((item) => !projectQuery || [item.name, item.bidder, item.agency, item.regulator, item.level].some((field) => String(field).includes(projectQuery)));
+      projectList.innerHTML = "";
+      if (!list.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "当前条件下暂无预警项目";
+        projectList.appendChild(empty);
+        return;
+      }
+      list.forEach((item) => projectList.appendChild(row(item, "project")));
+    }
+
+    function scopedCompanies() {
+      return companies.filter((item) => state.cat === "全部项目预警" || item.cat === state.cat);
+    }
+
+    function renderCompanies() {
+      const scoped = scopedCompanies();
+      companyStats.innerHTML = "";
+      roleOrder.forEach((role) => {
+        const button = document.createElement("button");
+        button.className = "metric" + (state.role === role ? " is-on" : "");
+        button.type = "button";
+        button.innerHTML = "<b></b><span></span>";
+        button.querySelector("b").textContent = scoped.filter((item) => item.role === role).length;
+        button.querySelector("span").textContent = role;
+        button.addEventListener("click", () => {
+          state.role = state.role === role ? "all" : role;
+          renderCompanies();
+        });
+        companyStats.appendChild(button);
+      });
+
+      companyList.innerHTML = "";
+      const companyQuery = document.getElementById("companySearch").value.trim();
+      const list = scoped.filter((item) => (state.role === "all" || item.role === state.role) && (!companyQuery || item.name.includes(companyQuery)));
+      if (!list.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "当前条件下暂无预警企业";
+        companyList.appendChild(empty);
+        return;
+      }
+      list.forEach((item) => companyList.appendChild(row(item, "company")));
+    }
+
+    function renderPeople() {
+      peopleStats.innerHTML = "";
+      const peopleQuery = document.getElementById("peopleSearch").value.trim();
+      const people = [
+        { label: "专家预警", count: window.GUIZHOU ? GUIZHOU.rows.filter((row) => row.tab === "expert").length : experts.length, group: "expert" },
+        { label: "工作人员预警", count: window.GUIZHOU ? GUIZHOU.rows.filter((row) => row.tab === "staff").length : staff.length, group: "staff" }
+      ].filter((item) => !peopleQuery || item.label.includes(peopleQuery));
+      if (!people.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "当前条件下暂无预警人员";
+        peopleStats.appendChild(empty);
+        return;
+      }
+      people.forEach((item) => {
+        const button = document.createElement("button");
+        button.className = "metric";
+        button.type = "button";
+        button.innerHTML = "<b></b><span></span>";
+        button.querySelector("b").textContent = item.count;
+        button.querySelector("span").textContent = item.label;
+        button.addEventListener("click", () => openPeople(item.group));
+        peopleStats.appendChild(button);
+      });
+    }
+
+    const mask = document.getElementById("mask");
+    const drawer = document.getElementById("drawer");
+
+    function openDrawer() {
+      mask.classList.add("show");
+      drawer.classList.add("show");
+      drawer.setAttribute("aria-hidden", "false");
+    }
+
+    function closeDrawer() {
+      mask.classList.remove("show");
+      drawer.classList.remove("show");
+      drawer.setAttribute("aria-hidden", "true");
+    }
+
+    function setFacts(pairs) {
+      const facts = document.getElementById("drawerFacts");
+      facts.innerHTML = "";
+      pairs.forEach(([label, value]) => {
+        const li = document.createElement("li");
+        const em = document.createElement("em");
+        em.textContent = label;
+        li.append(em, document.createTextNode(value));
+        facts.appendChild(li);
+      });
+    }
+
+    function openDetail(kind, item) {
+      document.getElementById("drawerPeople").innerHTML = "";
+      document.getElementById("drawerKicker").textContent = kind === "project" ? "项目预警" : "企业预警";
+      document.getElementById("drawerTitle").textContent = item.name;
+      document.getElementById("drawerNote").textContent = item.note;
+      const badge = document.querySelector("#drawer .badge");
+      badge.textContent = item.level || "高风险";
+      badge.style.color = item.level === "中风险" ? "#d97706" : item.level === "低风险" ? "#15803d" : "";
+      badge.style.background = item.level === "中风险" ? "#fff7ed" : item.level === "低风险" ? "#f0fdf4" : "";
+      if (kind === "project") {
+        setFacts([
+          ["行业领域", item.cat],
+          ["招标人", item.bidder],
+          ["招标代理", item.agency],
+          ["监管部门", item.regulator],
+          ["预警等级", item.level],
+          ["预警时间", item.date || "—"]
+        ]);
+      } else {
+        setFacts([
+          ["主体角色", item.role],
+          ["风险等级", item.level || "高风险"],
+          ["预警对象", "企业"]
+        ]);
+      }
+      openDrawer();
+    }
+
+    function openPeople(group) {
+      const isExpert = group === "expert";
+      document.getElementById("drawerKicker").textContent = "人员预警";
+      const peopleBadge = document.querySelector("#drawer .badge");
+      document.getElementById("drawerTitle").textContent = isExpert ? "专家预警" : "工作人员预警";
+      const list = window.GUIZHOU
+        ? GUIZHOU.rows.filter((row) => row.tab === (isExpert ? "expert" : "staff"))
+        : (isExpert ? experts : staff).map((name) => ({ name: name, level: "高风险", point: "" }));
+      peopleBadge.textContent = list.length + "人";
+      peopleBadge.style.color = "";
+      peopleBadge.style.background = "";
+      document.getElementById("drawerNote").textContent = isExpert
+        ? "来自专家表中已标注预警等级的人员。"
+        : "来自员工表中已标注预警等级的人员。";
+      setFacts([
+        ["人员类型", isExpert ? "评审专家" : "工作人员"],
+        ["预警数量", String(list.length)],
+        ["风险等级", "见各人标注"]
+      ]);
+      const box = document.getElementById("drawerPeople");
+      box.innerHTML = "";
+      list.forEach((item) => {
+        const div = document.createElement("div");
+        div.className = "person";
+        div.style.display = "block";
+        const top = document.createElement("div");
+        top.style.display = "flex";
+        top.style.justifyContent = "space-between";
+        const who = document.createElement("span");
+        who.textContent = item.name;
+        const risk = document.createElement("span");
+        risk.className = "risk";
+        risk.textContent = item.level || "高风险";
+        if (item.level === "中风险") risk.style.color = "#d97706";
+        if (item.level === "低风险") risk.style.color = "#15803d";
+        top.append(who, risk);
+        const note = document.createElement("div");
+        note.style.marginTop = "4px";
+        note.style.color = "#66788a";
+        note.style.lineHeight = "1.45";
+        note.textContent = item.point || "";
+        div.append(top, note);
+        box.appendChild(div);
+      });
+      openDrawer();
+    }
+
+    document.getElementById("projectSearch").addEventListener("input", renderProjects);
+    document.getElementById("companySearch").addEventListener("input", renderCompanies);
+    document.getElementById("peopleSearch").addEventListener("input", renderPeople);
+    document.getElementById("timeSelect").addEventListener("change", (event) => {
+      state.time = event.target.value;
+      renderProjects();
+    });
+
+    document.getElementById("closeDrawer").addEventListener("click", closeDrawer);
+    mask.addEventListener("click", closeDrawer);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeDrawer();
+    });
+    renderProjects();
+    renderCompanies();
+    renderPeople();
+  </script>
+</body>
+</html>
