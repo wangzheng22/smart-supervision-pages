@@ -1891,6 +1891,12 @@
       if (title === project.name) return project.cat || "";
       return "";
     }
+    function legalOf(orgName) {
+      if (!orgName || orgName === "—") return "—";
+      const people = (gz && gz.peopleByUnit && gz.peopleByUnit[orgName]) || [];
+      const hit = people.find((person) => /法定代表人/.test(person.role || ""));
+      return hit ? hit.name : "—";
+    }
     function bidPair(title) {
       const item = projectGraph(title);
       const win = item && (item.bidders || []).find((bidder) => bidder.win);
@@ -1910,7 +1916,7 @@
       }
       if (spec.type === "owner") return [["名称", spec.name], ["关联项目", project.name]];
       if (spec.type === "agency") return [["名称", spec.name], ["关联项目", project.name]];
-      return [["企业名称", spec.fullName || spec.name], ["关联项目", project.name]];
+      return [["企业名称", spec.fullName || spec.name], ["法人", legalOf(spec.fullName || spec.name)], ["关联项目", project.name]];
     }
     function defaultTimeline(spec) {
       const titles = { person: "人员时序", expert: "专家时序", project: "项目历程图", owner: "招标主体时序", agency: "招标代理时序", bidder: "投标企业时序" };
@@ -2015,7 +2021,7 @@
     })).concat(warnedBidders.map((item) => ({
       id: item.id, type: "bidder", role: "投标企业", group: item.warn ? "risk" : "normal", name: item.name, fullName: item.full || item.name, icon: "org", risk: !!item.warn, win: !!item.win,
       levels: [item.warn ? "warn" : "normal", "normal", "normal"],
-      attrs: [["企业名称", item.full || item.name], ["关联项目", project.name]],
+      attrs: [["企业名称", item.full || item.name], ["法人", legalOf(item.full || item.name)], ["关联项目", project.name]],
       timeline: defaultTimeline({ type: "bidder" })
     })));
     const chipW = 132;
@@ -2132,7 +2138,7 @@
       picked: [],
       batchIds: null,
       attrOn: {},
-      attrShow: {}
+      pinned: []
     };
     if ((params.get("from") === "agency" || params.get("role") === "招标代理") && catalog.agency && (catalog.agency.rel.projects || []).length > 1) {
       state.open.push({ id: "agency", op: "projects", label: "代理项目" });
@@ -2208,34 +2214,40 @@
       return 156;
     }
     let sceneNow = null;
-    const EXTEND_KIND = { "招标人": "owner", "中标单位": "win", "施工单位": "build" };
+    const EXTEND_KIND = { "招标人": "owner", "中标单位": "win", "施工单位": "build", "投标单位": "bid", "法人": "legal" };
     function extKey(text) {
       let n = 0;
       for (let i = 0; i < text.length; i += 1) n = (n * 33 + text.charCodeAt(i)) >>> 0;
       return n.toString(36);
     }
+    function extAttrs(label, value) {
+      if (label === "法人") return [["姓名", value], ["职务", "法定代表人"]];
+      if (label === "中标单位" || label === "施工单位" || label === "投标单位") return [[label, value], ["法人", legalOf(value)]];
+      return [[label, value]];
+    }
     function ensureExtNode(label, value) {
-      const id = "ax-" + EXTEND_KIND[label] + "-" + extKey(value);
-      const type = label === "招标人" ? "owner" : "bidder";
+      const id = "ax-" + (EXTEND_KIND[label] || "x") + "-" + extKey(value);
+      const type = label === "法人" ? "person" : (label === "招标人" ? "owner" : "bidder");
       const prev = catalog[id];
       if (prev) {
         prev.name = value;
         prev.win = label === "中标单位";
+        prev.attrs = extAttrs(label, value);
         return prev;
       }
       const node = {
         id: id,
         type: type,
         role: label,
-        group: type,
+        group: type === "person" ? "person" : type,
         name: value,
-        icon: "org",
+        icon: type === "person" ? "person" : "org",
         risk: false,
         tone: "",
         levels: ["normal"],
         ops: [],
-        attrs: [[label, value]],
-        timeline: defaultTimeline({ type: type === "owner" ? "owner" : "bidder" }),
+        attrs: extAttrs(label, value),
+        timeline: defaultTimeline({ type: type }),
         alerts: [],
         rel: {},
         win: label === "中标单位",
@@ -2570,30 +2582,46 @@
         note.y = Math.max(8, note.parent.y - 28);
       });
       function placeAttrExtensions() {
-        const order = ["招标人", "中标单位", "施工单位"].filter((label) => state.attrShow && state.attrShow[label]);
-        if (!order.length || !state.batchIds || !state.batchIds.length) return;
-        const parents = state.batchIds.map((id) => byId[id]).filter(Boolean);
-        if (!parents.length) return;
-        const baseY = parents.reduce((max, item) => Math.max(max, item.y), 0);
-        order.forEach((label, row) => {
-          const y = baseY + 168 + row * 156;
+        const order = ["招标人", "中标单位", "施工单位", "投标单位", "法人"];
+        let baseY = null;
+        let row = 0;
+        order.forEach((label) => {
+          const pins = (state.pinned || []).filter((pin) => pin.label === label);
+          if (!pins.length) return;
           const groups = {};
-          parents.forEach((parent) => {
-            const value = attrValue(parent.node, label);
-            if (!value || value === "—") return;
-            if (!groups[value]) groups[value] = [];
-            groups[value].push(parent);
+          pins.forEach((pin) => {
+            const parent = byId[pin.parentId];
+            if (!parent || !pin.value || pin.value === "—") return;
+            if (!groups[pin.value]) groups[pin.value] = [];
+            groups[pin.value].push(parent);
           });
+          const keys = Object.keys(groups);
+          if (!keys.length) return;
+          const parentTops = [];
+          keys.forEach((value) => groups[value].forEach((parent) => parentTops.push(parent.y)));
+          const top = parentTops.reduce((max, y) => Math.max(max, y), 0);
+          if (label !== "法人") {
+            if (baseY == null) baseY = top;
+          }
+          const y = label === "法人" ? top + 168 : baseY + 168 + row * 156;
+          if (label !== "法人") row += 1;
           const rowItems = [];
-          Object.keys(groups).forEach((value) => {
-            const spec = ensureExtNode(label, value);
-            const w = Math.max(nodeWidth(spec), Math.min(220, value.length * 13 + 28));
+          keys.forEach((value) => {
             const ps = groups[value];
-            const mid = ps.reduce((sum, item) => sum + item.x + item.w / 2, 0) / ps.length;
-            put(spec, mid - w / 2, y, w);
-            const placed = byId[spec.id];
+            const reused = label === "法人"
+              ? items.find((item) => item.node.name === value && (item.node.type === "person" || item.node.role === "法人"))
+              : null;
+            let placed = reused;
+            if (reused) reused.node.ext = true;
+            if (!placed) {
+              const spec = ensureExtNode(label, value);
+              const w = Math.max(nodeWidth(spec), Math.min(220, value.length * 13 + 28));
+              const mid = ps.reduce((sum, item) => sum + item.x + item.w / 2, 0) / ps.length;
+              put(spec, mid - w / 2, y, w);
+              placed = byId[spec.id];
+              rowItems.push(placed);
+            }
             ps.forEach((parent) => addLink(parent, placed, "#8aa4c4", 1.5, true, ""));
-            rowItems.push(placed);
           });
           rowItems.sort((a, b) => a.x - b.x);
           let edge = -Infinity;
@@ -2774,7 +2802,29 @@
     }
     const FUNNEL = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 3h12l-4.2 5.2V13l-3.6-1.6V8.2L2 3z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
     const EXTEND_ICON = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="3.2" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 5.2v2.4M4.8 10.2h6.4M8 7.6v5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
-    const EXTEND_LABELS = { "招标人": true, "中标单位": true, "施工单位": true };
+    function extentCovered(label) {
+      const nodes = batchNodeList().filter((node) => {
+        const value = attrValue(node, label);
+        return value && value !== "—";
+      });
+      if (!nodes.length) return false;
+      return nodes.every((node) => state.pinned.some((pin) => pin.label === label && pin.parentId === node.id));
+    }
+    function toggleExtent(label) {
+      const nodes = batchNodeList();
+      if (extentCovered(label)) {
+        state.pinned = state.pinned.filter((pin) => !(pin.label === label && nodes.some((node) => node.id === pin.parentId)));
+        return;
+      }
+      nodes.forEach((node) => {
+        const value = attrValue(node, label);
+        if (!value || value === "—") return;
+        if (!state.pinned.some((pin) => pin.label === label && pin.parentId === node.id)) {
+          state.pinned.push({ label: label, parentId: node.id, value: value });
+        }
+      });
+    }
+    const EXTEND_LABELS = { "招标人": true, "中标单位": true, "施工单位": true, "投标单位": true, "法人": true };
     const PLAIN_LABELS = { "项目名称": true, "项目编码": true, "项目类别": true, "风险等级": true };
     function renderBatchDetail(body) {
       const nodes = batchNodeList();
@@ -2783,7 +2833,7 @@
         const text = row.values.length === 1 ? row.values[0] : ("多种（" + row.values.length + "）");
         let tail = "<span></span>";
         if (EXTEND_LABELS[row.label]) {
-          tail = '<button type="button" class="attr-extend' + (state.attrShow[row.label] ? " is-on" : "") + '" data-extend="' + esc(row.label) + '" aria-label="展开' + esc(row.label) + '">' + EXTEND_ICON + "</button>";
+          tail = '<button type="button" class="attr-extend' + (extentCovered(row.label) ? " is-on" : "") + '" data-extend="' + esc(row.label) + '" aria-label="展开' + esc(row.label) + '">' + EXTEND_ICON + "</button>";
         } else if (!PLAIN_LABELS[row.label]) {
           const chosen = state.attrOn[row.label];
           const options = row.values.map((value, index) => {
@@ -2870,7 +2920,8 @@
               : id === pickedId));
         button.classList.toggle("is-on", on);
         button.classList.toggle("is-picked", false);
-        button.classList.toggle("is-fade", narrowed ? !visible : (!state.batchIds && Boolean(spec) && spec.ids.indexOf(id) < 0 && !opened.has(id)));
+        const keepNode = button.dataset.keep === "1";
+        button.classList.toggle("is-fade", !keepNode && (narrowed ? !visible : (!state.batchIds && Boolean(spec) && spec.ids.indexOf(id) < 0 && !opened.has(id))));
         button.classList.toggle("is-dim", !narrowed && !state.batchIds && !spec && button.dataset.match === "0");
         button.setAttribute("aria-pressed", on ? "true" : "false");
         if (mark) mark.setAttribute("aria-label", mark.dataset.label);
@@ -2886,8 +2937,9 @@
         }
         const hot = Boolean(spec) && spec.lines.indexOf(key) >= 0;
         const kept = ends.length === 2 && opened.has(ends[0]) && opened.has(ends[1]);
+        const extWire = ends.some((end) => end.indexOf("ax-") === 0);
         wire.classList.toggle("is-hot", hot);
-        wire.classList.toggle("is-fade", Boolean(spec) && !hot && !kept);
+        wire.classList.toggle("is-fade", !extWire && Boolean(spec) && !hot && !kept);
       });
     }
     function arcPath(r, a0, a1) {
@@ -2978,6 +3030,7 @@
         list.forEach((node) => {
           const card = document.createElement("div");
           card.dataset.id = node.id;
+          if (node.ext) card.dataset.keep = "1";
           const kind = node.type === "person" ? "staff" : (node.type || "bidder");
           card.className = "node kind-" + kind + (node.tone ? " lv-" + node.tone : "");
           card.style.left = node.x + "px";
@@ -4047,7 +4100,7 @@
           risk: !!bidder.warn,
           win: !!(bidder.win || item.win),
           levels: [bidder.warn ? "warn" : "normal", "normal", "normal"],
-          attrs: [["企业名称", bidder.full || bidder.name], ["关联项目", project.name]]
+          attrs: [["企业名称", bidder.full || bidder.name], ["法人", legalOf(bidder.full || bidder.name)], ["关联项目", project.name]]
         });
         node.fullName = bidder.full || bidder.name;
       } else if (item.kind === "expert") {
@@ -4208,7 +4261,6 @@
     document.addEventListener("click", () => closeRelMenu());
 
     function selectNode(id) {
-      if (String(id).indexOf("ax-") === 0) return;
       if (state.picking) {
         const index = state.picked.indexOf(id);
         if (index >= 0) state.picked.splice(index, 1);
@@ -4442,7 +4494,6 @@
         state.picked = [];
         state.batchIds = null;
         state.attrOn = {};
-        state.attrShow = {};
         updateBatchBar();
         render();
         return;
@@ -4450,8 +4501,7 @@
       const extendBtn = event.target.closest ? event.target.closest("[data-extend]") : null;
       if (extendBtn) {
         event.stopPropagation();
-        const label = extendBtn.dataset.extend;
-        state.attrShow[label] = !state.attrShow[label];
+        toggleExtent(extendBtn.dataset.extend);
         render();
         return;
       }
@@ -4526,7 +4576,6 @@
         state.picked = [];
         state.batchIds = null;
         state.attrOn = {};
-        state.attrShow = {};
         render();
         return;
       }
