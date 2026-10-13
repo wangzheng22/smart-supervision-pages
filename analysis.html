@@ -823,7 +823,187 @@
       top: 14px;
       left: 60px;
       z-index: 6;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-width: calc(100% - 220px);
     }
+    .batch-switch {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      margin: 0;
+      padding: 0 10px 0 8px;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
+      background: #fff;
+      color: #24364c;
+      font-size: 12px;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(22, 62, 112, 0.08);
+    }
+    .batch-switch input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .batch-switch i {
+      position: relative;
+      width: 28px;
+      height: 16px;
+      border-radius: 8px;
+      background: #d5dde8;
+    }
+    .batch-switch i::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.16s ease;
+    }
+    .batch-switch input:checked + i { background: #2f78f6; }
+    .batch-switch input:checked + i::after { transform: translateX(12px); }
+    .batch-switch input:focus-visible + i { box-shadow: 0 0 0 2px #c5d8fb; }
+    .batch-count { font-size: 12px; color: #3d5166; white-space: nowrap; }
+    .batch-count[hidden], .batch-ok[hidden] { display: none; }
+    .batch-ok {
+      height: 32px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 6px;
+      background: #2f78f6;
+      color: #fff;
+      font-size: 12px;
+      box-shadow: 0 6px 16px rgba(47, 120, 246, 0.18);
+    }
+    .batch-ok:disabled { opacity: 0.45; }
+    .batch-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0 0 8px;
+    }
+    .batch-head b { font-size: 14px; color: #24364c; }
+    .batch-names { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+    .batch-chip {
+      max-width: 100%;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: #f3f6fb;
+      color: #24364c;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .batch-sub { margin: 0 0 4px; font-size: 13px; font-weight: 650; color: #5e7088; }
+    .attr-line {
+      position: relative;
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr) 22px;
+      gap: 8px;
+      align-items: start;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f3f7;
+      font-size: 13px;
+    }
+    .attr-k { color: #8b97a6; }
+    .attr-v { color: #24364c; text-align: right; word-break: break-all; }
+    .attr-funnel {
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: #8b97a6;
+    }
+    .attr-funnel:hover, .attr-funnel.is-on,
+    .attr-extend:hover, .attr-extend.is-on { background: #e7f0ff; color: #2f78f6; }
+    .attr-extend {
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: #8b97a6;
+    }
+    .graph-legend {
+      position: absolute;
+      top: 14px;
+      right: 56px;
+      z-index: 4;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+      max-width: 460px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 6px 16px rgba(22, 62, 112, 0.08);
+      color: #5e7088;
+      font-size: 12px;
+      line-height: 1;
+    }
+    .canvas.is-table .graph-legend { display: none; }
+    .graph-legend i {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-right: 6px;
+      border-radius: 50%;
+      vertical-align: -1px;
+    }
+    .graph-legend .owner { background: #f3b240; }
+    .graph-legend .agency { background: #2a9ade; }
+    .graph-legend .project { background: #8574f7; }
+    .graph-legend .bidder { background: #4089f3; }
+    .graph-legend .expert { background: #7430bd; }
+    .graph-legend .staff { background: #1fc292; }
+    .graph-legend .line {
+      width: 18px;
+      height: 3px;
+      border-radius: 3px;
+      background: #c5ced6;
+      vertical-align: middle;
+    }
+    .graph-legend .line.high { background: #ef4d4f; }
+    .graph-legend .line.mid { background: #e5922a; }
+    .graph-legend .line.low { background: #2f9e6b; }
+    .attr-pop {
+      position: absolute;
+      right: 0;
+      top: 30px;
+      z-index: 6;
+      width: 230px;
+      max-height: 220px;
+      overflow: auto;
+      padding: 6px 8px;
+      border: 1px solid #e4eaf2;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(20, 34, 54, 0.16);
+    }
+    .attr-pop[hidden] { display: none; }
+    .attr-opt {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      margin: 0;
+      padding: 4px 0;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #24364c;
+    }
+    .attr-opt span { min-width: 0; word-break: break-all; }
     .workspace:has(.detail.open) .graph-tools { left: 392px; }
     .detail .vline {
       margin: 2px 0 0;
@@ -1383,9 +1563,28 @@
     </aside>
     <div class="graph-tools" id="graphTools">
       <button class="clue-fab" id="clueFab" type="button">添加全部线索</button>
+      <label class="batch-switch">
+        <input id="batchToggle" type="checkbox" />
+        <i aria-hidden="true"></i>
+        <span>批量选择</span>
+      </label>
+      <span class="batch-count" id="batchCount" hidden>已选 0个</span>
+      <button class="batch-ok" id="batchOk" type="button" hidden disabled>确定</button>
     </div>
 
     <section class="canvas" id="canvas">
+      <div class="graph-legend" aria-label="图例">
+        <span><i class="owner"></i>招标人</span>
+        <span><i class="agency"></i>招标代理</span>
+        <span><i class="project"></i>项目</span>
+        <span><i class="bidder"></i>投标企业</span>
+        <span><i class="expert"></i>专家</span>
+        <span><i class="staff"></i>人员</span>
+        <span><i class="line"></i>关联</span>
+        <span><i class="line high"></i>高风险</span>
+        <span><i class="line mid"></i>中风险</span>
+        <span><i class="line low"></i>低风险</span>
+      </div>
       <div class="crumb" id="crumb" hidden>
         <button class="back" id="back" type="button">返回</button>
         <span id="crumbText"></span>
@@ -1406,7 +1605,6 @@
 
     <aside class="relate" id="relate">
       <div class="vtab-col">
-        <button class="vtab" id="relateTab" type="button"><svg class="vtab-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="4" cy="8" r="1.8" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="4.2" r="1.8" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="11.8" r="1.8" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M5.7 7.2L10.2 5M5.7 8.8L10.2 11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><span>高级关联</span></button>
         <button class="vtab" id="reportTab" type="button"><span>线索报告</span></button>
       </div>
       <div class="body" id="relateBody"></div>
@@ -1682,6 +1880,24 @@
       return node;
     }
     const catalog = {};
+    function projectGraph(title) {
+      if (gz && gz.graphs && gz.graphs[title]) return gz.graphs[title];
+      if (title === project.name) return graph;
+      return null;
+    }
+    function projectCat(title) {
+      const meta = ((gz && gz.indexProjects) || []).find((row) => row.name === title);
+      if (meta && meta.cat) return meta.cat;
+      if (title === project.name) return project.cat || "";
+      return "";
+    }
+    function bidPair(title) {
+      const item = projectGraph(title);
+      const win = item && (item.bidders || []).find((bidder) => bidder.win);
+      const winner = win ? (win.full || win.name) : "—";
+      const builder = winner !== "—" && (projectCat(title) === "建设工程" || /建设|建筑|市政|路桥/.test(winner)) ? winner : "—";
+      return [["中标单位", winner], ["施工单位", builder]];
+    }
     function defaultAttrs(spec) {
       if (spec.type === "person") {
         return [["证件号码", "—"], ["职务", spec.job || "职员"], ["关联企业", spec.orgName || "—"]];
@@ -1690,7 +1906,7 @@
         return [["姓名", spec.name], ["评标专业", spec.major || "—"], ["关联项目", project.name]];
       }
       if (spec.type === "project") {
-        return [["项目编码", (graph && graph.id) || ""], ["项目类别", project.cat], ["风险等级", project.level], ["招标人", project.bidder], ["招标代理", project.agency || "—"]];
+        return [["项目名称", spec.name], ["项目编码", (projectGraph(spec.name) && projectGraph(spec.name).id) || ""], ["项目类别", projectCat(spec.name) || project.cat], ["风险等级", project.level], ["招标人", project.bidder], ["招标代理", project.agency || "—"]].concat(bidPair(spec.name));
       }
       if (spec.type === "owner") return [["名称", spec.name], ["关联项目", project.name]];
       if (spec.type === "agency") return [["名称", spec.name], ["关联项目", project.name]];
@@ -1783,7 +1999,7 @@
     cores.push({
       id: "project", type: "project", role: "项目", group: "project", name: project.name, icon: "folder",
       levels: ["normal", "normal", warnedBidders.some((item) => item.warn) ? "warn" : "normal", warnedExperts.some((item) => item.warn) ? "warn" : "normal"],
-      attrs: [["项目编码", (graph && graph.id) || ""], ["项目类别", project.cat], ["风险等级", quietPark ? "无预警" : project.level], ["招标人", ownerName], ["招标代理", agencyName || "—"]],
+      attrs: [["项目名称", project.name], ["项目编码", (graph && graph.id) || ""], ["项目类别", project.cat], ["风险等级", quietPark ? "无预警" : project.level], ["招标人", ownerName], ["招标代理", agencyName || "—"]].concat(bidPair(project.name)),
       timeline: sheetTimeline("项目历程图", "project")
     });
     cores.forEach((spec, index) => {
@@ -1865,7 +2081,7 @@
             icon: "folder",
             risk: meta.level === "高风险",
             levels: ["normal", "normal", "normal", "normal"],
-            attrs: [["项目名称", title], ["行业领域", meta.cat || "—"], ["风险等级", meta.level || "无预警"], ["招标人", item.owner || "—"], ["招标代理", item.agency || "—"]]
+            attrs: [["项目名称", title], ["项目编码", item.id || ""], ["项目类别", meta.cat || "—"], ["行业领域", meta.cat || "—"], ["风险等级", meta.level || "无预警"], ["招标人", item.owner || "—"], ["招标代理", item.agency || "—"]].concat(bidPair(title))
           });
         }
         ids.push(id);
@@ -1911,7 +2127,12 @@
       alert: "",
       focus: false,
       open: [],
-      filters: { owner: true, agency: true, risk: true, normal: true, expert: true }
+      filters: { owner: true, agency: true, risk: true, normal: true, expert: true },
+      picking: false,
+      picked: [],
+      batchIds: null,
+      attrOn: {},
+      attrShow: {}
     };
     if ((params.get("from") === "agency" || params.get("role") === "招标代理") && catalog.agency && (catalog.agency.rel.projects || []).length > 1) {
       state.open.push({ id: "agency", op: "projects", label: "代理项目" });
@@ -1987,6 +2208,42 @@
       return 156;
     }
     let sceneNow = null;
+    const EXTEND_KIND = { "招标人": "owner", "中标单位": "win", "施工单位": "build" };
+    function extKey(text) {
+      let n = 0;
+      for (let i = 0; i < text.length; i += 1) n = (n * 33 + text.charCodeAt(i)) >>> 0;
+      return n.toString(36);
+    }
+    function ensureExtNode(label, value) {
+      const id = "ax-" + EXTEND_KIND[label] + "-" + extKey(value);
+      const type = label === "招标人" ? "owner" : "bidder";
+      const prev = catalog[id];
+      if (prev) {
+        prev.name = value;
+        prev.win = label === "中标单位";
+        return prev;
+      }
+      const node = {
+        id: id,
+        type: type,
+        role: label,
+        group: type,
+        name: value,
+        icon: "org",
+        risk: false,
+        tone: "",
+        levels: ["normal"],
+        ops: [],
+        attrs: [[label, value]],
+        timeline: defaultTimeline({ type: type === "owner" ? "owner" : "bidder" }),
+        alerts: [],
+        rel: {},
+        win: label === "中标单位",
+        ext: true
+      };
+      catalog[id] = node;
+      return node;
+    }
     function pruneOpen() {
       let guard = 0;
       while (guard < 8) {
@@ -2312,12 +2569,56 @@
         note.x = note.parent.x;
         note.y = Math.max(8, note.parent.y - 28);
       });
+      function placeAttrExtensions() {
+        const order = ["招标人", "中标单位", "施工单位"].filter((label) => state.attrShow && state.attrShow[label]);
+        if (!order.length || !state.batchIds || !state.batchIds.length) return;
+        const parents = state.batchIds.map((id) => byId[id]).filter(Boolean);
+        if (!parents.length) return;
+        const baseY = parents.reduce((max, item) => Math.max(max, item.y), 0);
+        order.forEach((label, row) => {
+          const y = baseY + 168 + row * 156;
+          const groups = {};
+          parents.forEach((parent) => {
+            const value = attrValue(parent.node, label);
+            if (!value || value === "—") return;
+            if (!groups[value]) groups[value] = [];
+            groups[value].push(parent);
+          });
+          const rowItems = [];
+          Object.keys(groups).forEach((value) => {
+            const spec = ensureExtNode(label, value);
+            const w = Math.max(nodeWidth(spec), Math.min(220, value.length * 13 + 28));
+            const ps = groups[value];
+            const mid = ps.reduce((sum, item) => sum + item.x + item.w / 2, 0) / ps.length;
+            put(spec, mid - w / 2, y, w);
+            const placed = byId[spec.id];
+            ps.forEach((parent) => addLink(parent, placed, "#8aa4c4", 1.5, true, ""));
+            rowItems.push(placed);
+          });
+          rowItems.sort((a, b) => a.x - b.x);
+          let edge = -Infinity;
+          rowItems.forEach((item) => {
+            if (item.x < edge + 18) {
+              item.x = edge + 18;
+              item.node.x = item.x;
+            }
+            edge = item.x + item.w;
+          });
+        });
+      }
+      placeAttrExtensions();
+      let boundX = maxX + shiftX;
+      let boundY = maxY + shiftY;
+      items.forEach((item) => {
+        boundX = Math.max(boundX, item.x + item.w + 56);
+        boundY = Math.max(boundY, item.y + 150);
+      });
       return {
         items: items,
         notes: notes,
         links: links,
-        width: Math.round(maxX + shiftX),
-        height: Math.round(maxY + shiftY)
+        width: Math.round(boundX),
+        height: Math.round(boundY)
       };
     }
     function shownScene() {
@@ -2432,6 +2733,70 @@
       return dated.length ? dated[Math.floor((dated.length - 1) / 2)] : null;
     }
 
+    function attrValue(node, label) {
+      if (!node) return null;
+      if (label === "主体角色") return node.role || "";
+      const row = attrsOf(node).find((item) => item[0] === label);
+      return row ? String(row[1] == null ? "" : row[1]) : null;
+    }
+    function batchNodeList() {
+      return (state.batchIds || []).map((id) => catalog[id]).filter(Boolean);
+    }
+    function commonAttrs(nodes) {
+      if (!nodes.length) return [];
+      const labels = ["主体角色"].concat(attrsOf(nodes[0]).map((row) => row[0]));
+      const shared = [];
+      labels.forEach((label) => {
+        if (!nodes.every((node) => attrValue(node, label) != null)) return;
+        const values = [];
+        nodes.forEach((node) => {
+          const value = attrValue(node, label);
+          if (values.indexOf(value) < 0) values.push(value);
+        });
+        shared.push({ label: label, values: values });
+      });
+      return shared;
+    }
+    function attrNarrowed(row) {
+      const chosen = state.attrOn[row.label];
+      return Boolean(chosen && chosen.length !== row.values.length);
+    }
+    function filterNarrowed() {
+      if (!state.batchIds || !state.batchIds.length) return false;
+      return commonAttrs(batchNodeList()).some(attrNarrowed);
+    }
+    function passesAttrFilter(node) {
+      if (!node || !state.batchIds || state.batchIds.indexOf(node.id) < 0) return false;
+      return commonAttrs(batchNodeList()).every((row) => {
+        if (!attrNarrowed(row)) return true;
+        return state.attrOn[row.label].indexOf(attrValue(node, row.label)) >= 0;
+      });
+    }
+    const FUNNEL = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 3h12l-4.2 5.2V13l-3.6-1.6V8.2L2 3z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+    const EXTEND_ICON = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="3.2" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 5.2v2.4M4.8 10.2h6.4M8 7.6v5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
+    const EXTEND_LABELS = { "招标人": true, "中标单位": true, "施工单位": true };
+    const PLAIN_LABELS = { "项目名称": true, "项目编码": true, "项目类别": true, "风险等级": true };
+    function renderBatchDetail(body) {
+      const nodes = batchNodeList();
+      const chips = nodes.map((node) => '<span class="batch-chip">' + esc(node.name) + "</span>").join("");
+      const rows = commonAttrs(nodes).map((row) => {
+        const text = row.values.length === 1 ? row.values[0] : ("多种（" + row.values.length + "）");
+        let tail = "<span></span>";
+        if (EXTEND_LABELS[row.label]) {
+          tail = '<button type="button" class="attr-extend' + (state.attrShow[row.label] ? " is-on" : "") + '" data-extend="' + esc(row.label) + '" aria-label="展开' + esc(row.label) + '">' + EXTEND_ICON + "</button>";
+        } else if (!PLAIN_LABELS[row.label]) {
+          const chosen = state.attrOn[row.label];
+          const options = row.values.map((value, index) => {
+            const on = !chosen || chosen.indexOf(value) >= 0;
+            return '<label class="attr-opt"><input type="checkbox" data-attr-val="' + esc(row.label) + '" data-val-i="' + index + '"' + (on ? " checked" : "") + "><span>" + esc(value) + "</span></label>";
+          }).join("");
+          const allOn = !chosen || chosen.length === row.values.length;
+          tail = '<button type="button" class="attr-funnel' + (attrNarrowed(row) ? " is-on" : "") + '" data-attr="' + esc(row.label) + '" aria-label="筛选' + esc(row.label) + '">' + FUNNEL + '</button><div class="attr-pop" hidden><label class="attr-opt"><input type="checkbox" data-attr-all="' + esc(row.label) + '"' + (allOn ? " checked" : "") + "><span>全部</span></label>" + options + "</div>";
+        }
+        return '<div class="attr-line"><span class="attr-k">' + esc(row.label) + '</span><span class="attr-v">' + esc(text) + "</span>" + tail + "</div>";
+      }).join("");
+      body.innerHTML = '<div class="batch-head"><b>已选节点</b><button type="button" class="clue-mini" data-batch-clear>清空</button></div><div class="batch-names">' + chips + '</div><div class="batch-sub">共有属性</div>' + rows;
+    }
     function renderDetail() {
       const node = current();
       const body = document.getElementById("detailBody");
@@ -2440,6 +2805,10 @@
       state.tab = "attr";
       if (!open) {
         body.innerHTML = "";
+        return;
+      }
+      if (state.batchIds && state.batchIds.length) {
+        renderBatchDetail(body);
         return;
       }
       const rows = [["主体角色", node.role]].concat(attrsOf(node));
@@ -2466,35 +2835,56 @@
       return ids;
     }
     function syncGraphState() {
-      const multi = relate.classList.contains("open");
-      canvas.classList.toggle("is-multi", multi);
-      const spec = multi ? null : focusSpec();
+      const relateMulti = relate.classList.contains("open");
+      const picking = state.picking;
+      canvas.classList.toggle("is-multi", relateMulti || picking);
+      const spec = relateMulti || picking || state.batchIds ? null : focusSpec();
       const opened = openedIds();
-      const picked = current().id;
+      const pickedId = current().id;
       const lineEnds = state.line ? state.line.split("|") : [];
+      const narrowed = filterNarrowed();
       stage.querySelectorAll(".node").forEach((button) => {
         const id = button.dataset.id;
-        const chosen = multi && relatePick.indexOf(id) >= 0;
-        const on = multi
-          ? chosen
-          : (spec
-            ? (state.line ? lineEnds.indexOf(id) >= 0 : (state.alert ? spec.ids.indexOf(id) >= 0 : id === picked))
-            : id === picked);
-        button.classList.toggle("is-on", on);
-        button.classList.toggle("is-picked", chosen);
-        button.classList.toggle("is-fade", !multi && Boolean(spec) && spec.ids.indexOf(id) < 0 && !opened.has(id));
-        button.classList.toggle("is-dim", !multi && !spec && button.dataset.match === "0");
-        button.setAttribute("aria-pressed", on ? "true" : "false");
         const mark = button.querySelector(".mark");
-        if (mark) {
-          if (!mark.dataset.label) mark.dataset.label = mark.getAttribute("aria-label") || "";
-          mark.setAttribute("aria-label", multi ? ((chosen ? "取消选择 " : "添加 ") + mark.dataset.label) : mark.dataset.label);
+        if (mark && !mark.dataset.label) mark.dataset.label = mark.getAttribute("aria-label") || "";
+        if (relateMulti || picking) {
+          const bag = relateMulti ? relatePick : state.picked;
+          const chosen = bag.indexOf(id) >= 0;
+          const visible = !(picking && narrowed) || (catalog[id] && passesAttrFilter(catalog[id]));
+          button.classList.toggle("is-on", picking && narrowed ? visible : chosen);
+          button.classList.toggle("is-picked", chosen);
+          button.classList.toggle("is-fade", picking && narrowed ? !visible : false);
+          button.classList.toggle("is-dim", false);
+          button.setAttribute("aria-pressed", chosen ? "true" : "false");
+          if (mark) mark.setAttribute("aria-label", (chosen ? "取消勾选 " : "勾选 ") + mark.dataset.label);
+          return;
         }
+        const batchHit = state.batchIds && state.batchIds.indexOf(id) >= 0;
+        const visible = !narrowed || (catalog[id] && passesAttrFilter(catalog[id]));
+        const on = narrowed
+          ? visible
+          : (state.batchIds
+            ? batchHit
+            : (spec
+              ? (state.line ? lineEnds.indexOf(id) >= 0 : (state.alert ? spec.ids.indexOf(id) >= 0 : id === pickedId))
+              : id === pickedId));
+        button.classList.toggle("is-on", on);
+        button.classList.toggle("is-picked", false);
+        button.classList.toggle("is-fade", narrowed ? !visible : (!state.batchIds && Boolean(spec) && spec.ids.indexOf(id) < 0 && !opened.has(id)));
+        button.classList.toggle("is-dim", !narrowed && !state.batchIds && !spec && button.dataset.match === "0");
+        button.setAttribute("aria-pressed", on ? "true" : "false");
+        if (mark) mark.setAttribute("aria-label", mark.dataset.label);
       });
       wires.querySelectorAll(".wire").forEach((wire) => {
         const key = wire.dataset.line || "";
-        const hot = Boolean(spec) && spec.lines.indexOf(key) >= 0;
         const ends = key.split("|");
+        if (narrowed) {
+          const hot = ends.length === 2 && ends.every((end) => catalog[end] && passesAttrFilter(catalog[end]));
+          wire.classList.toggle("is-hot", hot);
+          wire.classList.toggle("is-fade", !hot);
+          return;
+        }
+        const hot = Boolean(spec) && spec.lines.indexOf(key) >= 0;
         const kept = ends.length === 2 && opened.has(ends[0]) && opened.has(ends[1]);
         wire.classList.toggle("is-hot", hot);
         wire.classList.toggle("is-fade", Boolean(spec) && !hot && !kept);
@@ -3818,6 +4208,15 @@
     document.addEventListener("click", () => closeRelMenu());
 
     function selectNode(id) {
+      if (String(id).indexOf("ax-") === 0) return;
+      if (state.picking) {
+        const index = state.picked.indexOf(id);
+        if (index >= 0) state.picked.splice(index, 1);
+        else state.picked.push(id);
+        updateBatchBar();
+        syncGraphState();
+        return;
+      }
       if (relate.classList.contains("open")) {
         toggleRelatePick(id);
         state.selected = id;
@@ -3912,7 +4311,17 @@
       const clueFab = document.getElementById("clueFab");
       clueFab.hidden = state.mode !== "graph";
       clueFab.textContent = "添加线索";
+      updateBatchBar();
       fit();
+    }
+    function updateBatchBar() {
+      const count = document.getElementById("batchCount");
+      const ok = document.getElementById("batchOk");
+      const on = state.picking;
+      count.hidden = !on;
+      ok.hidden = !on;
+      count.textContent = "已选 " + state.picked.length + "个";
+      ok.disabled = state.picked.length === 0;
     }
 
     function setDrawer() {
@@ -3923,7 +4332,8 @@
       fit();
     }
     document.getElementById("tabDetail").addEventListener("click", () => setDrawer());
-    document.getElementById("relateTab").addEventListener("click", () => {
+    const relateTab = document.getElementById("relateTab");
+    if (relateTab) relateTab.addEventListener("click", () => {
       const open = !relate.classList.contains("open");
       relate.classList.toggle("open", open);
       if (open) {
@@ -3999,7 +4409,7 @@
     });
     canvas.addEventListener("pointerdown", (event) => {
       if (state.mode !== "graph" || event.button !== 0) return;
-      if (event.target.closest && event.target.closest(".node, .wire, .crumb, .sheet, button, a, input, select, textarea")) return;
+      if (event.target.closest && event.target.closest(".node, .wire, .crumb, .sheet, button, a, input, select, textarea, .graph-legend")) return;
       const startX = event.clientX;
       const startY = event.clientY;
       const originX = panX;
@@ -4026,6 +4436,38 @@
       canvas.addEventListener("pointercancel", end);
     });
     document.getElementById("detailBody").addEventListener("click", (event) => {
+      const clear = event.target.closest ? event.target.closest("[data-batch-clear]") : null;
+      if (clear) {
+        event.stopPropagation();
+        state.picked = [];
+        state.batchIds = null;
+        state.attrOn = {};
+        state.attrShow = {};
+        updateBatchBar();
+        render();
+        return;
+      }
+      const extendBtn = event.target.closest ? event.target.closest("[data-extend]") : null;
+      if (extendBtn) {
+        event.stopPropagation();
+        const label = extendBtn.dataset.extend;
+        state.attrShow[label] = !state.attrShow[label];
+        render();
+        return;
+      }
+      const funnel = event.target.closest ? event.target.closest(".attr-funnel") : null;
+      if (funnel) {
+        event.stopPropagation();
+        const pop = funnel.parentElement.querySelector(".attr-pop");
+        const willOpen = pop.hidden;
+        document.querySelectorAll(".attr-pop").forEach((item) => { item.hidden = true; });
+        pop.hidden = !willOpen;
+        return;
+      }
+      if (event.target.closest && event.target.closest(".attr-pop")) {
+        event.stopPropagation();
+        return;
+      }
       const tab = event.target.closest ? event.target.closest("[data-tab]") : null;
       if (tab) {
         state.tab = tab.dataset.tab;
@@ -4047,6 +4489,56 @@
       const card = event.target.closest ? event.target.closest("[data-alert]") : null;
       if (!card) return;
       focusAlertCard(card.dataset.alert);
+    });
+    document.getElementById("detailBody").addEventListener("change", (event) => {
+      const input = event.target;
+      if (!input || !input.dataset) return;
+      const label = input.dataset.attrAll || input.dataset.attrVal;
+      if (!label) return;
+      const row = commonAttrs(batchNodeList()).find((item) => item.label === label);
+      if (!row) return;
+      const boxes = [...document.querySelectorAll("#detailBody input[data-attr-val]")].filter((box) => box.dataset.attrVal === label);
+      const allBox = [...document.querySelectorAll("#detailBody input[data-attr-all]")].find((box) => box.dataset.attrAll === label);
+      if (input.dataset.attrAll != null) boxes.forEach((box) => { box.checked = input.checked; });
+      const chosen = boxes.filter((box) => box.checked).map((box) => row.values[Number(box.dataset.valI)]);
+      if (chosen.length === row.values.length) delete state.attrOn[label];
+      else state.attrOn[label] = chosen;
+      if (allBox) {
+        allBox.checked = chosen.length === row.values.length;
+        allBox.indeterminate = chosen.length > 0 && chosen.length < row.values.length;
+      }
+      const funnel = [...document.querySelectorAll("#detailBody .attr-funnel")].find((item) => item.dataset.attr === label);
+      if (funnel) funnel.classList.toggle("is-on", Boolean(state.attrOn[label]));
+      const valueCell = funnel && funnel.parentElement.querySelector(".attr-v");
+      if (valueCell) {
+        const active = state.attrOn[label];
+        valueCell.textContent = !active ? (row.values.length === 1 ? row.values[0] : ("多种（" + row.values.length + "）")) : ("已筛 " + active.length + " 项");
+      }
+      syncGraphState();
+    });
+    document.addEventListener("click", (event) => {
+      if (event.target.closest && event.target.closest(".attr-line")) return;
+      document.querySelectorAll(".attr-pop").forEach((pop) => { pop.hidden = true; });
+    });
+    document.getElementById("batchToggle").addEventListener("change", (event) => {
+      state.picking = event.target.checked;
+      if (!state.picking) {
+        state.picked = [];
+        state.batchIds = null;
+        state.attrOn = {};
+        state.attrShow = {};
+        render();
+        return;
+      }
+      updateBatchBar();
+      syncGraphState();
+    });
+    document.getElementById("batchOk").addEventListener("click", () => {
+      if (!state.picked.length) return;
+      state.batchIds = state.picked.slice();
+      state.attrOn = {};
+      detail.classList.add("open");
+      render();
     });
     document.getElementById("timePanel").addEventListener("click", (event) => {
       const addNode = event.target.closest ? event.target.closest("[data-add-node]") : null;
@@ -4190,7 +4682,7 @@
     function renderReport() {
       reportDrawer.classList.toggle("is-open", report.open);
       document.getElementById("reportTab").classList.toggle("is-on", report.open);
-      document.getElementById("relateTab").classList.toggle("is-on", relate.classList.contains("open"));
+      if (relateTab) relateTab.classList.toggle("is-on", relate.classList.contains("open"));
       reportDrawer.inert = !report.open;
       reportDrawer.setAttribute("aria-hidden", report.open ? "false" : "true");
       processCount.textContent = String(report.clues.length);
