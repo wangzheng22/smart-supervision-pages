@@ -74,49 +74,11 @@
     .vignette { position: absolute; inset: 0; background: radial-gradient(130% 100% at 50% 40%, rgba(255, 255, 255, 0) 52%, rgba(180, 196, 232, 0.22) 100%); }
     .stage { position: relative; flex: 1; min-height: 0; z-index: 1; }
     .stage canvas { display: block; }
-    .ops-layer {
-      position: absolute;
-      inset: 0;
-      z-index: 2;
-      pointer-events: none;
-    }
-    .node-ops {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 0;
-      height: 0;
-      overflow: visible;
-      pointer-events: none;
-    }
-    .node-ops.is-hot { z-index: 3; }
-    .ops-svg {
-      position: absolute;
-      left: -420px;
-      top: -420px;
-      width: 840px;
-      height: 840px;
-      overflow: visible;
-      pointer-events: none;
-    }
-    .ops-lab {
-      position: absolute;
-      left: 0;
-      top: 0;
-      font-size: 11px;
-      font-weight: 650;
-      line-height: 1;
-      white-space: nowrap;
-      color: #2f78f6;
-      text-shadow: 0 0 4px #e8eaee, 0 0 4px #e8eaee, 0 1px 1px #fff;
-      transform: translate(-50%, -50%);
-    }
-    .node-ops.is-hot .ops-lab { font-size: 12px; }
     .legend {
       position: absolute;
       right: 16px;
       bottom: 16px;
-      z-index: 4;
+      z-index: 2;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
@@ -653,7 +615,7 @@
         group.add(marker);
         anchors.set(item.id, marker);
       });
-      layerViews.push({ layer, group, placed, itemIds: placed.map((item) => item.id), glass, labels, slab });
+      layerViews.push({ layer, placed, itemIds: placed.map((item) => item.id), glass, labels, slab });
     });
 
     function shadowTexture() {
@@ -1065,295 +1027,9 @@
         timer: setTimeout(() => { arm = null; }, 320)
       };
     });
-    const REACH_REST = 5;
-    const REACH_HOT = 34;
-    const OP_INK = "#2f78f6";
-    const OPS = {
-      owner: ["招标项目", "招标代理", "员工", "法人"],
-      agency: ["代理招标主体", "代理项目", "员工", "法人"],
-      bidder: ["投标项目", "员工", "法人"],
-      expert: ["评审项目"],
-      project: ["招标主体", "招标代理", "投标企业", "专家"]
-    };
-    function opsKind(layer) {
-      const id = layer.id;
-      if (id === "owner" || id.indexOf("own-") === 0) return "owner";
-      if (id === "agency") return "agency";
-      if (id === "project" || id.indexOf("prj-") === 0) return "project";
-      if (id.indexOf("bid-") === 0) return "bidder";
-      if (id.indexOf("exp-") === 0) return "expert";
-      return "project";
-    }
-    function quadEdges(rel) {
-      const edges = [];
-      for (let i = 0; i < rel.length; i += 1) {
-        const a = rel[i];
-        const b = rel[(i + 1) % rel.length];
-        const mx = (a.x + b.x) / 2;
-        const my = (a.y + b.y) / 2;
-        let tx = b.x - a.x;
-        let ty = b.y - a.y;
-        const len = Math.hypot(tx, ty) || 1;
-        tx /= len;
-        ty /= len;
-        let nx = ty;
-        let ny = -tx;
-        if (nx * mx + ny * my < 0) { nx = -nx; ny = -ny; }
-        edges.push({ a, b, mx, my, nx, ny, tx, ty, len, gap: 220 });
-      }
-      return edges;
-    }
-    function rayGap(ox, oy, dx, dy, quads, skip) {
-      let best = 220;
-      for (let i = 0; i < quads.length; i += 1) {
-        if (i === skip || !quads[i]) continue;
-        const quad = quads[i];
-        for (let k = 0; k < 4; k += 1) {
-          const a = quad[k];
-          const b = quad[(k + 1) % 4];
-          const ex = b.x - a.x;
-          const ey = b.y - a.y;
-          const det = dx * ey - dy * ex;
-          if (Math.abs(det) < 1e-5) continue;
-          const t = ((a.x - ox) * ey - (a.y - oy) * ex) / det;
-          const u = ((a.x - ox) * dy - (a.y - oy) * dx) / det;
-          if (t > 2 && u >= 0 && u <= 1 && t < best) best = t;
-        }
-      }
-      return best;
-    }
-    function labelSpan(text, edge) {
-      const w = text.length * 11;
-      const h = 12;
-      return {
-        along: Math.abs(edge.tx) * w + Math.abs(edge.ty) * h,
-        out: Math.abs(edge.nx) * w + Math.abs(edge.ny) * h
-      };
-    }
-    const opsLayer = document.createElement("div");
-    opsLayer.className = "ops-layer";
-    stage.appendChild(opsLayer);
-    const scratch = new THREE.Vector3();
-    function projectLocal(group, x, y) {
-      scratch.set(x, y, 2.2);
-      group.localToWorld(scratch);
-      scratch.project(camera);
-      const width = renderer.domElement.clientWidth;
-      const height = renderer.domElement.clientHeight;
-      return {
-        x: (scratch.x * 0.5 + 0.5) * width,
-        y: (-scratch.y * 0.5 + 0.5) * height,
-        z: scratch.z
-      };
-    }
-    layerViews.forEach((view) => {
-      const names = OPS[opsKind(view.layer)] || [];
-      const root = document.createElement("div");
-      root.className = "node-ops";
-      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.setAttribute("class", "ops-svg");
-      svg.setAttribute("viewBox", "-420 -420 840 840");
-      svg.setAttribute("overflow", "visible");
-      const paths = names.map(() => {
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("fill", "none");
-        path.setAttribute("stroke", OP_INK);
-        path.setAttribute("stroke-linecap", "round");
-        path.setAttribute("stroke-linejoin", "round");
-        svg.appendChild(path);
-        return path;
-      });
-      root.appendChild(svg);
-      const labels = names.map((name) => {
-        const span = document.createElement("span");
-        span.className = "ops-lab";
-        span.textContent = name;
-        root.appendChild(span);
-        return span;
-      });
-      opsLayer.appendChild(root);
-      view.opsEl = root;
-      view.opPaths = paths;
-      view.opLabels = labels;
-      view.reach = REACH_REST;
-      view.reachTarget = REACH_REST;
-      view.hoverBox = null;
-    });
-    let hotLayerId = "";
-    function aimHot(next) {
-      if (next === hotLayerId) return;
-      hotLayerId = next;
-      layerViews.forEach((view) => {
-        const on = view.layer.id === hotLayerId;
-        view.reachTarget = on ? REACH_HOT : REACH_REST;
-        view.opsEl.classList.toggle("is-hot", on);
-      });
-    }
-    function layoutOps() {
-      const anyHot = !!hotLayerId;
-      const geos = layerViews.map((view) => {
-        view.reach += (view.reachTarget - view.reach) * 0.28;
-        if (Math.abs(view.reachTarget - view.reach) < 0.25) view.reach = view.reachTarget;
-        const group = view.group;
-        group.updateWorldMatrix(true, false);
-        const w = view.layer.w;
-        const h = view.layer.h;
-        const corners = [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]].map((pair) => projectLocal(group, pair[0], pair[1]));
-        const center = projectLocal(group, 0, 0);
-        const hidden = corners.some((point) => point.z < -1 || point.z > 1);
-        let minX = Infinity;
-        let minY = Infinity;
-        let maxX = -Infinity;
-        let maxY = -Infinity;
-        corners.forEach((point) => {
-          minX = Math.min(minX, point.x);
-          minY = Math.min(minY, point.y);
-          maxX = Math.max(maxX, point.x);
-          maxY = Math.max(maxY, point.y);
-        });
-        const tooSmall = maxX - minX < 12 || maxY - minY < 8;
-        if (hidden || tooSmall) {
-          view.opsEl.hidden = true;
-          view.hoverBox = null;
-          return null;
-        }
-        view.opsEl.hidden = false;
-        const rel = corners.map((point) => ({ x: point.x - center.x, y: point.y - center.y }));
-        let halfDiag = 0;
-        rel.forEach((point) => { halfDiag = Math.max(halfDiag, Math.hypot(point.x, point.y)); });
-        return { view, corners, center, rel, minX, minY, maxX, maxY, halfDiag };
-      });
-      const quads = geos.map((geo) => geo && geo.corners);
-      geos.forEach((geo, index) => {
-        if (!geo) return;
-        const view = geo.view;
-        view.opsEl.style.transform = "translate(" + geo.center.x.toFixed(1) + "px," + geo.center.y.toFixed(1) + "px)";
-        const edges = quadEdges(geo.rel);
-        edges.forEach((edge) => {
-          edge.gap = rayGap(geo.center.x + edge.mx, geo.center.y + edge.my, edge.nx, edge.ny, quads, index);
-        });
-        const count = view.opLabels.length;
-        const buckets = edges.map(() => []);
-        for (let n = 0; n < count; n += 1) {
-          let best = 0;
-          let score = -Infinity;
-          edges.forEach((edge, edgeIndex) => {
-            const used = buckets[edgeIndex].length;
-            const room = Math.min(edge.gap, 200) - used * 22;
-            const fit = edge.len / (used + 1);
-            const value = room * 2 + Math.min(fit, 46) - (edge.gap < 16 ? 120 : 0);
-            if (value > score) { score = value; best = edgeIndex; }
-          });
-          buckets[best].push(n);
-        }
-        const rest = {};
-        buckets.forEach((ids, edgeIndex) => {
-          if (!ids.length) return;
-          const edge = edges[edgeIndex];
-          const sideEdge = Math.abs(edge.nx) >= Math.abs(edge.ny);
-          const spans = ids.map((id) => labelSpan(view.opLabels[id].textContent, edge));
-          const rows = [];
-          if (sideEdge) {
-            rows.push(ids.map((id, ordinal) => ({ id, span: spans[ordinal] })));
-          } else {
-            let row = [];
-            let used = 0;
-            ids.forEach((id, ordinal) => {
-              const along = spans[ordinal].along;
-              const next = used + (row.length ? 4 : 0) + along;
-              if (row.length && next > edge.len * 0.96) {
-                rows.push(row);
-                row = [];
-                used = 0;
-              }
-              row.push({ id, span: spans[ordinal] });
-              used += (row.length > 1 ? 4 : 0) + along;
-            });
-            if (row.length) rows.push(row);
-          }
-          rows.forEach((items, rowIndex) => {
-            const total = items.reduce((sum, item) => sum + item.span.along, 0) + Math.max(0, items.length - 1) * 4;
-            let cursor = -total / 2;
-            items.forEach((item) => {
-              const along = cursor + item.span.along / 2;
-              cursor += item.span.along + 4;
-              const out = 3 + item.span.out / 2 + rowIndex * 16;
-              rest[item.id] = {
-                x: edge.mx + edge.tx * along + edge.nx * out,
-                y: edge.my + edge.ty * along + edge.ny * out,
-                ax: edge.mx + edge.tx * along,
-                ay: edge.my + edge.ty * along,
-                tx: edge.tx,
-                ty: edge.ty,
-                nx: edge.nx,
-                ny: edge.ny
-              };
-            });
-          });
-        });
-        const sweep = (Math.PI * 2) / count;
-        const grow = Math.max(0, Math.min(1, (view.reach - REACH_REST) / (REACH_HOT - REACH_REST)));
-        const hotR = geo.halfDiag + 30;
-        const hotHalf = count === 1 ? Math.PI * 0.9 : sweep * 0.38;
-        const plate = view.labels.material.opacity;
-        const hot = view.layer.id === hotLayerId;
-        const dim = anyHot && !hot ? 0.16 : 1;
-        view.opsEl.style.opacity = String((hot ? 1 : plate) * dim);
-        view.hoverBox = { minX: geo.minX - 110, maxX: geo.maxX + 110, minY: geo.minY - 110, maxY: geo.maxY + 110 };
-        view.opLabels.forEach((label, labelIndex) => {
-          const spot = rest[labelIndex];
-          const mid = count === 1 ? -Math.PI / 2 : -Math.PI / 2 + (labelIndex + 0.5) * sweep;
-          if (!spot) {
-            label.hidden = true;
-            view.opPaths[labelIndex].setAttribute("d", "");
-            return;
-          }
-          label.hidden = false;
-          const textW = label.textContent.length * 11;
-          const side = Math.abs(Math.cos(mid)) > Math.abs(Math.sin(mid));
-          const extra = side ? textW / 2 + 8 : 14;
-          const hx = Math.cos(mid) * (hotR + extra);
-          const hy = Math.sin(mid) * (hotR + extra);
-          const lx = spot.x + (hx - spot.x) * grow;
-          const ly = spot.y + (hy - spot.y) * grow;
-          label.style.transform = "translate(" + lx.toFixed(1) + "px," + ly.toFixed(1) + "px) translate(-50%,-50%)";
-          const steps = 8;
-          let d = "";
-          for (let step = 0; step <= steps; step += 1) {
-            const u = step / steps;
-            const along = (u - 0.5) * 18;
-            const rx = spot.ax + spot.tx * along + spot.nx * 2.5;
-            const ry = spot.ay + spot.ty * along + spot.ny * 2.5;
-            const ang = mid + (u - 0.5) * 2 * hotHalf;
-            const px = rx + (Math.cos(ang) * hotR - rx) * grow;
-            const py = ry + (Math.sin(ang) * hotR - ry) * grow;
-            d += (step === 0 ? "M" : "L") + px.toFixed(1) + " " + py.toFixed(1);
-          }
-          const path = view.opPaths[labelIndex];
-          path.setAttribute("d", d);
-          path.setAttribute("stroke-width", (4.5 + grow * 3.5).toFixed(2));
-        });
-      });
-    }
     renderer.domElement.addEventListener("pointermove", (event) => {
-      const pick = pickAt(event);
-      renderer.domElement.style.cursor = pick ? "pointer" : "";
-      const rect = renderer.domElement.getBoundingClientRect();
-      const px = event.clientX - rect.left;
-      const py = event.clientY - rect.top;
-      let next = "";
-      if (pick && !pick.line) {
-        const view = layerViews.find((item) => item.itemIds.indexOf(pick.id) >= 0);
-        if (view) next = view.layer.id;
-      }
-      if (!next && hotLayerId) {
-        const view = layerViews.find((item) => item.layer.id === hotLayerId);
-        const box = view && view.hoverBox;
-        if (box && px >= box.minX && px <= box.maxX && py >= box.minY && py <= box.maxY) next = hotLayerId;
-      }
-      aimHot(next);
+      renderer.domElement.style.cursor = pickAt(event) ? "pointer" : "";
     });
-    renderer.domElement.addEventListener("pointerleave", () => aimHot(""));
 
     function resize() {
       const width = stage.clientWidth;
@@ -1375,8 +1051,6 @@
         flow.halo.position.copy(point);
       });
       controls.update();
-      camera.updateMatrixWorld();
-      layoutOps();
       renderer.render(scene, camera);
       requestAnimationFrame(frame);
     }
