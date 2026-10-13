@@ -1,0 +1,4388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache" />
+  <title>分析</title>
+  <style>
+    :root {
+      --ink: #16324f;
+      --muted: #6d7f95;
+      --line: #e4ebf5;
+      --blue: #2f78f6;
+      --risk: #ef3b3b;
+      --shadow: 0 10px 30px rgba(22, 62, 112, 0.08);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      color: var(--ink);
+      font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      background: #e6e8ec;
+    }
+    button, input, textarea, select { font-family: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible {
+      outline: 2px solid rgba(47, 120, 246, 0.35);
+      outline-offset: 1px;
+    }
+
+    .topbar {
+      flex: none;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 12px;
+      background: #fff;
+      border-bottom: 1px solid #e6eaf0;
+    }
+    .top-left {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand {
+      flex: none;
+      display: flex;
+      align-items: center;
+      line-height: 0;
+    }
+    .logo {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+      display: block;
+    }
+    .subject {
+      min-width: 0;
+      font-size: 16px;
+      font-weight: 650;
+      color: #24364c;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .top-right { display: flex; align-items: center; gap: 8px; flex: none; }
+    .pack, .god {
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      flex: none;
+    }
+    .pack {
+      border: 0;
+      background: var(--blue);
+      color: #fff;
+    }
+    .pack:hover { background: #1f6feb; }
+    .god {
+      border: 1px solid #b9d0fb;
+      background: #eef4ff;
+      color: #1f6feb;
+    }
+    .pack-dialog {
+      width: min(640px, calc(100vw - 32px));
+      max-height: min(86vh, 820px);
+      margin: auto;
+      padding: 0;
+      border: 0;
+      border-radius: 10px;
+      color: var(--ink);
+      box-shadow: 0 18px 48px rgba(22, 62, 112, 0.18);
+    }
+    .pack-dialog::backdrop { background: rgba(16, 32, 54, 0.45); }
+    .pack-dialog form {
+      display: flex;
+      flex-direction: column;
+      max-height: min(86vh, 820px);
+    }
+    .pack-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    .pack-head h2 { margin: 0; font-size: 16px; font-weight: 650; }
+    .pack-x {
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #6d7f95;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .pack-x:hover { background: #f3f6fa; color: var(--ink); }
+    .pack-body {
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 16px 20px 8px;
+    }
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .field .lab { font-size: 13px; color: #3d4e64; }
+    .field input[type="text"],
+    .field textarea,
+    .field select,
+    .field input[type="file"] {
+      width: 100%;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .field input[type="text"],
+    .field select { height: 34px; padding: 0 10px; }
+    .field textarea {
+      min-height: 112px;
+      padding: 8px 10px;
+      resize: vertical;
+      line-height: 1.65;
+    }
+    .field input[readonly] { background: #f6f8fb; color: #3d4e64; }
+    .field .checks { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+    .field .checks .check { margin: 0; }
+    .field .hint { margin: 0; font-size: 12px; color: #8b97a6; line-height: 1.5; }
+    .file-list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+    .file-list:empty { display: none; }
+    .file-list li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      padding: 6px 8px;
+      border: 1px solid #e4ebf5;
+      border-radius: 6px;
+      background: #f6f8fb;
+      font-size: 13px;
+      color: #24364c;
+    }
+    .file-list li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-list button {
+      flex: none;
+      height: 24px;
+      padding: 0 8px;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: #c43745;
+      font-size: 12px;
+    }
+    .file-list button:hover { background: rgba(239, 59, 59, 0.08); }
+    .field .err { margin: 0; font-size: 12px; color: var(--risk); }
+    .pack-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px 16px;
+      border-top: 1px solid var(--line);
+    }
+    .pack-saved { margin: 0; color: #6b7c90; font-size: 12px; white-space: nowrap; }
+    .pack-actions { display: flex; gap: 8px; }
+    .pack-foot button {
+      height: 32px;
+      padding: 0 16px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .pack-foot .ghost {
+      border: 1px solid #d7dee8;
+      background: #fff;
+      color: #3d4e64;
+    }
+    .pack-foot .ok { border: 0; background: var(--blue); color: #fff; }
+    .pack-foot .ok:hover { background: #1f6feb; }
+    .search {
+      width: 280px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 10px;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
+      background: #fff;
+    }
+    .search input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      font-size: 13px;
+      color: var(--ink);
+      background: transparent;
+    }
+    .search svg { flex: none; color: #8b97a6; }
+    .switch { display: flex; }
+    .switch button {
+      width: 36px;
+      height: 32px;
+      border: 1px solid #d7dee8;
+      background: #fff;
+      color: #5e7088;
+      font-size: 13px;
+    }
+    .switch button:first-child { border-radius: 6px 0 0 6px; }
+    .switch button:last-child { border-radius: 0 6px 6px 0; margin-left: -1px; }
+    .switch button.is-on {
+      background: #eef4ff;
+      color: var(--blue);
+      border-color: #b9d0fb;
+      position: relative;
+      z-index: 1;
+    }
+
+    .workspace {
+      --time-h: 178px;
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      background: #e8eaee;
+    }
+
+    .detail, .relate, .time-panel {
+      position: absolute;
+      z-index: 5;
+      display: flex;
+      background: #fff;
+      border: 1px solid #e6eaf0;
+      border-radius: 8px;
+      box-shadow: 0 10px 28px rgba(22, 62, 112, 0.12);
+    }
+    .detail, .relate {
+      top: 12px;
+      bottom: calc(var(--time-h) + 24px);
+      min-height: 0;
+      overflow: hidden;
+      transition: width 0.24s ease, bottom 0.24s ease;
+    }
+    .workspace:has(.time-panel.is-collapsed) .detail.open,
+    .workspace:has(.time-panel.is-collapsed) .relate.open { bottom: 64px; }
+    .detail { left: 12px; width: 320px; }
+    .relate { right: 12px; width: 360px; }
+    .detail:not(.open),
+    .relate:not(.open) {
+      bottom: auto;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+    }
+    .detail:not(.open) .body,
+    .relate:not(.open) .body { display: none; }
+    .body {
+      flex: 1;
+      min-width: 0;
+      overflow: auto;
+      padding: 16px 18px 20px;
+    }
+    .detail.open,
+    .relate.open { overflow: visible; }
+    .detail.open .body,
+    .relate.open .body {
+      position: absolute;
+      inset: 0;
+      overflow: auto;
+    }
+    .vtab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 36px;
+      height: auto;
+      padding: 10px 0 12px;
+      border: 1px solid #e6eaf0;
+      border-radius: 8px;
+      background: #fff;
+      color: #5e7088;
+      writing-mode: horizontal-tb;
+      letter-spacing: 0;
+      font-size: 13px;
+      box-shadow: 0 6px 16px rgba(22, 62, 112, 0.12);
+    }
+    .vtab:hover { background: #f6f9fd; color: var(--ink); }
+    .vtab-icon { display: block; width: 16px; height: 16px; }
+    .vtab span {
+      writing-mode: vertical-rl;
+      letter-spacing: 0.22em;
+      line-height: 1;
+    }
+    .detail.open { border-top-right-radius: 0; }
+    .relate.open { border-top-left-radius: 0; }
+    .detail.open .vtab {
+      position: absolute;
+      top: -1px;
+      right: -35px;
+      border-left: 0;
+      border-radius: 0 8px 8px 0;
+      box-shadow: none;
+    }
+    .detail.open .vtab::before {
+      content: "";
+      position: absolute;
+      left: -2px;
+      top: 1px;
+      bottom: 1px;
+      width: 3px;
+      background: #fff;
+    }
+    .relate.open .vtab {
+      position: absolute;
+      top: -1px;
+      left: -35px;
+      border-right: 0;
+      border-radius: 8px 0 0 8px;
+      box-shadow: none;
+    }
+    .relate.open .vtab::before {
+      content: "";
+      position: absolute;
+      right: -2px;
+      top: 1px;
+      bottom: 1px;
+      width: 3px;
+      background: #fff;
+    }
+    .entity-name {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 0 0 14px;
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.45;
+      color: #24364c;
+    }
+    .entity-name .glyph { flex: none; margin-top: 2px; width: 18px; height: 16px; color: var(--blue); }
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin: 0 0 16px;
+      padding: 0 4px;
+      background: #f3f5f8;
+      border-radius: 6px;
+    }
+    .tabs button {
+      flex: 1;
+      height: 34px;
+      padding: 0;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: #6d7f95;
+      font-size: 14px;
+    }
+    .tabs button.is-on {
+      color: var(--blue);
+      border-bottom-color: var(--blue);
+      font-weight: 650;
+    }
+    .warn-dot { display: none; }
+    .tabs button.has-warn .warn-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      margin-left: 4px;
+      border-radius: 50%;
+      background: var(--risk);
+      vertical-align: 1px;
+    }
+    .entity-name.is-risk .glyph,
+    .entity-name.lv-high .glyph { color: #ef4d4f; }
+    .entity-name.lv-mid .glyph { color: #e5922a; }
+    .entity-name.lv-low .glyph { color: #2f9e6b; }
+    .attr {
+      display: grid;
+      grid-template-columns: 88px 1fr;
+      gap: 14px 12px;
+      margin: 0;
+      font-size: 13px;
+    }
+    .attr dt { color: #8b97a6; }
+    .attr dd { margin: 0; color: #24364c; text-align: right; word-break: break-all; }
+    .more { margin: 18px 0 0; color: #b0bac6; letter-spacing: 2px; }
+    .event, .alert {
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f3f7;
+    }
+    .event b, .alert b { display: block; font-size: 13px; font-weight: 650; color: #24364c; }
+    .event span, .alert span { display: block; margin-top: 4px; font-size: 12px; color: #8b97a6; line-height: 1.5; }
+    .alert b { color: #c43745; }
+
+    .kicker { margin: 0; font-size: 12px; color: var(--muted); }
+    .relate h2 { margin: 6px 0 14px; font-size: 16px; }
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: #3d4e64;
+    }
+    .summary { margin: 16px 0 0; font-size: 12px; color: var(--muted); line-height: 1.6; }
+    .rel-k { margin: 0; font-size: 13px; color: #8b97a6; }
+    .rel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .rel-clear { border: 0; background: transparent; color: #8b97a6; font-size: 12px; }
+    .rel-clear:hover { color: var(--blue); }
+    .rel-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 8px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #e8f3ff;
+      color: #1f2a37;
+      font-size: 13px;
+    }
+    .rel-chip .glyph { flex: none; width: 16px; height: 16px; color: #2f78f6; }
+    .rel-chip b { flex: 1; min-width: 0; overflow: hidden; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
+    .rel-chip button { border: 0; background: transparent; color: #8aa0b8; font-size: 16px; line-height: 1; }
+    .rel-empty { margin: 0 0 12px; font-size: 12px; color: #8b97a6; line-height: 1.6; }
+    .rel-add {
+      display: inline-flex;
+      align-items: center;
+      height: 32px;
+      margin-top: 4px;
+      padding: 0 14px;
+      border: 1px solid #d5dbe3;
+      border-radius: 16px;
+      background: #fff;
+      color: #3d4e64;
+      font-size: 13px;
+    }
+    .rel-add:hover { border-color: #b9c6d6; color: var(--ink); }
+    .rel-add:disabled { color: #b0bac6; cursor: default; }
+    .rel-card { margin-top: 14px; padding: 14px 12px 12px; border-radius: 8px; background: #f4f6f8; }
+    .rel-line { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; gap: 8px; margin-bottom: 10px; font-size: 13px; color: #5c6b7e; }
+    .rel-line select, .rel-cond select {
+      width: 100%;
+      height: 32px;
+      border: 1px solid #e1e6ee;
+      border-radius: 4px;
+      background: #fff;
+      color: #24364c;
+      padding: 0 8px;
+      font-size: 13px;
+    }
+    .rel-sec { margin: 2px 0 8px; font-size: 13px; color: #5c6b7e; }
+    .rel-cond { display: grid; grid-template-columns: minmax(0, 1fr) 88px 28px; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .rel-trash { display: grid; place-items: center; height: 32px; border: 0; background: transparent; color: #98a2b3; }
+    .rel-trash:hover { color: #ef4d4f; }
+    .rel-more {
+      display: inline-flex;
+      align-items: center;
+      height: 30px;
+      margin-top: 2px;
+      padding: 0 12px;
+      border: 1px dashed #c5ced8;
+      border-radius: 15px;
+      background: #fff;
+      color: #3d4e64;
+      font-size: 13px;
+    }
+    .rel-result-k { margin: 14px 0 8px; font-size: 13px; color: #5c6b7e; }
+    .rel-result { display: grid; grid-template-columns: minmax(0, 1fr) 46px auto; gap: 8px; align-items: center; }
+    .rel-kind { display: flex; align-items: center; height: 34px; padding: 0 12px; border-radius: 4px; background: #e7f1ff; color: #3d4e64; font-size: 13px; }
+    .rel-count { display: flex; align-items: center; justify-content: center; height: 34px; border-radius: 4px; background: #4e5969; color: #fff; font-size: 14px; font-weight: 650; }
+    .rel-go { height: 34px; padding: 0 12px; border: 0; border-radius: 4px; background: #2f78f6; color: #fff; font-size: 13px; }
+    .rel-go:disabled { background: #b7c3d4; }
+    .rel-menu { position: absolute; z-index: 8; min-width: 156px; padding: 6px 0; border-radius: 8px; background: #fff; box-shadow: 0 8px 24px rgba(22, 62, 112, 0.16); }
+    .rel-menu button { display: flex; justify-content: space-between; gap: 18px; width: 100%; height: 34px; padding: 0 14px; border: 0; background: transparent; color: #24364c; font-size: 13px; text-align: left; }
+    .rel-menu button:hover { background: #f4f8fd; }
+    .rel-menu em { font-style: normal; color: #8b97a6; }
+
+    .canvas {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      cursor: grab;
+      touch-action: none;
+    }
+    .canvas.is-panning { cursor: grabbing; }
+    .canvas.is-panning .stage { transition: none; }
+    .canvas.is-table { cursor: default; }
+    .stage {
+      position: relative;
+      width: 1120px;
+      height: 500px;
+      transform-origin: center center;
+      transition: transform 0.24s ease;
+    }
+    #wires {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+    }
+    .wire-hit { pointer-events: stroke; cursor: pointer; }
+    .wire:hover .wire-line { stroke-width: 3.5; }
+    .wire-tip {
+      position: absolute;
+      z-index: 6;
+      max-width: 280px;
+      padding: 8px 10px 10px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid #f3d0d2;
+      box-shadow: 0 8px 24px rgba(22, 62, 112, 0.16);
+      pointer-events: none;
+    }
+    .wire-tip[hidden] { display: none; }
+    .wire-tip-k { margin-bottom: 4px; font-size: 11px; color: #c43745; }
+    .wire-tip-name { font-size: 13px; font-weight: 700; color: #24364c; line-height: 1.45; }
+    .wire-tip-name + .wire-tip-name { margin-top: 4px; }
+    .node {
+      position: absolute;
+      width: 148px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      text-align: center;
+      color: #3d4e64;
+    }
+    .hub {
+      position: relative;
+      width: 46px;
+      height: 46px;
+      margin: 0 auto 14px;
+    }
+    .win-badge {
+      position: absolute;
+      z-index: 6;
+      left: 50%;
+      top: -12px;
+      transform: translateX(-50%);
+      height: 16px;
+      padding: 0 7px;
+      border-radius: 8px;
+      background: #111;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 16px;
+      letter-spacing: 0.4px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .ring-wrap {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 180px;
+      height: 180px;
+      transform: translate(-50%, -50%) scale(0.86);
+      opacity: 0;
+      transition: transform 0.22s ease, opacity 0.16s ease;
+      overflow: visible;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .node:hover { z-index: 8; }
+    .node:hover .ring-wrap {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    .ring { display: block; width: 180px; height: 180px; overflow: visible; }
+    .seg {
+      fill: none;
+      stroke-width: 8;
+      pointer-events: none;
+      transition: stroke-width 0.12s ease, filter 0.12s ease;
+    }
+    .seg-hit { fill: none; stroke: transparent; stroke-width: 22; pointer-events: stroke; cursor: pointer; }
+    .seg-group { pointer-events: none; }
+    .node:hover .seg-group { pointer-events: auto; }
+    .seg-group:hover .seg { stroke-width: 12; }
+    .seg-group.is-open .seg {
+      stroke-width: 12;
+      filter: drop-shadow(0 0 5px var(--glow));
+    }
+    .seg-group.is-down .seg {
+      stroke-width: 18;
+      filter: drop-shadow(0 0 8px var(--glow));
+    }
+    .arm {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 0;
+      height: 0;
+      transform-origin: 0 0;
+    }
+    .seg-label {
+      position: absolute;
+      left: 0;
+      top: -90px;
+      transform: translateX(-50%);
+      font-size: 12px;
+      font-weight: 650;
+      line-height: 1;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      text-shadow: 0 0 4px #e8eaee, 0 0 4px #e8eaee, 0 1px 1px #fff;
+      transition: opacity 0.16s ease;
+    }
+    .seg-label.is-flip { transform: translateX(-50%) rotate(180); }
+    .node:hover .seg-label { opacity: 1; }
+    .mark {
+      position: relative;
+      z-index: 3;
+      width: 46px;
+      height: 46px;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #c0deff 0%, #4089f3 42%);
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(64, 137, 243, 0.28);
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+    }
+    .node.kind-project .mark { background: linear-gradient(180deg, #c9c0ff 0%, #8574f7 42%); box-shadow: 0 4px 10px rgba(133, 116, 247, 0.3); }
+    .node.kind-bidder .mark { background: linear-gradient(180deg, #c0deff 0%, #4089f3 42%); box-shadow: 0 4px 10px rgba(64, 137, 243, 0.28); }
+    .node.kind-owner .mark { background: linear-gradient(180deg, #ffe7be 0%, #f3b240 42%); box-shadow: 0 4px 10px rgba(243, 178, 64, 0.32); }
+    .node.kind-agency .mark { background: linear-gradient(180deg, #afe1ff 0%, #2a9ade 42%); box-shadow: 0 4px 10px rgba(42, 154, 222, 0.28); }
+    .node.kind-expert .mark { background: linear-gradient(180deg, #c28dfb 0%, #7430bd 42%); box-shadow: 0 4px 10px rgba(116, 48, 189, 0.3); }
+    .node.kind-staff .mark { background: linear-gradient(180deg, #8dfbdb 0%, #1fc292 42%); box-shadow: 0 4px 10px rgba(31, 194, 146, 0.3); }
+    .node.lv-high .mark { box-shadow: 0 0 0 4px #ef4d4f; }
+    .node.lv-mid .mark { box-shadow: 0 0 0 4px #f3b240; }
+    .node.lv-low .mark { box-shadow: 0 0 0 4px #1fc292; }
+    .mark:active { transform: scale(0.9); }
+    .node.is-on .mark { box-shadow: 0 8px 16px rgba(16, 36, 68, 0.42); }
+    .node.lv-high.is-on .mark { box-shadow: 0 0 0 4px #ef4d4f, 0 8px 16px rgba(16, 36, 68, 0.42); }
+    .node.lv-mid.is-on .mark { box-shadow: 0 0 0 4px #f3b240, 0 8px 16px rgba(16, 36, 68, 0.42); }
+    .node.lv-low.is-on .mark { box-shadow: 0 0 0 4px #1fc292, 0 8px 16px rgba(16, 36, 68, 0.42); }
+    .node.is-on .name { font-weight: 700; color: #16324f; }
+    .mark .glyph {
+      position: static;
+      display: block;
+      width: 26px;
+      height: 24px;
+    }
+    .mark .glyph.org { height: 25px; }
+    .mark .glyph.person { width: 24px; height: 24px; }
+    .canvas.is-multi .mark .glyph { position: relative; z-index: 1; }
+    .canvas.is-multi .mark::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      border-radius: 50%;
+      background: rgba(16, 28, 48, 0.18);
+      pointer-events: none;
+    }
+    .canvas.is-multi .mark::after {
+      content: "+";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 3;
+      transform: translate(-50%, -54%);
+      color: #fff;
+      font: 600 20px/1 "PingFang SC", "Hiragino Sans GB", sans-serif;
+      text-shadow: 1px 0 0 #16324f, -1px 0 0 #16324f, 0 1px 0 #16324f, 0 -1px 0 #16324f;
+      pointer-events: none;
+    }
+    .canvas.is-multi .node.is-picked .mark::after {
+      content: "";
+      width: 22px;
+      height: 22px;
+      transform: translate(-50%, -50%);
+      background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5.2 12.4 9.6 16.8 18.8 7.2' fill='none' stroke='%23ffffff' stroke-width='4.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M5.2 12.4 9.6 16.8 18.8 7.2' fill='none' stroke='%2316b364' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      text-shadow: none;
+    }
+    .node .name {
+      display: block;
+      width: 100%;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #3d4e64;
+      transition: opacity 0.16s ease;
+    }
+    .node:hover .name { opacity: 0; }
+    .node.is-dim { opacity: 0.28; }
+    .node.is-fade { opacity: 0.2; filter: grayscale(1); }
+    .node.is-fade .seg-label { color: #9aa3af !important; }
+    .wire.is-fade { opacity: 0.2; }
+    .wire.is-fade .wire-line { stroke: #9aa3af !important; }
+    .wire.is-hot .wire-line { stroke-width: 2.6; }
+    .warn-list { display: flex; flex-direction: column; gap: 10px; }
+    .warn-card {
+      display: block;
+      width: 100%;
+      padding: 12px 12px 12px 14px;
+      border: 1px solid #f3c4cb;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #fff8f9 0%, #ffecef 100%);
+      box-shadow: 0 8px 18px rgba(226, 61, 85, 0.06);
+      text-align: left;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+    }
+    .warn-card.mid {
+      border-color: #f3d7b0;
+      background: linear-gradient(180deg, #fffaf4 0%, #fff1e2 100%);
+      box-shadow: 0 8px 18px rgba(229, 146, 42, 0.06);
+    }
+    .warn-card.low {
+      border-color: #b7dfcc;
+      background: linear-gradient(180deg, #f6fdf9 0%, #e7f6ee 100%);
+      box-shadow: 0 8px 18px rgba(47, 158, 107, 0.06);
+    }
+    .warn-card.high.on {
+      border-color: #e23d55;
+      box-shadow: 0 0 0 1px #e23d55, 0 10px 22px rgba(226, 61, 85, 0.12);
+    }
+    .warn-card.mid.on {
+      border-color: #e5922a;
+      box-shadow: 0 0 0 1px #e5922a, 0 10px 22px rgba(229, 146, 42, 0.12);
+    }
+    .warn-card.low.on {
+      border-color: #2f9e6b;
+      box-shadow: 0 0 0 1px #2f9e6b, 0 10px 22px rgba(47, 158, 107, 0.12);
+    }
+    .warn-head { display: flex; align-items: flex-start; gap: 8px; }
+    .warn-card .sev {
+      display: inline-flex;
+      align-items: center;
+      flex: none;
+      height: 20px;
+      margin-top: 1px;
+      padding: 0 6px;
+      border-radius: 4px;
+      background: #fff1f3;
+      color: #e23d55;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .warn-card h3 { margin: 0; flex: 1; min-width: 0; font-size: 14px; line-height: 1.45; font-weight: 650; color: #e23d55; }
+    .warn-card.mid .sev { background: #fff4e8; color: #e5922a; }
+    .warn-card.mid h3 { color: #e5922a; }
+    .warn-card.low .sev { background: #eef8f3; color: #2f9e6b; }
+    .warn-card.low h3 { color: #2f9e6b; }
+    .warn-card .who { margin: 8px 0 4px; font-size: 12px; color: #3d5166; }
+    .warn-card p { margin: 0; font-size: 12px; line-height: 1.55; color: #6d7f95; }
+    .warn-foot { display: flex; justify-content: flex-end; margin-top: 10px; }
+    .warn-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 12px; }
+    .warn-title h2 { margin: 0; font-size: 16px; }
+    .warn-empty { margin: 8px 0 0; font-size: 13px; color: #8b97a6; }
+    .clue-mini, .clue-fab {
+      border: 1px solid #c5d8fb;
+      background: #f3f7ff;
+      color: var(--blue);
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    .clue-mini { height: 26px; padding: 0 10px; }
+    .clue-mini:disabled { opacity: 0.45; }
+    .clue-mini:hover, .clue-fab:hover { background: #e7f0ff; }
+    .clue-fab {
+      height: 32px;
+      padding: 0 12px;
+      box-shadow: 0 6px 16px rgba(47, 120, 246, 0.12);
+    }
+    .clue-fab[hidden] { display: none; }
+    .graph-tools {
+      position: absolute;
+      top: 14px;
+      left: 60px;
+      z-index: 6;
+    }
+    .workspace:has(.detail.open) .graph-tools { left: 392px; }
+    .detail .vline {
+      margin: 2px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .detail .vline li {
+      display: grid;
+      grid-template-columns: 18px auto minmax(0, 1fr);
+      column-gap: 10px;
+      align-items: start;
+      min-height: 52px;
+    }
+    .detail .vline time {
+      padding-top: 1px;
+      font-size: 12px;
+      line-height: 18px;
+      color: #8b97a6;
+      white-space: nowrap;
+    }
+    .detail .vline .rail { position: relative; display: flex; justify-content: center; }
+    .detail .vline .rail::before {
+      content: "";
+      position: absolute;
+      top: 14px;
+      bottom: -4px;
+      width: 2px;
+      background: #d7e0ea;
+    }
+    .detail .vline li:last-child .rail::before { display: none; }
+    .detail .vline .rail i {
+      position: relative;
+      z-index: 1;
+      width: 10px;
+      height: 10px;
+      margin-top: 4px;
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 0 0 3px #e8f1ff;
+    }
+    .detail .vline b {
+      display: block;
+      text-align: right;
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 18px;
+      color: #24364c;
+    }
+    .vtab-col { display: flex; flex-direction: column; gap: 8px; }
+    .detail.open .vtab-col {
+      position: absolute;
+      top: -1px;
+      right: -36px;
+    }
+    .detail.open .vtab-col .vtab {
+      position: static;
+      border-left: 0;
+      border-radius: 0 8px 8px 0;
+      box-shadow: none;
+    }
+    .vtab.is-on { color: var(--blue); border-color: #b9d0fb; }
+    .relate .vtab-col { display: flex; flex-direction: column; gap: 8px; }
+    .relate.open .vtab-col {
+      position: absolute;
+      top: -1px;
+      left: -36px;
+    }
+    .relate.open .vtab-col .vtab {
+      position: static;
+      border-right: 0;
+      border-radius: 8px 0 0 8px;
+      box-shadow: none;
+    }
+    .report {
+      position: absolute;
+      top: 12px;
+      right: 56px;
+      bottom: calc(var(--time-h) + 24px);
+      width: min(440px, calc(100% - 24px));
+      z-index: 8;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 16px 40px rgba(22, 62, 112, 0.16);
+      transform: translateX(calc(100% + 120px));
+      transition: transform 0.28s ease;
+      pointer-events: none;
+    }
+    .workspace:has(.time-panel.is-collapsed) .report { bottom: 64px; }
+    .report.is-open { transform: translateX(0); pointer-events: auto; }
+    .report-head, .report-bar {
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .report-head { justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #e8eef6; }
+    .report-head h2 { margin: 0; font-size: 16px; }
+    .report-x {
+      width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: #6d7f95; font-size: 20px;
+    }
+    .report-body { flex: 1; min-height: 0; overflow: auto; padding: 14px 16px 8px; }
+    .report-conclusion {
+      flex: none; display: flex; flex-direction: column; height: 210px; min-height: 128px;
+      padding: 14px 16px 0; border-bottom: 1px solid #e8eef6;
+    }
+    .report-conclusion textarea {
+      flex: 1; min-height: 0; margin: 8px 0 0; resize: none; width: 100%; padding: 10px 12px;
+      border: 1px solid #e1e8f2; border-radius: 8px; color: #24364c; font-size: 13px; line-height: 1.6;
+    }
+    .report-grip { flex: none; height: 14px; margin: 0 -16px; border: 0; background: transparent; cursor: ns-resize; position: relative; }
+    .report-grip::before {
+      content: ""; position: absolute; left: 50%; top: 5px; width: 36px; height: 3px; margin-left: -18px; border-radius: 2px; background: #d5deea;
+    }
+    .report-sec h3, .process-head h3 { margin: 0; font-size: 14px; font-weight: 650; color: #24364c; }
+    .process-head { display: flex; align-items: center; gap: 8px; }
+    .process-head b {
+      display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; margin-left: 6px;
+      padding: 0 5px; border-radius: 9px; background: #eef4ff; color: var(--blue); font-size: 12px;
+    }
+    .fold-all {
+      display: inline-flex; align-items: center; gap: 4px; margin-left: auto; height: 26px; padding: 0 8px;
+      border: 0; border-radius: 4px; background: transparent; color: var(--blue); font-size: 12px;
+    }
+    .fold-all svg { width: 14px; height: 14px; transition: transform 0.2s ease; }
+    .fold-all.is-open svg { transform: rotate(180deg); }
+    .process-body { display: grid; gap: 10px; margin-top: 10px; }
+    .process-empty { margin: 0; font-size: 13px; color: #8b97a6; }
+    .clue-item { padding: 12px; border: 1px solid #e6edf6; border-radius: 10px; background: #f8fbff; }
+    .clue-top { display: flex; align-items: flex-start; gap: 8px; }
+    .clue-top strong { flex: 1; min-width: 0; font-size: 13px; line-height: 1.45; }
+    .clue-top .sev {
+      flex: none; height: 20px; padding: 0 6px; border-radius: 4px; background: #fff1f3; color: #e23d55; font-size: 12px; line-height: 20px; font-weight: 600;
+    }
+    .clue-item.mid .sev { background: #fff4e8; color: #e5922a; }
+    .clue-item.low .sev { background: #eef8f3; color: #2f9e6b; }
+    .clue-del { flex: none; height: 24px; padding: 0 8px; border: 0; border-radius: 4px; background: transparent; color: #8b97a6; font-size: 12px; }
+    .clue-line { margin: 8px 0 0; font-size: 12px; line-height: 1.55; color: #3d5166; }
+    .clue-line em { font-style: normal; color: #8b97a6; margin-right: 6px; }
+    .analysis-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .analysis-row .clue-line { flex: 1; min-width: 0; margin: 0; }
+    .model-toggle {
+      flex: none; width: 24px; height: 24px; border: 0; border-radius: 4px; background: transparent;
+    }
+    .model-toggle .chev {
+      display: block; width: 7px; height: 7px; margin: 0 auto; border-right: 1.5px solid #6d7f95; border-bottom: 1.5px solid #6d7f95;
+      transform: rotate(45deg);
+    }
+    .clue-item.is-folded .model-toggle .chev { transform: rotate(-45deg); }
+    .clue-item.is-folded .model-body { display: none; }
+    .model-body { margin-top: 6px; }
+    .clue-item ol { margin: 6px 0 0; padding-left: 18px; color: #3d5166; font-size: 12px; line-height: 1.6; }
+    .report-files { margin-top: 16px; }
+    .attach-pick {
+      position: relative; display: inline-flex; align-items: center; height: 30px; padding: 0 12px;
+      border: 1px solid #c5d8fb; border-radius: 6px; background: #f3f7ff; color: var(--blue); font-size: 12px; cursor: pointer;
+    }
+    .attach-pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .report-files .hint { margin: 8px 0 0; font-size: 12px; color: #8b97a6; }
+    .report-files .file-list { margin: 8px 0 0; padding: 0; list-style: none; }
+    .report-files .file-list li { display: flex; gap: 8px; align-items: center; font-size: 12px; }
+    .report-bar { padding: 12px 16px; border-top: 1px solid #e8eef6; }
+    .report-set { position: relative; flex: none; }
+    .report-set > button, .report-go { height: 32px; padding: 0 14px; border-radius: 6px; font-size: 13px; }
+    .report-set > button { border: 1px solid #d7dee8; background: #fff; color: #3d4e64; }
+    .report-status { flex: 1; min-width: 0; margin: 0; font-size: 12px; color: #2f9e6b; }
+    .report-go { border: 0; background: var(--blue); color: #fff; }
+    .report-go:disabled { opacity: 0.45; }
+    .set-pop {
+      position: absolute; left: 0; bottom: calc(100% + 8px); width: 180px; padding: 12px;
+      background: #fff; border: 1px solid #e6ebf2; border-radius: 10px; box-shadow: 0 10px 28px rgba(22, 62, 112, 0.12);
+    }
+    .set-pop[hidden] { display: none; }
+    .set-pop label { display: grid; gap: 4px; font-size: 12px; color: #6d7f95; }
+    .set-pop select { height: 32px; border: 1px solid #d7dee8; border-radius: 6px; padding: 0 8px; color: #24364c; background: #fff; }
+    .crumb {
+      position: absolute;
+      z-index: 4;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 520px;
+      height: 32px;
+      padding: 0 12px 0 4px;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 6px 18px rgba(22, 62, 112, 0.12);
+      color: #5e7088;
+      font-size: 12px;
+    }
+    .crumb[hidden] { display: none; }
+    .crumb .back {
+      flex: none;
+      height: 24px;
+      padding: 0 10px;
+      border: 0;
+      border-radius: 12px;
+      background: #eef4ff;
+      color: var(--blue);
+      font-size: 12px;
+    }
+    .crumb span {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .empty-note {
+      position: absolute;
+      width: 168px;
+      color: #8b97a6;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .sheet {
+      display: none;
+      position: absolute;
+      inset: 16px;
+      overflow: auto;
+      background: #fff;
+      border-radius: 8px;
+    }
+    .canvas.is-table .stage { display: none; }
+    .canvas.is-table .sheet { display: block; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 12px 16px; border-bottom: 1px solid #eef2f6; text-align: left; }
+    th { color: #8b97a6; font-weight: 550; background: #fafbfc; }
+    tbody tr { cursor: pointer; }
+    tbody tr:hover { background: #f6f9fd; }
+    tbody tr.is-on { background: #eef4ff; }
+    td.risk { color: var(--risk); }
+
+    .time-panel {
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 4;
+      height: var(--time-h);
+      padding: 8px 16px 12px;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+      transition: height 0.24s ease;
+    }
+    .time-panel.is-collapsed { height: 40px; }
+    .time-panel.is-collapsed .time-scroll { display: none; }
+    .time-head {
+      flex: none;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .time-name { font-size: 13px; color: #8b97a6; }
+    .fold {
+      height: 22px;
+      padding: 0 8px;
+      border: 1px solid #d7dee8;
+      border-radius: 4px;
+      background: #fff;
+      color: #5e7088;
+      font-size: 12px;
+    }
+    .time-scroll { flex: 1; min-height: 0; overflow-x: auto; overflow-y: hidden; }
+    .time-panel.is-multi .time-scroll { overflow-y: auto; }
+    .time-body { position: relative; height: 132px; min-width: 980px; margin: 0 12px; }
+    .time-panel.is-multi .time-body { height: auto; }
+    .lanes { display: flex; flex-direction: column; gap: 10px; min-width: 980px; }
+    .lane { display: flex; align-items: stretch; gap: 8px; }
+    .lane-label {
+      flex: none;
+      width: 132px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+    }
+    .lane-label b {
+      font-size: 12px;
+      font-weight: 650;
+      color: #24364c;
+      line-height: 1.35;
+    }
+    .lane-label span { font-size: 12px; color: #8b97a6; }
+    .lane.is-on .lane-label b { color: var(--blue); }
+    .lane-plot { position: relative; flex: 1; min-width: 0; }
+    .gantt { display: flex; flex-direction: column; gap: 6px; min-width: 980px; }
+    .gantt-row, .gantt-scale { display: flex; align-items: stretch; gap: 8px; }
+    .gantt-row { height: 48px; }
+    .gantt-row.has-warn { height: 72px; }
+    .gantt-row.has-marks { height: 58px; }
+    .gantt-row.has-marks.has-warn { height: 86px; }
+    .gantt-row.has-marks .gantt-guide { top: 42px; }
+    .gantt-row.has-marks .gantt-bar.is-warn { top: 54px; }
+    .gantt-mark { position: absolute; top: 42px; width: 0; height: 0; }
+    .gantt-mark i {
+      position: absolute;
+      left: -5px;
+      top: -5px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #2f78f6;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px #2f78f6;
+    }
+    .gantt-mark b {
+      position: absolute;
+      left: 0;
+      bottom: 12px;
+      transform: translateX(-50%);
+      color: #24364c;
+      font-size: 12px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+    .gantt-mark.lane-1 b { bottom: 28px; }
+    .gantt-row.is-on .lane-label b { color: var(--blue); }
+    .gantt-track { position: relative; flex: 1; min-width: 0; }
+    .gantt-guide {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 30px;
+      height: 2px;
+      border-radius: 2px;
+      background: #d5deea;
+    }
+    .gantt-bar {
+      position: absolute;
+      top: 22px;
+      height: 18px;
+      border-radius: 4px;
+      background: #e7f0ff;
+      color: transparent;
+      font-size: 12px;
+      font-weight: 650;
+      line-height: 18px;
+      overflow: visible;
+      box-sizing: border-box;
+    }
+    .gantt-bar b {
+      position: absolute;
+      left: 0;
+      bottom: 18px;
+      color: #1d5fd0;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+    .gantt-bar.is-warn {
+      top: 46px;
+      padding: 0 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #e25b6a;
+      background: #f8d5d8;
+    }
+    .gantt-bar.is-warn b { display: none; }
+    .gantt-scale { height: 32px; }
+    .gantt-scale .gantt-track { height: 32px; }
+    .gantt-scale .axis { top: 0; left: 0; right: 0; }
+    .gantt-tick {
+      position: absolute;
+      top: 10px;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #8b97a6;
+      white-space: nowrap;
+    }
+    .gantt-tick i {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      width: 1px;
+      height: 8px;
+      background: #fff;
+      box-shadow: 0 0 0 1px #9eb0c6;
+    }
+    .band {
+      position: absolute;
+      top: 0;
+      height: 22px;
+      border-radius: 4px;
+      background: #f8d5d8;
+      color: #e25b6a;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      padding: 0 8px;
+    }
+    .band.row-1 { top: 26px; }
+    .axis {
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      top: 92px;
+      height: 4px;
+      border-radius: 4px;
+      background: var(--blue);
+    }
+    .dot {
+      position: absolute;
+      top: 88px;
+      width: 12px;
+      height: 12px;
+      margin-left: -6px;
+      border-radius: 50%;
+      background: var(--blue);
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px var(--blue);
+    }
+    .pill {
+      position: absolute;
+      top: 54px;
+      transform: translateX(-50%);
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 4px;
+      background: #eef1f4;
+      color: #5c6b7e;
+      font-size: 12px;
+      line-height: 22px;
+      white-space: nowrap;
+    }
+    .when {
+      position: absolute;
+      top: 108px;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #8b97a6;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="top-left">
+      <a class="brand" href="cockpit.html" title="返回首页">
+        <img class="logo" src="logo.png" alt="工程交易" />
+      </a>
+      <div class="subject" id="subject"></div>
+    </div>
+    <div class="top-right">
+      <label class="search">
+        <input id="search" type="search" placeholder="请输入项目名称/编号/主体名/人名" />
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+          <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </label>
+      <button class="god" id="godView" type="button">概览视图</button>
+      <div class="switch" role="group" aria-label="视图切换">
+        <button id="modeGraph" type="button" class="is-on" aria-pressed="true">图</button>
+        <button id="modeTable" type="button" aria-pressed="false">表</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="detail open" id="detail">
+      <div class="body" id="detailBody"></div>
+      <div class="vtab-col">
+        <button class="vtab" id="tabDetail" type="button"><span>详情</span></button>
+        <button class="vtab is-on" id="tabWarn" type="button"><span>预警</span></button>
+      </div>
+    </aside>
+    <div class="graph-tools" id="graphTools">
+      <button class="clue-fab" id="clueFab" type="button">添加全部线索</button>
+    </div>
+
+    <section class="canvas" id="canvas">
+      <div class="crumb" id="crumb" hidden>
+        <button class="back" id="back" type="button">返回</button>
+        <span id="crumbText"></span>
+      </div>
+      <div class="stage" id="stage">
+        <svg id="wires" viewBox="0 0 1120 500"></svg>
+      </div>
+      <div class="wire-tip" id="wireTip" hidden></div>
+      <div class="sheet">
+        <table>
+          <thead>
+            <tr><th>主体</th><th>角色</th><th>关系</th><th>关联对象</th><th>状态</th></tr>
+          </thead>
+          <tbody id="sheetBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <aside class="relate" id="relate">
+      <div class="vtab-col">
+        <button class="vtab" id="relateTab" type="button"><svg class="vtab-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="4" cy="8" r="1.8" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="4.2" r="1.8" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="11.8" r="1.8" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M5.7 7.2L10.2 5M5.7 8.8L10.2 11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><span>高级关联</span></button>
+        <button class="vtab" id="reportTab" type="button"><span>线索报告</span></button>
+      </div>
+      <div class="body" id="relateBody"></div>
+      <div class="rel-menu" id="relMenu" hidden></div>
+    </aside>
+
+    <section class="time-panel" id="timePanel" aria-label="时序图">
+      <div class="time-head">
+        <div class="time-name" id="timeName">项目历程图</div>
+        <button class="fold" id="fold" type="button">收起</button>
+      </div>
+      <div class="time-scroll">
+        <div class="time-body" id="timeBody"></div>
+      </div>
+    </section>
+
+  <aside class="report" id="reportDrawer" aria-labelledby="reportTitle" aria-hidden="true" inert>
+    <div class="report-head">
+      <h2 id="reportTitle">线索报告</h2>
+      <button class="report-x" id="reportClose" type="button" aria-label="关闭">×</button>
+    </div>
+    <section class="report-sec report-conclusion" id="reportConclusionBox">
+      <h3>描述及AI查办指引</h3>
+      <textarea id="reportConclusion" aria-label="描述及AI查办指引" placeholder="暂未能自动总结原因，请输入描述及查办指引"></textarea>
+      <button class="report-grip" id="reportGrip" type="button" aria-label="调整结论区域高度"></button>
+    </section>
+    <div class="report-body">
+      <section class="report-process" id="reportProcess">
+        <div class="process-head">
+          <h3>分析过程<b id="processCount">0</b></h3>
+          <button class="fold-all" id="foldAll" type="button">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6.2l5 4.6 5-4.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>全部展开</span>
+          </button>
+        </div>
+        <div class="process-body" id="processBody"></div>
+      </section>
+      <section class="report-sec report-files">
+        <h3>附件</h3>
+        <label class="attach-pick">
+          上传附件
+          <input id="reportFiles" type="file" multiple accept=".pdf,.xls,.xlsx,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.avi,.mp3,.wav,.zip,.txt,.csv,.html,.htm" />
+        </label>
+        <p class="hint">可一次选择多个文件，也能继续追加</p>
+        <ul class="file-list" id="reportFileList"></ul>
+      </section>
+    </div>
+    <div class="report-bar">
+      <div class="report-set">
+        <button id="reportSettings" type="button" aria-expanded="false" aria-controls="setPop">设置</button>
+        <div class="set-pop" id="setPop" hidden>
+          <label>格式
+            <select id="reportFormat">
+              <option value="pdf">pdf</option>
+              <option value="word">word</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <p class="report-status" id="reportStatus"></p>
+      <button class="report-go" id="reportGo" type="button">生成报告</button>
+    </div>
+  </aside>
+  </main>
+
+  <dialog class="pack-dialog" id="packDialog" aria-labelledby="packTitle">
+    <form id="packForm">
+      <div class="pack-head">
+        <h2 id="packTitle">线索打包</h2>
+        <button class="pack-x" id="packClose" type="button" aria-label="关闭">×</button>
+      </div>
+      <div class="pack-body">
+        <div class="pair">
+          <div class="field">
+            <span class="lab">线索名称</span>
+            <input id="clueName" type="text" maxlength="80" placeholder="请输入线索名称" />
+            <p class="err" id="clueErr" hidden>请填写线索名称</p>
+          </div>
+          <div class="field">
+            <span class="lab">线索编号</span>
+            <input id="clueNo" type="text" readonly />
+          </div>
+        </div>
+        <div class="field">
+          <span class="lab">线索描述</span>
+          <textarea id="clueDesc"></textarea>
+        </div>
+        <div class="field">
+          <span class="lab">线索内容</span>
+          <div class="checks">
+            <label class="check"><input type="checkbox" name="content" value="当前视图内容" checked />当前视图内容</label>
+            <label class="check"><input type="checkbox" name="content" value="属性" checked />属性</label>
+            <label class="check"><input type="checkbox" name="content" value="时序" checked />时序</label>
+            <label class="check"><input type="checkbox" name="content" value="预警" checked />预警</label>
+          </div>
+        </div>
+        <div class="field">
+          <span class="lab">线索形式</span>
+          <div class="checks">
+            <label class="check"><input type="checkbox" name="form" value="分析图" checked />分析图</label>
+            <label class="check"><input type="checkbox" name="form" value="数据表" checked />数据表</label>
+          </div>
+        </div>
+        <div class="field">
+          <span class="lab">其他资料上传</span>
+          <input id="clueFiles" type="file" multiple accept=".pdf,.xls,.xlsx,.jpg,.jpeg,.png,.mov,.avi,.mp4,.mp3,.html,.htm,.doc,.docx,.gif,.webp,.wav,.zip,.txt,.csv" />
+          <p class="hint">支持 pdf、xls、jpg、png、mov、avi、mp4、mp3、html 等常用格式，可多次添加</p>
+          <ul class="file-list" id="fileList"></ul>
+        </div>
+        <div class="field">
+          <span class="lab">责任部门</span>
+          <select id="clueDept">
+            <option>贵州省公共资源交易中心</option>
+            <option>贵阳市公共资源交易中心</option>
+            <option>遵义市公共资源交易中心</option>
+            <option>六盘水市公共资源交易中心</option>
+            <option>贵州省住房和城乡建设厅</option>
+            <option>贵州省交通运输厅</option>
+            <option>贵州省水利厅</option>
+          </select>
+          <p class="hint">已推荐贵州省公共资源交易中心，可按管辖调整</p>
+        </div>
+      </div>
+      <div class="pack-foot">
+        <p class="pack-saved" id="packSaved">上次保存：—</p>
+        <div class="pack-actions">
+          <button class="ghost" id="packCancel" type="button">取消</button>
+          <button class="ok" type="submit">打包下载</button>
+          <button class="ghost" id="packDraft" type="button">暂存</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="mock-data.js?v=129"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const gz = window.GUIZHOU;
+    const story = (gz && gz.story) || {};
+    const named = params.get("name");
+    const hit = gz && named ? gz.indexProjects.find((item) => item.name === named) : null;
+    const project = {
+      name: named || story.project || "观山湖区第八小学扩建工程",
+      bidder: params.get("bidder") || (hit && hit.bidder) || story.owner || "贵阳市观山湖区教育局",
+      agency: params.get("agency") || (hit && hit.agency) || story.agency || "贵州恒信招标代理有限公司",
+      level: params.get("level") || (hit && hit.level) || story.level || "高风险",
+      date: params.get("date") || (hit && hit.date) || story.date || "2026-05-25",
+      cat: params.get("cat") || (hit && hit.cat) || story.cat || "工程建设"
+    };
+    const askedAgency = params.get("agency") || (params.get("from") === "company" && params.get("role") === "招标代理" ? params.get("name") : "");
+    const agencyEntry = params.get("from") === "agency" || params.get("role") === "招标代理";
+    if (agencyEntry && askedAgency && gz && gz.graphs) {
+      const current = gz.graphs[project.name];
+      if (!current || current.agency !== askedAgency) {
+        const names = Object.keys(gz.graphs).filter((title) => (gz.graphs[title].agency || "") === askedAgency);
+        names.sort((a, b) => {
+          const score = (title) => {
+            const item = gz.graphs[title];
+            const alerts = item.alerts || [];
+            const cited = alerts.filter((alert) => (alert.subjects || []).indexOf("agency") >= 0).length;
+            const row = (gz.indexProjects || []).find((entry) => entry.name === title);
+            const rank = row && row.level === "高风险" ? 2 : row && row.level === "中风险" ? 1 : 0;
+            return cited * 100 + alerts.length * 10 + rank;
+          };
+          return score(b) - score(a);
+        });
+        if (names[0]) {
+          const item = gz.graphs[names[0]];
+          const row = (gz.indexProjects || []).find((entry) => entry.name === names[0]) || {};
+          project.name = names[0];
+          if (item.owner) project.bidder = item.owner;
+          if (row.level) project.level = row.level;
+          if (row.date) project.date = row.date;
+          if (row.cat) project.cat = row.cat;
+        }
+      }
+      project.agency = askedAgency;
+    }
+    document.getElementById("subject").textContent = project.name;
+
+    const glyphs = {
+      folder: '<svg class="glyph" viewBox="0 0 30 27" aria-hidden="true"><path fill="currentColor" d="M23.133 13.879H13.112a1.503 1.503 0 0 1 0-3.007h10.021a1.503 1.503 0 0 1 0 3.007zM6.013 18.305c0 .919.668 1.587 1.587 1.587.918 0 1.587-.752 1.587-1.587 0-.835-.669-1.587-1.587-1.587-.919 0-1.587.668-1.587 1.587zm0-5.93c0 .919.668 1.587 1.587 1.587.918 0 1.587-.751 1.587-1.586 0-.835-.669-1.587-1.587-1.587-.919 0-1.587.752-1.587 1.587zM23.133 19.808H13.112a1.503 1.503 0 0 1 0-3.006h10.021a1.503 1.503 0 0 1 0 3.006zM29.982 24.652V5.862s-2.088-.088-2.088-.088H16.118s-.668-.334-1.086-.334c0 0-.501-.835-1.42-2.171C12.778-.235 11.692.016 11.692.016H2.589S0 .016 0 2.438v22.047s2.088 2.422 2.088 2.422h26.056s2.171-.255 1.838-2.255z"/></svg>',
+      org: '<svg class="glyph org" viewBox="0 0 30 29" aria-hidden="true"><path fill="currentColor" d="M11.516.136.826 5.112A1.48 1.48 0 0 0 0 6.41v21.965h13.557V1.434C13.557.387 12.465-.307 11.516.136zM10.321 16.938H3.231v-2.4h7.095v2.4zm0-4.898H3.231v-2.4h7.095v2.4zM29.174 13.707l-10.695-4.976c-.949-.443-2.036.251-2.036 1.298v18.346H30V15c0-.555-.322-1.06-.826-1.293zM26.769 19.687h-7.095v-2.4h7.095v2.4z"/></svg>',
+      person: '<svg class="glyph person" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.2" r="3.1" fill="currentColor"/><path fill="currentColor" d="M4.8 19.6c.8-3.6 3.5-5.3 7.2-5.3s6.4 1.7 7.2 5.3c.2.8-.4 1.4-1.2 1.4H6c-.8 0-1.4-.6-1.2-1.4z"/></svg>'
+    };
+    const LEVEL_COLOR = { normal: "#2f78f6", risk: "#f0b429", warn: "#ef4d4f" };
+    const TONE_HEX = { high: "#ef4d4f", mid: "#e5922a", low: "#2f9e6b" };
+    const graph = (gz && gz.graphs && gz.graphs[project.name]) || null;
+    function toneName(level) {
+      const text = String(level || "");
+      if (text.indexOf("低") === 0) return "low";
+      if (text.indexOf("中") === 0) return "mid";
+      if (text.indexOf("高") === 0) return "high";
+      return "";
+    }
+    function toneRank(tone) { return tone === "high" ? 3 : tone === "mid" ? 2 : tone === "low" ? 1 : 0; }
+    function strongerTone(a, b) { return toneRank(a) >= toneRank(b) ? a : b; }
+    const rowLevel = {};
+    function rememberLevel(key, level) {
+      const tone = toneName(level);
+      if (!key || !tone) return;
+      rowLevel[key] = strongerTone(rowLevel[key] || "", tone);
+    }
+    ((gz && gz.rows) || []).forEach((row) => {
+      rememberLevel(row.code, row.level);
+      rememberLevel(row.name, row.level);
+    });
+    ((gz && gz.companies) || []).forEach((row) => rememberLevel(row.name, row.level));
+    const alertTone = {};
+    ((graph && graph.alerts) || []).forEach((item) => { alertTone[item.id] = toneName(item.level) || "high"; });
+    function toneOfAlerts(ids) {
+      let tone = "";
+      (ids || []).forEach((id) => { tone = strongerTone(tone, alertTone[id] || ""); });
+      return tone;
+    }
+    const quietPark = agencyEntry && askedAgency === "贵州中鼎招标有限公司" && project.name === "遵义汇川区某物流园场平工程";
+    function toneOfNode(id, name, full) {
+      if (quietPark && (id === "project" || name === project.name)) return "";
+      let cited = "";
+      ((graph && graph.alerts) || []).forEach((item) => {
+        if ((item.subjects || []).indexOf(id) >= 0) cited = strongerTone(cited, toneName(item.level));
+      });
+      if (cited) return cited;
+      return rowLevel[id] || rowLevel[full] || rowLevel[name] || (id === "project" && graph ? (rowLevel[graph.id] || rowLevel[project.name] || "") : "");
+    }
+    function paintTone(spec) {
+      if (!spec) return spec;
+      spec.tone = toneOfNode(spec.id, spec.name, spec.fullName) || (spec.risk ? "high" : "");
+      if (spec.tone) spec.risk = true;
+      return spec;
+    }
+    if (graph) {
+      project.bidder = graph.owner || project.bidder;
+      project.agency = graph.agency || "";
+    }
+    function linkKey(a, b) {
+      return a < b ? a + "|" + b : b + "|" + a;
+    }
+    function warningsOf(a, b) {
+      const links = (graph && graph.links) || [];
+      const link = links.find((item) => linkKey(item.a, item.b) === linkKey(a.id, b.id));
+      if (!link || !link.warn) return [];
+      const ids = link.alertIds || (link.alertId ? [link.alertId] : []);
+      const alerts = (graph && graph.alerts) || [];
+      return ids.map((id) => {
+        const hit = alerts.find((item) => item.id === id);
+        return hit ? hit.title : "";
+      }).filter(Boolean);
+    }
+    const ROLE = { owner: "招标主体", agency: "招标代理", bidder: "投标企业", expert: "专家", project: "项目", person: "自然人" };
+    const OPSET = {
+      owner: [["projects", "招标项目"], ["agencies", "招标代理"], ["staff", "员工"], ["legal", "法人"]],
+      agency: [["clients", "代理招标主体"], ["projects", "代理项目"], ["staff", "员工"], ["legal", "法人"]],
+      bidder: [["projects", "投标项目"], ["staff", "员工"], ["legal", "法人"]],
+      expert: [["projects", "评审项目"]],
+      project: [["owner", "招标主体"], ["agency", "招标代理"], ["bidders", "投标企业"], ["experts", "专家"]],
+      person: [["companies", "作为法人企业"]]
+    };
+    function opsFor(type, levels) {
+      return OPSET[type].map(function (pair, index) {
+        return { key: pair[0], label: pair[1], level: (levels && levels[index]) || "normal" };
+      });
+    }
+    const markSize = 46;
+    function placed(node, cx, cy, w) {
+      node.x = cx - w / 2;
+      node.y = cy - markSize / 2;
+      node.w = w;
+      return node;
+    }
+    const catalog = {};
+    function defaultAttrs(spec) {
+      if (spec.type === "person") {
+        return [["证件号码", "—"], ["职务", spec.job || "职员"], ["关联企业", spec.orgName || "—"]];
+      }
+      if (spec.type === "expert") {
+        return [["姓名", spec.name], ["评标专业", spec.major || "—"], ["关联项目", project.name]];
+      }
+      if (spec.type === "project") {
+        return [["项目编码", (graph && graph.id) || ""], ["项目类别", project.cat], ["风险等级", project.level], ["招标人", project.bidder], ["招标代理", project.agency || "—"]];
+      }
+      if (spec.type === "owner") return [["名称", spec.name], ["关联项目", project.name]];
+      if (spec.type === "agency") return [["名称", spec.name], ["关联项目", project.name]];
+      return [["企业名称", spec.fullName || spec.name], ["关联项目", project.name]];
+    }
+    function defaultTimeline(spec) {
+      const titles = { person: "人员时序", expert: "专家时序", project: "项目历程图", owner: "招标主体时序", agency: "招标代理时序", bidder: "投标企业时序" };
+      const labels = {
+        person: ["任职", "授权备案", "在任"],
+        expert: ["入库", "抽取", "评审", "复审"],
+        project: ["立项", "招标公告", "开标", "评标", "定标"],
+        owner: ["立项", "委托", "发标", "定标"],
+        agency: ["接受委托", "编制文件", "开标", "发出通知"],
+        bidder: ["购标", "递交投标", "开标", "结果公示"]
+      }[spec.type];
+      return {
+        title: titles[spec.type],
+        events: labels.map((label, index) => ({
+          label: label,
+          when: "2026." + (3 + (index % 5)) + "." + String(8 + index * 4).padStart(2, "0"),
+          at: Math.round(8 + index * (78 / (labels.length - 1)))
+        })),
+        bands: []
+      };
+    }
+    function sheetTimeline(title, type) {
+      const events = (gz && gz.timelines && gz.timelines[project.name]) || [];
+      if (!events.length) return defaultTimeline({ type: type });
+      return {
+        title: title,
+        events: events.map((item, index) => ({
+          label: item.label,
+          when: String(item.text || "").replace(/-/g, "."),
+          at: events.length === 1 ? 50 : Math.round(6 + index * (84 / (events.length - 1)))
+        })),
+        bands: []
+      };
+    }
+    function make(spec) {
+      const node = {
+        id: spec.id,
+        type: spec.type,
+        role: ROLE[spec.type],
+        group: spec.group || spec.type,
+        name: spec.name,
+        icon: spec.icon || (spec.type === "project" ? "folder" : (spec.type === "expert" || spec.type === "person" ? "person" : "org")),
+        risk: Boolean(spec.risk),
+        levels: spec.levels,
+        ops: opsFor(spec.type, spec.levels),
+        attrs: spec.attrs || defaultAttrs(spec),
+        timeline: spec.timeline || defaultTimeline(spec),
+        alerts: spec.alerts || [],
+        fullName: spec.fullName,
+        job: spec.job || "",
+        win: !!spec.win,
+        rel: {}
+      };
+      paintTone(node);
+      catalog[node.id] = node;
+      return node;
+    }
+    function alertsForId(id) {
+      if (quietPark && id === "project") return [];
+      return ((graph && graph.alerts) || []).filter((item) => (item.subjects || []).indexOf(id) >= 0).map((item) => [item.title, item.note]);
+    }
+    const nodes = [];
+    function pushNode(spec, cx, cy, w) {
+      const node = placed(Object.assign({ alerts: alertsForId(spec.id) }, spec), cx, cy, w);
+      nodes.push(node);
+      return node;
+    }
+    const warnedBidders = quietPark || !graph ? [] : graph.bidders.slice();
+    const warnedExperts = quietPark || !graph ? [] : graph.experts.slice();
+    const ownerName = (graph && graph.owner) || project.bidder;
+    const agencyName = graph ? (graph.agency || "") : (project.agency || "");
+    const cores = [{
+      id: "owner", type: "owner", role: "招标主体", group: "owner", name: ownerName, icon: "org",
+      levels: ["normal", "normal", "normal", "normal"],
+      attrs: [["名称", ownerName], ["关联项目", project.name]],
+      timeline: sheetTimeline("招标人时序", "owner")
+    }];
+    if (agencyName) {
+      cores.push({
+        id: "agency", type: "agency", role: "招标代理", group: "agency", name: agencyName, icon: "org",
+        levels: ["normal", "normal", "normal", "normal"],
+        attrs: [["名称", agencyName], ["关联项目", project.name]],
+        timeline: sheetTimeline("招标代理时序", "agency")
+      });
+    }
+    cores.push({
+      id: "project", type: "project", role: "项目", group: "project", name: project.name, icon: "folder",
+      levels: ["normal", "normal", warnedBidders.some((item) => item.warn) ? "warn" : "normal", warnedExperts.some((item) => item.warn) ? "warn" : "normal"],
+      attrs: [["项目编码", (graph && graph.id) || ""], ["项目类别", project.cat], ["风险等级", quietPark ? "无预警" : project.level], ["招标人", ownerName], ["招标代理", agencyName || "—"]],
+      timeline: sheetTimeline("项目历程图", "project")
+    });
+    cores.forEach((spec, index) => {
+      paintTone(spec);
+      const w = spec.type === "project" ? 180 : 168;
+      pushNode(spec, 160 + index * 250, 168, w);
+    });
+    const chips = warnedExperts.map((item) => ({
+      id: item.id, type: "expert", role: "专家", group: "expert", name: item.name, fullName: item.name, icon: "person", risk: !!item.warn,
+      levels: [item.warn ? "warn" : "normal"],
+      attrs: [["姓名", item.name], ["关联项目", project.name]],
+      timeline: defaultTimeline({ type: "expert" })
+    })).concat(warnedBidders.map((item) => ({
+      id: item.id, type: "bidder", role: "投标企业", group: item.warn ? "risk" : "normal", name: item.name, fullName: item.full || item.name, icon: "org", risk: !!item.warn, win: !!item.win,
+      levels: [item.warn ? "warn" : "normal", "normal", "normal"],
+      attrs: [["企业名称", item.full || item.name], ["关联项目", project.name]],
+      timeline: defaultTimeline({ type: "bidder" })
+    })));
+    const chipW = 132;
+    const chipGap = 28;
+    const span = chips.length ? chips.length * chipW + Math.max(0, chips.length - 1) * chipGap : 0;
+    const chipStart = Math.max(96, 160 + Math.max(0, cores.length - 1) * 125 - span / 2);
+    chips.forEach((spec, index) => {
+      paintTone(spec);
+      const w = spec.type === "expert" ? 112 : chipW;
+      pushNode(spec, chipStart + index * (chipW + chipGap), 408, w);
+    });
+    nodes.forEach((node) => {
+      node.ops = opsFor(node.type, node.levels);
+      node.rel = {};
+      catalog[node.id] = node;
+    });
+    function bindPeople(orgId, orgName) {
+      const org = catalog[orgId];
+      if (!org || !orgName) return;
+      const people = (gz && gz.peopleByUnit && gz.peopleByUnit[orgName]) || [];
+      const staff = [];
+      const legal = [];
+      people.forEach((person, index) => {
+        const lead = /法定代表人/.test(person.role || "");
+        const id = (lead ? "lp-" : "st-") + orgId + "-" + index;
+        if (!catalog[id]) {
+          make({
+            id: id,
+            type: "person",
+            name: person.name,
+            levels: ["normal"],
+            orgName: orgName,
+            job: person.role || "职员",
+            alerts: []
+          });
+        }
+        if (lead && !legal.length) legal.push(id);
+        else staff.push(id);
+      });
+      if (staff.length) org.rel.staff = staff;
+      if (legal.length) org.rel.legal = legal;
+    }
+    if (catalog.project) {
+      catalog.project.rel.owner = catalog.owner ? ["owner"] : [];
+      catalog.project.rel.agency = catalog.agency ? ["agency"] : [];
+      catalog.project.rel.bidders = warnedBidders.map((item) => item.id);
+      catalog.project.rel.experts = warnedExperts.map((item) => item.id);
+    }
+    function relatedProjectIds(field, name) {
+      const graphs = (gz && gz.graphs) || {};
+      const ids = [];
+      Object.keys(graphs).forEach((title) => {
+        const item = graphs[title];
+        if ((item[field] || "") !== name) return;
+        const id = title === project.name ? "project" : "xp-" + (item.id || title);
+        if (!catalog[id]) {
+          const meta = ((gz && gz.indexProjects) || []).find((row) => row.name === title) || {};
+          make({
+            id: id,
+            type: "project",
+            name: title,
+            group: "project",
+            icon: "folder",
+            risk: meta.level === "高风险",
+            levels: ["normal", "normal", "normal", "normal"],
+            attrs: [["项目名称", title], ["行业领域", meta.cat || "—"], ["风险等级", meta.level || "无预警"], ["招标人", item.owner || "—"], ["招标代理", item.agency || "—"]]
+          });
+        }
+        ids.push(id);
+      });
+      if (catalog.project && ids.indexOf("project") >= 0) {
+        ids.splice(ids.indexOf("project"), 1);
+        ids.unshift("project");
+      }
+      return ids;
+    }
+    function fillRelated(node, ids) {
+      if (!node) return;
+      node.rel.projects = ids.length ? ids : (catalog.project ? ["project"] : []);
+      const titles = node.rel.projects.map((id) => catalog[id] && catalog[id].name).filter(Boolean);
+      const row = (node.attrs || []).find((item) => item[0] === "关联项目");
+      if (row && titles.length) row[1] = titles.join("、");
+    }
+    if (catalog.owner) {
+      fillRelated(catalog.owner, relatedProjectIds("owner", ownerName));
+      catalog.owner.rel.agencies = catalog.agency ? ["agency"] : [];
+      bindPeople("owner", ownerName);
+    }
+    if (catalog.agency) {
+      catalog.agency.rel.clients = ["owner"];
+      fillRelated(catalog.agency, relatedProjectIds("agency", agencyName));
+      bindPeople("agency", agencyName);
+    }
+    warnedBidders.forEach((item) => {
+      if (!catalog[item.id]) return;
+      catalog[item.id].rel.projects = ["project"];
+      bindPeople(item.id, item.full || item.name);
+    });
+    warnedExperts.forEach((item) => {
+      if (catalog[item.id]) catalog[item.id].rel.projects = ["project"];
+    });
+
+    const state = {
+      tab: "warn",
+      mode: "graph",
+      query: "",
+      selected: "project",
+      line: "",
+      alert: "",
+      focus: false,
+      open: [],
+      filters: { owner: true, agency: true, risk: true, normal: true, expert: true }
+    };
+    if ((params.get("from") === "agency" || params.get("role") === "招标代理") && catalog.agency && (catalog.agency.rel.projects || []).length > 1) {
+      state.open.push({ id: "agency", op: "projects", label: "代理项目" });
+    }
+    (function focusAsked() {
+      const asked = params.get("node") || "";
+      const askedName = params.get("focus") || "";
+      const askedAlert = params.get("alert") || "";
+      const list = Object.keys(catalog).map((key) => catalog[key]);
+      let id = asked && catalog[asked] ? asked : "";
+      if (!id && askedName) {
+        const exact = list.find((node) => node.name === askedName || node.fullName === askedName);
+        const loose = exact || list.find((node) => node.name.indexOf(askedName) >= 0 || askedName.indexOf(node.name) >= 0);
+        if (loose) id = loose.id;
+      }
+      const hit = ((graph && graph.alerts) || []).find((item) => item.id === askedAlert);
+      if (!id && hit) {
+        const prefer = (hit.subjects || []).find((sid) => sid !== "project" && catalog[sid]) || (hit.subjects || []).find((sid) => catalog[sid]);
+        if (prefer) id = prefer;
+      }
+      if (hit) {
+        state.alert = hit.id;
+        state.focus = true;
+        state.tab = "warn";
+      }
+      if (!id) return;
+      state.selected = id;
+      state.focus = true;
+      state.tab = "warn";
+      if (nodes.some((node) => node.id === id)) return;
+      nodes.some((parent) => {
+        const rel = parent.rel || {};
+        return Object.keys(rel).some((key) => {
+          if ((rel[key] || []).indexOf(id) < 0) return false;
+          const op = parent.ops.find((item) => item.key === key);
+          if (!op) return false;
+          state.open.push({ id: parent.id, op: key, label: op.label });
+          return true;
+        });
+      });
+    })();
+
+    const detail = document.getElementById("detail");
+    const relate = document.getElementById("relate");
+    const canvas = document.getElementById("canvas");
+    const timePanel = document.getElementById("timePanel");
+    const stage = document.getElementById("stage");
+    const wires = document.getElementById("wires");
+
+    function esc(text) {
+      return String(text).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+    }
+    function codeOf(name) {
+      let n = 0;
+      for (let i = 0; i < name.length; i += 1) n = (n * 33 + name.charCodeAt(i)) % 9000000000;
+      return "SDRG" + String(1000000000 + n);
+    }
+    function addressOf(name) {
+      const hit = name.match(/^(.{2,3}?[省市])/);
+      return (hit ? hit[1] : "项目所在地") + "****地段";
+    }
+    function visible(node) {
+      if (node.group === "project") return true;
+      return state.filters[node.group] !== false;
+    }
+    function matched(node) {
+      const q = state.query.trim();
+      return !q || node.name.includes(q) || node.role.includes(q);
+    }
+    function nodeWidth(node) {
+      if (node.type === "project") return 180;
+      if (node.type === "person" || node.type === "expert") return 112;
+      return 156;
+    }
+    let sceneNow = null;
+    function pruneOpen() {
+      let guard = 0;
+      while (guard < 8) {
+        guard += 1;
+        const ids = {};
+        nodes.filter(visible).forEach((node) => { ids[node.id] = true; });
+        const next = [];
+        state.open.forEach((frame) => {
+          if (!ids[frame.id] || !catalog[frame.id]) return;
+          next.push(frame);
+          (catalog[frame.id].rel[frame.op] || []).forEach((id) => { ids[id] = true; });
+        });
+        const same = next.length === state.open.length;
+        state.open = next;
+        if (same) return;
+      }
+    }
+    function buildScene() {
+      const items = [];
+      const byId = {};
+      function put(node, x, y, w) {
+        const view = Object.assign({}, node, { x: x, y: y, w: w });
+        const item = { id: node.id, node: view, x: x, y: y, w: w };
+        items.push(item);
+        byId[node.id] = item;
+      }
+      const present = [];
+      const shownIds = {};
+      function addPresent(node) {
+        if (!node || shownIds[node.id]) return;
+        shownIds[node.id] = true;
+        present.push(node);
+      }
+      nodes.filter(visible).forEach(addPresent);
+      state.open.forEach((frame) => {
+        const rel = catalog[frame.id] && catalog[frame.id].rel[frame.op];
+        (rel || []).forEach((id) => addPresent(catalog[id]));
+      });
+      const parentsOf = {};
+      function addParent(childId, parentId) {
+        if (!childId || !parentId || childId === parentId || !shownIds[childId]) return;
+        if (!parentsOf[childId]) parentsOf[childId] = [];
+        if (parentsOf[childId].indexOf(parentId) < 0) parentsOf[childId].push(parentId);
+      }
+      state.open.forEach((frame) => {
+        const rel = catalog[frame.id] && catalog[frame.id].rel[frame.op];
+        (rel || []).forEach((id) => addParent(id, frame.id));
+      });
+      if (shownIds.agency && shownIds.owner) addParent("agency", "owner");
+      if (shownIds.project) addParent("project", shownIds.agency ? "agency" : "owner");
+      function childOf(id, op) {
+        return state.open.some((frame) => frame.op === op && (((catalog[frame.id] && catalog[frame.id].rel[frame.op]) || []).indexOf(id) >= 0));
+      }
+      const supplierIds = {};
+      (((gz && gz.winnerSuppliers) || {}).suppliers || []).forEach((item) => { supplierIds[item.id] = true; });
+      function isSupplierCo(node) {
+        return node.type === "bidder" && (supplierIds[node.id] || (childOf(node.id, "suppliers") && !node.win));
+      }
+      function isSupplierLegal(node) {
+        return node.type === "person" && childOf(node.id, "suppliers");
+      }
+      const hasSupplierLayer = present.some(isSupplierCo);
+      present.forEach((node) => {
+        if (node.type === "expert" && shownIds.project && !(parentsOf[node.id] || []).length) addParent(node.id, "project");
+        if (node.type === "bidder" && shownIds.project && !isSupplierCo(node) && !(parentsOf[node.id] || []).length) addParent(node.id, "project");
+      });
+      const firmIds = present.filter(isSupplierCo).map((node) => node.id);
+      present.forEach((node) => {
+        if (isSupplierLegal(node) && firmIds.length) parentsOf[node.id] = firmIds.slice();
+      });
+      const orderOf = {};
+      state.open.forEach((frame) => {
+        const rel = catalog[frame.id] && catalog[frame.id].rel[frame.op];
+        (rel || []).forEach((id, index) => {
+          if (orderOf[id] == null) orderOf[id] = index;
+        });
+      });
+      function bandOf(node) {
+        if (isSupplierLegal(node)) return "supplierLegal";
+        if (isSupplierCo(node)) return "supplier";
+        if (hasSupplierLayer && node.type === "bidder" && node.win) return "winner";
+        if (node.type === "person") return "person";
+        return ["owner", "agency", "project", "expert", "bidder"].indexOf(node.type) >= 0 ? node.type : "bidder";
+      }
+      function parentCenter(id) {
+        const xs = [];
+        (parentsOf[id] || []).forEach((pid) => {
+          const item = byId[pid];
+          if (item) xs.push(item.x + item.w / 2);
+        });
+        if (!xs.length) return null;
+        return xs.reduce((sum, x) => sum + x, 0) / xs.length;
+      }
+      function compareNodes(a, b) {
+        const ax = parentCenter(a.id);
+        const bx = parentCenter(b.id);
+        if (ax != null && bx != null && Math.abs(ax - bx) > 12) return ax - bx;
+        const aPerson = a.type === "person" && (a.id.indexOf("lp-") === 0 || /法人/.test(a.job || ""));
+        const bPerson = b.type === "person" && (b.id.indexOf("lp-") === 0 || /法人/.test(b.job || ""));
+        if (aPerson !== bPerson) return aPerson ? -1 : 1;
+        const ai = nodes.findIndex((n) => n.id === a.id);
+        const bi = nodes.findIndex((n) => n.id === b.id);
+        if (ai >= 0 && bi >= 0) return ai - bi;
+        if (ai >= 0) return -1;
+        if (bi >= 0) return 1;
+        const ao = orderOf[a.id] == null ? 999 : orderOf[a.id];
+        const bo = orderOf[b.id] == null ? 999 : orderOf[b.id];
+        if (ao !== bo) return ao - bo;
+        return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+      }
+      function centerEntry(list) {
+        const index = list.findIndex((node) => node.id === "project");
+        if (index < 0 || list.length < 2) return;
+        const entry = list.splice(index, 1)[0];
+        list.splice(Math.floor(list.length / 2), 0, entry);
+      }
+      const bandOrder = ["owner", "agency", "project", "expert", "bidder", "winner", "supplier", "supplierLegal", "person"];
+      const grouped = {};
+      present.forEach((node) => {
+        const band = bandOf(node);
+        if (!grouped[band]) grouped[band] = [];
+        grouped[band].push(node);
+      });
+      const bands = bandOrder.map((band) => grouped[band]).filter((list) => list && list.length);
+      bands.forEach((list) => {
+        list.sort(compareNodes);
+        centerEntry(list);
+      });
+      const packed = [];
+      let bucket = [];
+      bands.forEach((list) => {
+        if (list.length > 1) {
+          if (bucket.length) packed.push(bucket);
+          bucket = [];
+          packed.push([list]);
+        } else bucket.push(list);
+      });
+      if (bucket.length) packed.push(bucket);
+      const gapX = 32;
+      const bandGap = 72;
+      const padX = 64;
+      const rowPitch = 196;
+      function rowSpan(groups) {
+        let width = 0;
+        groups.forEach((list, gi) => {
+          if (gi) width += bandGap;
+          list.forEach((node, ni) => { width += nodeWidth(node) + (ni ? gapX : 0); });
+        });
+        return width;
+      }
+      const maxW = Math.max.apply(null, packed.map(rowSpan).concat([720]));
+      function layoutRow(groups, y) {
+        let x = padX + (maxW - rowSpan(groups)) / 2;
+        groups.forEach((list, gi) => {
+          if (gi) x += bandGap;
+          list.forEach((node, ni) => {
+            const w = nodeWidth(node);
+            if (ni) x += gapX;
+            const item = byId[node.id];
+            if (!item) put(node, x, y, w);
+            else {
+              item.x = x;
+              item.y = y;
+              item.w = w;
+              item.node.x = x;
+              item.node.y = y;
+              item.node.w = w;
+            }
+            x += w;
+          });
+        });
+      }
+      function placeAnchored(list, y) {
+        const clusters = [];
+        list.forEach((node) => {
+          const parents = parentsOf[node.id] || [];
+          let pid = "";
+          for (let i = 0; i < parents.length; i += 1) {
+            if (byId[parents[i]]) { pid = parents[i]; break; }
+          }
+          const last = clusters[clusters.length - 1];
+          if (last && last.pid === pid) last.nodes.push(node);
+          else clusters.push({ pid: pid, nodes: [node] });
+        });
+        const ready = clusters.length > 1 && clusters.every((cluster) => cluster.pid && byId[cluster.pid]);
+        if (!ready) {
+          centerEntry(list);
+          layoutRow([list], y);
+          return;
+        }
+        const slots = clusters.map((cluster) => {
+          const width = rowSpan([cluster.nodes]);
+          const xs = [];
+          cluster.nodes.forEach((node) => {
+            (parentsOf[node.id] || []).forEach((pid) => {
+              const item = byId[pid];
+              if (item) xs.push(item.x + item.w / 2);
+            });
+          });
+          const parent = byId[cluster.pid];
+          const mid = xs.length ? xs.reduce((sum, x) => sum + x, 0) / xs.length : parent.x + parent.w / 2;
+          return { cluster: cluster, w: width, left: mid - width / 2 };
+        });
+        let edge = -Infinity;
+        slots.forEach((slot) => {
+          const left = Math.max(padX, slot.left);
+          slot.left = left < edge + bandGap ? edge + bandGap : left;
+          edge = slot.left + slot.w;
+        });
+        slots.forEach((slot) => {
+          let x = Math.max(padX, slot.left);
+          slot.cluster.nodes.forEach((node, ni) => {
+            const w = nodeWidth(node);
+            if (ni) x += gapX;
+            const item = byId[node.id];
+            if (!item) put(node, x, y, w);
+            else {
+              item.x = x;
+              item.y = y;
+              item.w = w;
+              item.node.x = x;
+              item.node.y = y;
+              item.node.w = w;
+            }
+            x += w;
+          });
+        });
+      }
+      packed.forEach((groups, index) => layoutRow(groups, 36 + index * rowPitch));
+      packed.forEach((groups, index) => {
+        const y = 36 + index * rowPitch;
+        groups.forEach((list) => {
+          if (list.length > 1) list.sort(compareNodes);
+        });
+        if (groups.length === 1 && groups[0].length > 1) placeAnchored(groups[0], y);
+        else layoutRow(groups, y);
+      });
+      const notes = [];
+      state.open.forEach((frame) => {
+        const parent = byId[frame.id];
+        if (!parent) return;
+        const children = (catalog[frame.id].rel[frame.op] || []).map((id) => catalog[id]).filter(Boolean);
+        if (!children.length) notes.push({ id: frame.id + ":" + frame.op, text: "暂无「" + frame.label + "」", parent: parent });
+      });
+      let minX = 0;
+      let minY = 0;
+      let maxX = 1120;
+      let maxY = 500;
+      items.forEach((item) => {
+        minX = Math.min(minX, item.x);
+        minY = Math.min(minY, item.y);
+        maxX = Math.max(maxX, item.x + item.w);
+        maxY = Math.max(maxY, item.y + 118);
+      });
+      if (minX < 0 || minY < 0 || maxX > 1120 || maxY > 500) {
+        minX -= 56;
+        minY -= 56;
+        maxX += 56;
+        maxY += 56;
+      }
+      const shiftX = minX < 0 ? -minX : 0;
+      const shiftY = minY < 0 ? -minY : 0;
+      if (shiftX || shiftY) {
+        items.forEach((item) => {
+          item.x += shiftX;
+          item.y += shiftY;
+          item.node.x = item.x;
+          item.node.y = item.y;
+        });
+      }
+      const links = [];
+      const seen = {};
+      function addLink(a, b, color, width, prefer, tone) {
+        if (!a || !b || a.id === b.id) return;
+        const key = a.id < b.id ? a.id + "|" + b.id : b.id + "|" + a.id;
+        if (!seen[key] || prefer) {
+          seen[key] = true;
+          links.push({ a: a, b: b, color: color, width: width, key: key, tone: tone || "" });
+          if (prefer) {
+            for (let i = links.length - 2; i >= 0; i -= 1) {
+              if (links[i].key === key) links.splice(i, 1);
+            }
+          }
+        }
+      }
+      const baseIds = {};
+      nodes.forEach((node) => { baseIds[node.id] = true; });
+      const graphLinks = (graph && graph.links) || [
+        { a: "owner", b: catalog.agency ? "agency" : "project" }
+      ].concat(catalog.agency ? [{ a: "agency", b: "project" }] : []);
+      graphLinks.forEach((link) => {
+        if (!baseIds[link.a] || !baseIds[link.b]) return;
+        const ids = link.alertIds || (link.alertId ? [link.alertId] : []);
+        const tone = link.warn ? (toneOfAlerts(ids) || "high") : "";
+        addLink(byId[link.a], byId[link.b], tone ? TONE_HEX[tone] : "#c5ced6", link.warn ? 2 : 1.5, false, tone);
+      });
+      function pairTone(aId, bId) {
+        const hit = graphLinks.find((item) => linkKey(item.a, item.b) === linkKey(aId, bId));
+        if (!hit || !hit.warn) return "";
+        const ids = hit.alertIds || (hit.alertId ? [hit.alertId] : []);
+        return toneOfAlerts(ids) || "high";
+      }
+      state.open.forEach((frame) => {
+        const parent = byId[frame.id];
+        if (!parent) return;
+        const op = catalog[frame.id].ops.find((item) => item.key === frame.op);
+        const plain = LEVEL_COLOR[(op && op.level && op.level !== "warn") ? op.level : "normal"];
+        const relIds = catalog[frame.id].rel[frame.op] || [];
+        relIds.forEach((id) => {
+          const child = catalog[id];
+          if (frame.op === "suppliers" && child && child.type === "person") {
+            const firms = relIds.filter((fid) => catalog[fid] && catalog[fid].type === "bidder");
+            if (firms.length) {
+              firms.forEach((fid) => addLink(byId[fid], byId[id], plain, 1.5, false, ""));
+              return;
+            }
+          }
+          const tone = pairTone(frame.id, id);
+          addLink(parent, byId[id], tone ? TONE_HEX[tone] : plain, tone ? 2 : 1.5, Boolean(tone), tone);
+        });
+      });
+      notes.forEach((note) => {
+        note.x = note.parent.x;
+        note.y = Math.max(8, note.parent.y - 28);
+      });
+      return {
+        items: items,
+        notes: notes,
+        links: links,
+        width: Math.round(maxX + shiftX),
+        height: Math.round(maxY + shiftY)
+      };
+    }
+    function shownScene() {
+      if (!sceneNow) sceneNow = buildScene();
+      return sceneNow;
+    }
+    function shown() {
+      return shownScene().items.map((item) => item.node);
+    }
+    function current() {
+      const list = shown();
+      return list.find((node) => node.id === state.selected) || catalog[state.selected] || catalog.project;
+    }
+    function attrsOf(node) {
+      return node.attrs.map(([label, value]) => {
+        if (label === "项目编码") return [label, codeOf(node.name)];
+        if (label === "项目地址") return [label, addressOf(node.name)];
+        return [label, value];
+      });
+    }
+
+    let alertCache = null;
+    function toneOf(level) {
+      if (level === "低风险") return "low";
+      if (level === "中风险") return "mid";
+      return "high";
+    }
+    function allAlerts() {
+      if (alertCache) return alertCache;
+      const alerts = (graph && graph.alerts) || [];
+      const links = (graph && graph.links) || [];
+      alertCache = alerts.map((item) => {
+        const lines = links.filter((link) => {
+          const ids = link.alertIds || (link.alertId ? [link.alertId] : []);
+          return ids.indexOf(item.id) >= 0;
+        }).map((link) => linkKey(link.a, link.b));
+        const level = item.level || "高风险";
+        return {
+          id: item.id,
+          level: level,
+          tone: toneOf(level),
+          title: item.title,
+          who: item.who || "",
+          note: item.note || "",
+          whoNames: (item.whoNames || []).slice(),
+          model: item.model || item.title || "",
+          steps: (item.steps || []).slice(),
+          subjects: (item.subjects || []).filter((sid) => !(quietPark && sid === "project")),
+          line: lines[0] || "",
+          lines: lines
+        };
+      });
+      return alertCache;
+    }
+    function alertsForNode(id) {
+      return allAlerts().filter((item) => item.subjects.indexOf(id) >= 0);
+    }
+    function alertsForLine(key) {
+      return allAlerts().filter((item) => item.line === key || (item.lines || []).indexOf(key) >= 0);
+    }
+    function listedAlerts() {
+      if (state.line) return alertsForLine(state.line);
+      return alertsForNode(state.selected);
+    }
+    function focusSpec() {
+      if (!state.focus) return null;
+      if (state.alert) {
+        const one = allAlerts().find((item) => item.id === state.alert);
+        return {
+          ids: one ? one.subjects.slice() : [],
+          lines: one && one.lines && one.lines.length ? one.lines.slice() : (one && one.line ? [one.line] : [])
+        };
+      }
+      if (state.line) {
+        const alerts = alertsForLine(state.line);
+        const ids = state.line.split("|");
+        alerts.forEach((item) => item.subjects.forEach((id) => {
+          if (ids.indexOf(id) < 0) ids.push(id);
+        }));
+        return { ids: ids, lines: [state.line] };
+      }
+      const alerts = alertsForNode(state.selected);
+      const ids = [state.selected];
+      const lines = [];
+      alerts.forEach((item) => {
+        item.subjects.forEach((id) => {
+          if (ids.indexOf(id) < 0) ids.push(id);
+        });
+        if (item.line && lines.indexOf(item.line) < 0) lines.push(item.line);
+      });
+      return { ids: ids, lines: lines };
+    }
+    function warnCard(item) {
+      const on = state.alert === item.id ? " on" : "";
+      return '<div class="warn-card ' + item.tone + on + '" data-alert="' + esc(item.id) + '"><div class="warn-head"><span class="sev">' + esc(item.level) + "</span><h3>" + esc(item.title) + '</h3></div><div class="who">' + esc(item.who) + "</div><p>" + esc(item.note) + '</p><div class="warn-foot"><button type="button" class="clue-mini" data-add-clue="' + esc(item.id) + '">添加线索</button></div></div>';
+    }
+
+    function renderDetail() {
+      const node = current();
+      const body = document.getElementById("detailBody");
+      const warns = listedAlerts();
+      const open = detail.classList.contains("open");
+      document.getElementById("tabDetail").classList.toggle("is-on", open && state.tab !== "warn");
+      document.getElementById("tabWarn").classList.toggle("is-on", open && state.tab === "warn");
+      if (state.tab !== "warn") {
+        const tab = state.tab === "time" ? "time" : "attr";
+        const tabs = [["attr", "属性"], ["time", "时序"]].map(([key, label]) => {
+          const on = key === tab;
+          return '<button type="button" data-tab="' + key + '" class="' + (on ? "is-on" : "") + '" role="tab" aria-selected="' + (on ? "true" : "false") + '">' + label + "</button>";
+        }).join("");
+        let inner = "";
+        if (tab === "attr") {
+          const rows = [["主体角色", node.role]].concat(attrsOf(node));
+          if (node.type !== "project" && node.type !== "person" && !rows.some((row) => row[0] === "关联项目")) {
+            const titles = ((node.rel && node.rel.projects) || []).map((id) => catalog[id] && catalog[id].name).filter(Boolean);
+            rows.push(["关联项目", titles.length ? titles.join("、") : project.name]);
+          }
+          inner = '<dl class="attr">' + rows.map(([label, value]) => "<dt>" + esc(label) + "</dt><dd>" + esc(value) + "</dd>").join("") + "</dl>";
+        } else {
+          inner = '<ol class="vline">' + node.timeline.events.map((item) => '<li><span class="rail"><i></i></span><time>' + esc(item.when) + "</time><b>" + esc(item.label) + "</b></li>").join("") + "</ol>";
+        }
+        body.innerHTML = '<div class="warn-title"><h1 class="entity-name" id="entityName">' + glyphs[node.icon] + "<span>" + esc(node.name) + '</span></h1><button type="button" class="clue-mini" data-add-node>添加线索</button></div><div class="tabs" role="tablist">' + tabs + "</div>" + inner;
+        const name = document.getElementById("entityName");
+        if (node.type !== "project" && node.tone) name.classList.add("lv-" + node.tone);
+        else if (node.risk || node.id === "project") name.classList.add("is-risk");
+        return;
+      }
+      const cards = warns.length
+        ? '<div class="warn-list">' + warns.map(warnCard).join("") + "</div>"
+        : '<p class="warn-empty">' + (state.line ? "这条关系没有待处理预警。" : "当前主体暂无预警信息") + "</p>";
+      body.innerHTML = '<div class="warn-title"><h2>预警信息</h2><button type="button" class="clue-mini" data-add-node>添加线索</button></div>' + cards;
+      const selectedCard = body.querySelector(".warn-card.on");
+      if (selectedCard) {
+        const panelBox = body.getBoundingClientRect();
+        const cardBox = selectedCard.getBoundingClientRect();
+        const pad = 8;
+        if (cardBox.top < panelBox.top + pad) body.scrollTop += cardBox.top - panelBox.top - pad;
+        else if (cardBox.bottom > panelBox.bottom - pad) body.scrollTop += cardBox.bottom - panelBox.bottom + pad;
+      }
+    }
+
+    let graphKey = "";
+    let navToken = 0;
+    function openedIds() {
+      const ids = new Set();
+      state.open.forEach((frame) => {
+        ids.add(frame.id);
+        const rel = catalog[frame.id] && catalog[frame.id].rel;
+        ((rel && rel[frame.op]) || []).forEach((id) => ids.add(id));
+      });
+      return ids;
+    }
+    function syncGraphState() {
+      const multi = relate.classList.contains("open");
+      canvas.classList.toggle("is-multi", multi);
+      const spec = multi ? null : focusSpec();
+      const opened = openedIds();
+      const picked = current().id;
+      const lineEnds = state.line ? state.line.split("|") : [];
+      stage.querySelectorAll(".node").forEach((button) => {
+        const id = button.dataset.id;
+        const chosen = multi && relatePick.indexOf(id) >= 0;
+        const on = multi
+          ? chosen
+          : (spec
+            ? (state.line ? lineEnds.indexOf(id) >= 0 : (state.alert ? spec.ids.indexOf(id) >= 0 : id === picked))
+            : id === picked);
+        button.classList.toggle("is-on", on);
+        button.classList.toggle("is-picked", chosen);
+        button.classList.toggle("is-fade", !multi && Boolean(spec) && spec.ids.indexOf(id) < 0 && !opened.has(id));
+        button.classList.toggle("is-dim", !multi && !spec && button.dataset.match === "0");
+        button.setAttribute("aria-pressed", on ? "true" : "false");
+        const mark = button.querySelector(".mark");
+        if (mark) {
+          if (!mark.dataset.label) mark.dataset.label = mark.getAttribute("aria-label") || "";
+          mark.setAttribute("aria-label", multi ? ((chosen ? "取消选择 " : "添加 ") + mark.dataset.label) : mark.dataset.label);
+        }
+      });
+      wires.querySelectorAll(".wire").forEach((wire) => {
+        const key = wire.dataset.line || "";
+        const hot = Boolean(spec) && spec.lines.indexOf(key) >= 0;
+        const ends = key.split("|");
+        const kept = ends.length === 2 && opened.has(ends[0]) && opened.has(ends[1]);
+        wire.classList.toggle("is-hot", hot);
+        wire.classList.toggle("is-fade", Boolean(spec) && !hot && !kept);
+      });
+    }
+    function arcPath(r, a0, a1) {
+      const rad = Math.PI / 180;
+      const x0 = Math.cos(a0 * rad) * r;
+      const y0 = Math.sin(a0 * rad) * r;
+      const x1 = Math.cos(a1 * rad) * r;
+      const y1 = Math.sin(a1 * rad) * r;
+      const large = a1 - a0 > 180 ? 1 : 0;
+      return "M " + x0.toFixed(2) + " " + y0.toFixed(2) + " A " + r + " " + r + " 0 " + large + " 1 " + x1.toFixed(2) + " " + y1.toFixed(2);
+    }
+    function ringMarkup(node) {
+      const ops = node.ops;
+      const count = ops.length;
+      const radius = 56;
+      const segs = ops.map((op, index) => {
+        const color = LEVEL_COLOR[op.level];
+        let shape;
+        if (count === 1) {
+          shape = '<circle class="seg-hit" cx="0" cy="0" r="' + radius + '"></circle><circle class="seg" cx="0" cy="0" r="' + radius + '" stroke="' + color + '"></circle>';
+        } else {
+          const sweep = 360 / count;
+          const gap = Math.min(12, sweep * 0.18);
+          const start = -90 + index * sweep + gap / 2;
+          const end = -90 + (index + 1) * sweep - gap / 2;
+          const d = arcPath(radius, start, end);
+          shape = '<path class="seg-hit" d="' + d + '"></path><path class="seg" d="' + d + '" stroke="' + color + '"></path>';
+        }
+        return '<g class="seg-group" data-i="' + index + '" style="--glow:' + color + '">' + shape + "</g>";
+      }).join("");
+      const labels = ops.map((op, index) => {
+        const sweep = 360 / count;
+        const mid = count === 1 ? -90 : -90 + (index + 0.5) * sweep;
+        let norm = mid;
+        while (norm > 180) norm -= 360;
+        while (norm <= -180) norm += 360;
+        const flip = norm > 0 && norm < 180;
+        return '<span class="arm" style="transform:rotate(' + (mid + 90).toFixed(2) + 'deg)"><span class="seg-label' + (flip ? " is-flip" : "") + '" style="color:' + LEVEL_COLOR[op.level] + '">' + esc(op.label) + "</span></span>";
+      }).join("");
+      return '<svg class="ring" viewBox="-90 -90 180 180" overflow="visible" aria-hidden="true">' + segs + "</svg>" + labels;
+    }
+    function toggleOp(id, op) {
+      const index = state.open.findIndex((frame) => frame.id === id && frame.op === op.key);
+      if (index >= 0) state.open.splice(index, 1);
+      else state.open.push({ id: id, op: op.key, label: op.label });
+      pruneOpen();
+      state.selected = id;
+      detail.classList.add("open");
+      render();
+    }
+    function renderCrumb() {
+      const crumb = document.getElementById("crumb");
+      if (!state.open.length) {
+        crumb.hidden = true;
+        return;
+      }
+      crumb.hidden = false;
+      document.getElementById("back").textContent = "收起全部";
+      document.getElementById("crumbText").textContent = "已展开 " + state.open.length + " 个维度，再次点击同一段可收起";
+    }
+    function renderGraph() {
+      const scene = shownScene();
+      const list = scene.items.map((item) => item.node);
+      stage.style.width = scene.width + "px";
+      stage.style.height = scene.height + "px";
+      wires.setAttribute("viewBox", "0 0 " + scene.width + " " + scene.height);
+      const key = state.open.map((frame) => frame.id + ":" + frame.op).join(">") + "|" + list.map((node) => node.id + "@" + Math.round(node.x) + "," + Math.round(node.y)).join(";");
+      if (key !== graphKey) {
+        graphKey = key;
+        stage.querySelectorAll(".node, .empty-note").forEach((el) => el.remove());
+        document.getElementById("wireTip").hidden = true;
+        wires.innerHTML = scene.links.map((link) => {
+          const from = [link.a.x + link.a.w / 2, link.a.y + markSize / 2];
+          const to = [link.b.x + link.b.w / 2, link.b.y + markSize / 2];
+          const warns = warningsOf(link.a.node, link.b.node);
+          const hit = '<line class="wire-hit" x1="' + from[0] + '" y1="' + from[1] + '" x2="' + to[0] + '" y2="' + to[1] + '" stroke="transparent" stroke-width="16"/>';
+          return '<g class="wire" data-line="' + esc(link.key) + '"' + (link.tone ? ' data-tone="' + link.tone + '" data-base-tone="' + link.tone + '"' : "") + (warns.length ? ' data-warn="' + esc(warns.join("|")) + '"' : "") + '>' + hit +
+            '<line class="wire-line" x1="' + from[0] + '" y1="' + from[1] + '" x2="' + to[0] + '" y2="' + to[1] + '" stroke="' + link.color + '" stroke-width="' + link.width + '"/></g>';
+        }).join("");
+        scene.notes.forEach((note) => {
+          const tip = document.createElement("div");
+          tip.className = "empty-note";
+          tip.style.left = note.x + "px";
+          tip.style.top = note.y + "px";
+          tip.textContent = note.text;
+          stage.appendChild(tip);
+        });
+        list.forEach((node) => {
+          const card = document.createElement("div");
+          card.dataset.id = node.id;
+          const kind = node.type === "person" ? "staff" : (node.type || "bidder");
+          card.className = "node kind-" + kind + (node.tone ? " lv-" + node.tone : "");
+          card.style.left = node.x + "px";
+          card.style.top = node.y + "px";
+          card.style.width = node.w + "px";
+          const hubBox = document.createElement("div");
+          hubBox.className = "hub";
+          const wrap = document.createElement("div");
+          wrap.className = "ring-wrap";
+          wrap.innerHTML = ringMarkup(node);
+          const mark = document.createElement("button");
+          mark.type = "button";
+          mark.className = "mark";
+          mark.setAttribute("aria-label", node.name);
+          mark.innerHTML = glyphs[node.icon];
+          mark.addEventListener("click", (event) => {
+            event.stopPropagation();
+            selectNode(node.id);
+          });
+          const name = document.createElement("button");
+          name.type = "button";
+          name.className = "name";
+          name.textContent = node.name;
+          name.addEventListener("click", (event) => {
+            event.stopPropagation();
+            selectNode(node.id);
+          });
+          wrap.querySelectorAll(".seg-group").forEach((group) => {
+            const action = node.ops[Number(group.dataset.i)];
+            const opened = state.open.some((frame) => frame.id === node.id && frame.op === action.key);
+            group.classList.toggle("is-open", opened);
+            group.addEventListener("pointerdown", (event) => {
+              event.stopPropagation();
+              group.classList.add("is-down");
+            });
+            group.addEventListener("click", (event) => {
+              event.stopPropagation();
+              group.classList.add("is-down");
+              const token = ++navToken;
+              window.setTimeout(() => {
+                if (token !== navToken) return;
+                toggleOp(node.id, action);
+              }, 180);
+            });
+          });
+          hubBox.appendChild(wrap);
+          hubBox.appendChild(mark);
+          if (node.win) {
+            const badge = document.createElement("span");
+            badge.className = "win-badge";
+            badge.textContent = "中标";
+            hubBox.appendChild(badge);
+          }
+          card.appendChild(hubBox);
+          card.appendChild(name);
+          stage.appendChild(card);
+        });
+      }
+      list.forEach((node) => {
+        const button = stage.querySelector('.node[data-id="' + node.id + '"]');
+        if (button) button.dataset.match = matched(node) ? "1" : "0";
+      });
+      syncGraphState();
+    }
+
+    function renderTable() {
+      const picked = current();
+      document.getElementById("sheetBody").innerHTML = shown().filter(matched).map((node) =>
+        "<tr data-id=\"" + esc(node.id) + "\" class=\"" + (node.id === picked.id ? "is-on" : "") + "\"><td>" + esc(node.name) + "</td><td>" + esc(node.role) + "</td><td>" + (node.id === "project" ? "当前主体" : (node.risk ? "异常关联" : "关联")) + "</td><td>" + esc(project.name) + "</td><td class=\"" + (node.risk ? "risk" : "") + "\">" + (node.alerts.length ? "有预警" : "正常") + "</td></tr>"
+      ).join("");
+    }
+
+    const PROJECT_SHORT = {
+      project: "观山湖区第八小学扩建工程",
+      p2: "第二西通道工程",
+      p3: "海沧海底隧道工程",
+      p4: "观山湖小学配套"
+    };
+    const EXTRA_BID = {
+      "r1|p3": {
+        kind: "投标",
+        events: [
+          { label: "购标", when: "2026.1.8", at: 10 },
+          { label: "递交投标", when: "2026.1.28", at: 28 },
+          { label: "开标", when: "2026.2.3", at: 44 },
+          { label: "中标", when: "2026.2.12", at: 60 },
+          { label: "保证金异常", when: "2026.3.2", at: 82 }
+        ],
+        bands: [{ label: "保证金不予退还", start: 56, end: 94, row: 0, from: "2026.2.12", to: "2026.6.30" }]
+      },
+      "n1|p3": {
+        kind: "投标",
+        events: [
+          { label: "购标", when: "2026.1.9", at: 12 },
+          { label: "递交投标", when: "2026.1.27", at: 34 },
+          { label: "开标", when: "2026.2.3", at: 56 },
+          { label: "未中标", when: "2026.2.12", at: 78 }
+        ],
+        bands: []
+      },
+      "n2|p2": {
+        kind: "投标",
+        events: [
+          { label: "购标", when: "2025.11.20", at: 12 },
+          { label: "递交投标", when: "2025.12.14", at: 36 },
+          { label: "开标", when: "2025.12.16", at: 52 },
+          { label: "中标", when: "2025.12.28", at: 74 }
+        ],
+        bands: []
+      },
+      "n3|p2": {
+        kind: "投标",
+        events: [
+          { label: "购标", when: "2025.11.21", at: 12 },
+          { label: "递交投标", when: "2025.12.15", at: 36 },
+          { label: "开标", when: "2025.12.16", at: 54 },
+          { label: "未中标", when: "2025.12.28", at: 72 },
+          { label: "保证金退还", when: "2026.1.8", at: 88 }
+        ],
+        bands: []
+      }
+    };
+    const EXTRA_REVIEW = {
+      "ex1|project": {
+        kind: "评审",
+        events: [
+          { label: "抽取", when: "2026.3.28", at: 16 },
+          { label: "评标", when: "2026.4.1", at: 46 },
+          { label: "打分偏离", when: "2026.4.1", at: 72 }
+        ],
+        bands: [{ label: "评标异常", start: 40, end: 82, row: 0, from: "2026.3.28", to: "2026.4.8" }]
+      },
+      "ex1|p3": {
+        kind: "评审",
+        events: [
+          { label: "抽取", when: "2026.1.30", at: 16 },
+          { label: "评标", when: "2026.2.5", at: 48 },
+          { label: "打分偏离", when: "2026.2.5", at: 74 }
+        ],
+        bands: [{ label: "与同标段专家打分偏离大", start: 40, end: 86, row: 0, from: "2026.1.30", to: "2026.2.12" }]
+      },
+      "ex2|project": {
+        kind: "评审",
+        events: [
+          { label: "抽取", when: "2026.3.28", at: 22 },
+          { label: "评标", when: "2026.4.1", at: 58 },
+          { label: "提交评分", when: "2026.4.1", at: 80 }
+        ],
+        bands: []
+      },
+      "ex2|p2": {
+        kind: "评审",
+        events: [
+          { label: "抽取", when: "2025.12.12", at: 22 },
+          { label: "评标", when: "2025.12.18", at: 56 },
+          { label: "提交评分", when: "2025.12.18", at: 78 }
+        ],
+        bands: []
+      },
+      "ex3|project": {
+        kind: "评审",
+        events: [
+          { label: "抽取", when: "2026.3.29", at: 24 },
+          { label: "评标", when: "2026.4.1", at: 62 }
+        ],
+        bands: []
+      },
+      "ex3|p4": {
+        kind: "评审",
+        events: [
+          { label: "抽取", when: "2026.6.8", at: 24 },
+          { label: "评标", when: "2026.6.14", at: 62 }
+        ],
+        bands: []
+      }
+    };
+    function briefOrg(name) {
+      return name.replace(/(集团)?(股份)?有限(责任)?公司$/, "");
+    }
+    function bidSequence(bidder, projectNode) {
+      const custom = EXTRA_BID[bidder.id + "|" + projectNode.id];
+      if (custom) return custom;
+      return { kind: "投标", events: bidder.timeline.events, bands: bidder.timeline.bands };
+    }
+    function reviewSequence(expert, projectNode) {
+      const custom = EXTRA_REVIEW[expert.id + "|" + projectNode.id];
+      if (custom) return custom;
+      return { kind: "评审", events: expert.timeline.events, bands: expert.timeline.bands };
+    }
+    function agencySequence(agency, projectNode) {
+      const picked = projectNode.timeline.events.filter((item) => /公告|开标|中标|合同/.test(item.label));
+      return { kind: "代理", events: picked.length ? picked : projectNode.timeline.events, bands: [] };
+    }
+    function sequenceFor(source, projectNode) {
+      if (source.type === "bidder") return bidSequence(source, projectNode);
+      if (source.type === "expert") return reviewSequence(source, projectNode);
+      if (source.type === "agency") return agencySequence(source, projectNode);
+      return { kind: "项目历程", events: projectNode.timeline.events, bands: projectNode.timeline.bands };
+    }
+    const NOW = "2026.10.10";
+    const LIFE = {
+      r1: {
+        events: [
+          { label: "注册", when: "2024.3.18" },
+          { label: "资质核定", when: "2024.8.6" },
+          { label: "参与投标", when: "2026.1.8" },
+          { label: "中标", when: "2026.4.2" },
+          { label: "保证金异常", when: "2026.4.15" },
+          { label: "至今", when: NOW }
+        ],
+        bands: [{ label: "保证金不予退还", from: "2026.4.15", to: NOW }]
+      },
+      r2: {
+        events: [
+          { label: "注册", when: "2024.1.12" },
+          { label: "资质核定", when: "2024.6.20" },
+          { label: "参与投标", when: "2026.3.14" },
+          { label: "未中标", when: "2026.4.2" },
+          { label: "保证金异常", when: "2026.4.2" },
+          { label: "至今", when: NOW }
+        ],
+        bands: [{ label: "保证金不予退还", from: "2026.4.2", to: "2026.6.30" }]
+      },
+      n1: {
+        events: [
+          { label: "注册", when: "2023.5.9" },
+          { label: "资质核定", when: "2023.11.16" },
+          { label: "参与投标", when: "2026.3.11" },
+          { label: "未中标", when: "2026.4.2" },
+          { label: "至今", when: NOW }
+        ],
+        bands: []
+      },
+      n2: {
+        events: [
+          { label: "注册", when: "2023.8.22" },
+          { label: "资质核定", when: "2024.2.14" },
+          { label: "参与投标", when: "2026.3.13" },
+          { label: "未中标", when: "2026.4.2" },
+          { label: "保证金退还", when: "2026.4.8" },
+          { label: "至今", when: NOW }
+        ],
+        bands: []
+      },
+      n3: {
+        events: [
+          { label: "注册", when: "2023.9.4" },
+          { label: "资质核定", when: "2024.3.11" },
+          { label: "参与投标", when: "2026.3.15" },
+          { label: "未中标", when: "2026.4.2" },
+          { label: "保证金退还", when: "2026.4.10" },
+          { label: "至今", when: NOW }
+        ],
+        bands: []
+      }
+    };
+    function lifeOf(node) {
+      return LIFE[node.id] || {
+        events: [
+          { label: "注册", when: "2024.6.1" },
+          { label: "资质核定", when: "2025.1.8" },
+          { label: "至今", when: NOW }
+        ],
+        bands: []
+      };
+    }
+    function projectsExpanded(node) {
+      return state.open.some((frame) => frame.id === node.id && frame.op === "projects");
+    }
+    function timelineView() {
+      const node = current();
+      const items = [];
+      if (node.type === "bidder") {
+        const life = lifeOf(node);
+        items.push({ name: briefOrg(node.name), kind: "企业历程", events: life.events, bands: life.bands, marks: true });
+        if (projectsExpanded(node)) {
+          (node.rel.projects || []).forEach((id) => {
+            const projectNode = catalog[id];
+            if (!projectNode) return;
+            const seq = bidSequence(node, projectNode);
+            items.push({ name: PROJECT_SHORT[projectNode.id] || projectNode.name, kind: "投标", events: seq.events, bands: seq.bands, marks: false });
+          });
+        }
+        return { title: node.name + (items.length > 1 ? " · 投标项目" : " · 企业历程"), items: items };
+      }
+      if (node.type === "project") {
+        items.push({ name: PROJECT_SHORT[node.id] || node.name, kind: "项目事件", events: node.timeline.events, bands: node.timeline.bands, marks: true });
+        return { title: node.name, items: items };
+      }
+      items.push({ name: node.name, kind: node.timeline.title, events: node.timeline.events, bands: node.timeline.bands, marks: true });
+      if (projectsExpanded(node)) {
+        (node.rel.projects || []).forEach((id) => {
+          const projectNode = catalog[id];
+          if (!projectNode) return;
+          const seq = sequenceFor(node, projectNode);
+          items.push({ name: PROJECT_SHORT[projectNode.id] || projectNode.name, kind: seq.kind, events: seq.events, bands: seq.bands, marks: false });
+        });
+      }
+      return { title: node.name, items: items };
+    }
+    function dayOf(text) {
+      const matched = String(text || "").match(/(\d{4})\.(\d{1,2})\.(\d{1,2})/);
+      if (!matched) return null;
+      return Date.UTC(Number(matched[1]), Number(matched[2]) - 1, Number(matched[3])) / 86400000;
+    }
+    function dayText(day) {
+      const date = new Date(day * 86400000);
+      return date.getUTCFullYear() + "." + (date.getUTCMonth() + 1) + "." + date.getUTCDate();
+    }
+    function activityBars(events, kind) {
+      const points = events.map((item) => ({ label: item.label, day: dayOf(item.when) })).filter((item) => item.day != null);
+      const raw = [];
+      for (let index = 0; index < points.length - 1; index += 1) {
+        if (points[index + 1].day <= points[index].day) continue;
+        raw.push({ label: points[index].label, from: points[index].day, to: points[index + 1].day, warn: false });
+      }
+      const merged = [];
+      raw.forEach((bar) => {
+        const prev = merged[merged.length - 1];
+        if (prev && (bar.to - bar.from < 7 || prev.to - prev.from < 7)) {
+          prev.from = Math.min(prev.from, bar.from);
+          prev.to = Math.max(prev.to, bar.to);
+          prev.label = kind || prev.label;
+          return;
+        }
+        merged.push({ label: bar.label, from: bar.from, to: bar.to, warn: false });
+      });
+      return merged;
+    }
+    function rowBars(row) {
+      const bars = activityBars(row.events, row.kind);
+      (row.bands || []).forEach((band) => {
+        const from = dayOf(band.from);
+        const to = dayOf(band.to);
+        if (from == null || to == null || to <= from) return;
+        bars.push({ label: band.label, from: from, to: to, warn: true });
+      });
+      return bars;
+    }
+    function warnBars(bands) {
+      return (bands || []).map((band) => {
+        const from = dayOf(band.from);
+        const to = dayOf(band.to);
+        if (from == null || to == null || to <= from) return null;
+        return { label: band.label, from: from, to: to, warn: true };
+      }).filter(Boolean);
+    }
+    function sharedChart(items) {
+      const rows = items.map((item) => {
+        const marks = item.marks ? item.events.map((event) => ({ label: event.label, day: dayOf(event.when) })).filter((mark) => mark.day != null) : [];
+        const bars = item.marks ? warnBars(item.bands) : rowBars(item);
+        return { item: item, marks: marks, bars: bars, warn: bars.some((bar) => bar.warn), hasMarks: marks.length > 0 };
+      }).filter((row) => row.marks.length || row.bars.length);
+      let min = Infinity;
+      let max = -Infinity;
+      rows.forEach((row) => {
+        row.marks.forEach((mark) => {
+          min = Math.min(min, mark.day);
+          max = Math.max(max, mark.day);
+        });
+        row.bars.forEach((bar) => {
+          min = Math.min(min, bar.from);
+          max = Math.max(max, bar.to);
+        });
+      });
+      if (!isFinite(min) || max <= min) max = min + 30;
+      min -= 12;
+      max += 12;
+      const span = max - min;
+      const leftOf = (day) => (day - min) / span * 100;
+      const ticks = [];
+      const step = (max - min) > 800 ? 3 : 1;
+      const start = new Date(min * 86400000);
+      let year = start.getUTCFullYear();
+      let month = start.getUTCMonth();
+      if (step === 3) month = Math.ceil((month + 1) / 3) * 3 - 1;
+      else if (start.getUTCDate() > 1) month += 1;
+      if (month > 11) { month = 0; year += 1; }
+      for (let guard = 0; guard < 40; guard += 1) {
+        const day = Date.UTC(year, month, 1) / 86400000;
+        if (day >= max) break;
+        if (day > min) ticks.push({ left: leftOf(day), label: year + "." + (month + 1) });
+        month += step;
+        if (month > 11) { year += Math.floor(month / 12); month %= 12; }
+      }
+      const rowHtml = rows.map((row) => {
+        let labelCursor = -6;
+        const bars = row.bars.map((bar) => {
+          const range = dayText(bar.from) + " – " + dayText(bar.to);
+          const tip = bar.label + "  " + range;
+          const width = (bar.to - bar.from) / span * 100;
+          const start = leftOf(bar.from);
+          let caption = "";
+          if (!bar.warn) {
+            const need = bar.label.length * 1.35;
+            if (start >= labelCursor) {
+              caption = "<b>" + esc(bar.label) + "</b>";
+              labelCursor = start + need;
+            }
+          }
+          const shown = bar.warn ? (width > 24 ? bar.label + "  " + range : bar.label) : "";
+          return '<div class="gantt-bar' + (bar.warn ? " is-warn" : "") + '" style="left:' + start + "%;width:" + width + '%" title="' + esc(tip) + '">' + caption + esc(shown) + "</div>";
+        }).join("");
+        const cursors = [-8, -8];
+        const marks = row.marks.map((mark) => {
+          const start = leftOf(mark.day);
+          const need = mark.label.length * 1.45;
+          let lane = 0;
+          if (start < cursors[0]) lane = 1;
+          if (lane === 1 && start < cursors[1]) lane = 0;
+          const show = start >= cursors[lane] - 0.2;
+          if (show) cursors[lane] = start + need;
+          const tip = mark.label + "  " + dayText(mark.day);
+          return '<span class="gantt-mark' + (lane ? " lane-1" : "") + '" style="left:' + start + '%" title="' + esc(tip) + '"><i></i>' + (show ? "<b>" + esc(mark.label) + "</b>" : "") + "</span>";
+        }).join("");
+        const heightClass = (row.hasMarks ? " has-marks" : "") + (row.warn ? " has-warn" : "");
+        return '<div class="gantt-row' + heightClass + '"><div class="lane-label"><b>' + esc(row.item.name) + "</b><span>" + esc(row.item.kind) + '</span></div><div class="gantt-track"><i class="gantt-guide"></i>' + marks + bars + "</div></div>";
+      }).join("");
+      const tickHtml = ticks.map((tick) => '<div class="gantt-tick" style="left:' + tick.left + '%"><i></i>' + esc(tick.label) + "</div>").join("");
+      const height = rows.reduce((sum, row) => sum + (row.hasMarks ? (row.warn ? 86 : 58) : (row.warn ? 72 : 48)), 0) + Math.max(rows.length - 1, 0) * 6 + 32;
+      return { html: '<div class="gantt">' + rowHtml + '<div class="gantt-scale"><div class="lane-label"></div><div class="gantt-track"><div class="axis"></div>' + tickHtml + "</div></div></div>", height: height };
+    }
+    let openTimeHeight = 178;
+    let timeHeight = 178;
+    const workspace = document.querySelector(".workspace");
+    function applyTimeBox(px) {
+      timeHeight = px;
+      workspace.style.setProperty("--time-h", px + "px");
+      timePanel.style.height = px + "px";
+      const bottom = (px + 24) + "px";
+      detail.style.bottom = detail.classList.contains("open") ? bottom : "";
+      relate.style.bottom = relate.classList.contains("open") ? bottom : "";
+    }
+    function rememberTimeHeight(px) {
+      openTimeHeight = px;
+      if (timePanel.classList.contains("is-collapsed")) return;
+      applyTimeBox(px);
+    }
+    function renderTimeline() {
+      const view = timelineView();
+      document.getElementById("timeName").textContent = view.title;
+      const body = document.getElementById("timeBody");
+      timePanel.classList.add("is-multi");
+      const chart = sharedChart(view.items);
+      body.innerHTML = chart.html;
+      rememberTimeHeight(Math.max(178, Math.min(44 + chart.height, 360)));
+    }
+
+    const relatePick = [];
+    const relBlocks = [];
+    let relSeq = 1;
+    const REL_DIRS = {
+      bidProjects: { label: "投标项目", op: "projects", kind: "项目", types: ["bidder"] },
+      staff: { label: "员工", op: "staff", kind: "员工", types: ["bidder", "owner", "agency"] },
+      legal: { label: "法人", op: "legal", kind: "法人", types: ["bidder", "owner", "agency"] },
+      reviewProjects: { label: "评审项目", op: "projects", kind: "项目", types: ["expert"] },
+      tenderProjects: { label: "招标项目", op: "projects", kind: "项目", types: ["owner"] },
+      agencies: { label: "招标代理", op: "agencies", kind: "代理", types: ["owner"] },
+      agencyProjects: { label: "代理项目", op: "projects", kind: "项目", types: ["agency"] },
+      clients: { label: "招标人", op: "clients", kind: "招标人", types: ["agency"] },
+      bidders: { label: "投标企业", op: "bidders", kind: "企业", types: ["project"] },
+      suppliers: { label: "施工单位", op: "suppliers", kind: "施工单位", types: ["project", "bidder", "owner", "agency"] },
+      experts: { label: "评审专家", op: "experts", kind: "专家", types: ["project"] },
+      companies: { label: "任职企业", op: "companies", kind: "企业", types: ["person"] }
+    };
+    const TYPE_DIRS = {
+      bidder: ["bidProjects", "staff", "legal", "suppliers"],
+      expert: ["reviewProjects"],
+      owner: ["tenderProjects", "agencies", "staff", "legal", "suppliers"],
+      agency: ["agencyProjects", "clients", "staff", "legal", "suppliers"],
+      project: ["bidders", "experts", "suppliers"],
+      person: ["companies"]
+    };
+    const REL_FIELDS = {
+      bidProjects: [
+        { key: "cross", label: "是否交叉", options: ["是", "否"] },
+        { key: "level", label: "风险等级", options: ["高风险", "中风险", "低风险", "无预警"] },
+        { key: "cat", label: "行业领域", options: ["建设工程", "政府采购", "国企采购"] },
+        { key: "warn", label: "主体预警", options: ["有预警", "无预警"] }
+      ],
+      reviewProjects: [
+        { key: "cross", label: "是否交叉", options: ["是", "否"] },
+        { key: "level", label: "风险等级", options: ["高风险", "中风险", "低风险", "无预警"] },
+        { key: "cat", label: "行业领域", options: ["建设工程", "政府采购", "国企采购"] },
+        { key: "warn", label: "主体预警", options: ["有预警", "无预警"] }
+      ],
+      tenderProjects: [
+        { key: "level", label: "风险等级", options: ["高风险", "中风险", "低风险", "无预警"] },
+        { key: "cat", label: "行业领域", options: ["建设工程", "政府采购", "国企采购"] }
+      ],
+      agencyProjects: [
+        { key: "level", label: "风险等级", options: ["高风险", "中风险", "低风险", "无预警"] },
+        { key: "cat", label: "行业领域", options: ["建设工程", "政府采购", "国企采购"] }
+      ],
+      staff: [
+        { key: "legal", label: "是否法人", options: ["是", "否"] },
+        { key: "role", label: "职务", options: ["法定代表人", "项目经理", "技术负责人", "投标专员", "其他"] }
+      ],
+      legal: [
+        { key: "role", label: "职务", options: ["法定代表人", "总经理", "其他"] }
+      ],
+      bidders: [
+        { key: "win", label: "是否中标", options: ["是", "否"] },
+        { key: "warn", label: "主体预警", options: ["有预警", "无预警"] }
+      ],
+      suppliers: [
+        { key: "overlap", label: "是否法人重叠", options: ["是", "否"] }
+      ],
+      experts: [
+        { key: "cross", label: "是否交叉", options: ["是", "否"] },
+        { key: "warn", label: "主体预警", options: ["有预警", "无预警"] }
+      ],
+      clients: [{ key: "cross", label: "是否交叉", options: ["是", "否"] }],
+      agencies: [{ key: "cross", label: "是否交叉", options: ["是", "否"] }],
+      companies: []
+    };
+    const indexByName = {};
+    ((gz && gz.indexProjects) || []).forEach((item) => { indexByName[item.name] = item; });
+    const projectList = Object.keys((gz && gz.graphs) || {}).map((name) => {
+      const graphItem = gz.graphs[name];
+      const meta = indexByName[name] || {};
+      return {
+        name: name,
+        gid: graphItem.id || name,
+        level: meta.level || "无预警",
+        cat: meta.cat || "",
+        owner: graphItem.owner || "",
+        agency: graphItem.agency || "",
+        bidders: graphItem.bidders || [],
+        experts: graphItem.experts || []
+      };
+    });
+    function hashId(prefix, text) {
+      let n = 0;
+      const value = String(text || "");
+      for (let i = 0; i < value.length; i += 1) n = (n * 33 + value.charCodeAt(i)) >>> 0;
+      return prefix + n.toString(36);
+    }
+    function projectNodeId(rec) {
+      return rec.name === project.name ? "project" : "xp-" + rec.gid;
+    }
+    function ownerNodeId(name) {
+      if (catalog.owner && catalog.owner.name === name) return "owner";
+      return hashId("xo-", name);
+    }
+    function agencyNodeId(name) {
+      if (catalog.agency && catalog.agency.name === name) return "agency";
+      return hashId("xa-", name);
+    }
+    function pickedNodes() {
+      return relatePick.map((id) => catalog[id]).filter(Boolean);
+    }
+    function sourcesFor(direction) {
+      const types = (REL_DIRS[direction] && REL_DIRS[direction].types) || [];
+      return pickedNodes().filter((node) => types.indexOf(node.type) >= 0);
+    }
+    function recordOf(node) {
+      if (!node || node.type !== "project") return null;
+      if (node.id === "project") return projectList.find((rec) => rec.name === project.name) || null;
+      return projectList.find((rec) => "xp-" + rec.gid === node.id) || null;
+    }
+    function personOrg(node) {
+      const row = (node.attrs || []).find((item) => item[0] === "关联企业");
+      return row ? row[1] : "";
+    }
+    function blankItem(extra) {
+      return Object.assign({ cross: false, level: "", cat: "", warn: false, role: "", legal: false, anchors: [] }, extra);
+    }
+    function bidProjectItems(sources) {
+      return projectList.map((rec) => {
+        const hits = rec.bidders.filter((bidder) => sources.some((node) => node.id === bidder.id));
+        if (!hits.length) return null;
+        const warned = rec.bidders.filter((bidder) => bidder.warn).length;
+        return blankItem({
+          nodeId: projectNodeId(rec),
+          title: rec.name,
+          kind: "project",
+          spec: rec,
+          anchors: sources.filter((node) => hits.some((bidder) => bidder.id === node.id)).map((node) => node.id),
+          cross: sources.length >= 2 ? hits.length === sources.length : warned >= 2,
+          level: rec.level || "无预警",
+          cat: rec.cat,
+          warn: hits.some((bidder) => bidder.warn)
+        });
+      }).filter(Boolean);
+    }
+    function reviewProjectItems(sources) {
+      return projectList.map((rec) => {
+        const hits = rec.experts.filter((expert) => sources.some((node) => node.id === expert.id));
+        if (!hits.length) return null;
+        const warned = rec.experts.filter((expert) => expert.warn).length;
+        return blankItem({
+          nodeId: projectNodeId(rec),
+          title: rec.name,
+          kind: "project",
+          spec: rec,
+          anchors: sources.filter((node) => hits.some((expert) => expert.id === node.id)).map((node) => node.id),
+          cross: sources.length >= 2 ? hits.length === sources.length : warned >= 2,
+          level: rec.level || "无预警",
+          cat: rec.cat,
+          warn: hits.some((expert) => expert.warn)
+        });
+      }).filter(Boolean);
+    }
+    function orgProjectItems(sources, field) {
+      return projectList.filter((rec) => sources.some((node) => rec[field] === node.name)).map((rec) => blankItem({
+        nodeId: projectNodeId(rec),
+        title: rec.name,
+        kind: "project",
+        spec: rec,
+        anchors: sources.filter((node) => rec[field] === node.name).map((node) => node.id),
+        level: rec.level || "无预警",
+        cat: rec.cat,
+        warn: rec.level === "高风险" || rec.level === "中风险" || rec.level === "低风险"
+      }));
+    }
+    function staffItems(sources) {
+      const items = [];
+      sources.forEach((org) => {
+        const name = org.fullName || org.name;
+        const people = (gz && gz.peopleByUnit && gz.peopleByUnit[name]) || [];
+        people.forEach((person, index) => {
+          const legal = /法定代表人/.test(person.role || "");
+          items.push(blankItem({
+            nodeId: (legal ? "lp-" : "st-") + org.id + "-" + index,
+            title: person.name,
+            kind: "person",
+            anchors: [org.id],
+            role: person.role || "职员",
+            legal: legal,
+            orgName: name,
+            orgId: org.id
+          }));
+        });
+      });
+      return items;
+    }
+    function memberItems(sources, key) {
+      const map = {};
+      sources.forEach((node) => {
+        const rec = recordOf(node);
+        if (!rec) return;
+        const peer = rec[key].filter((item) => item.warn).length >= 2;
+        rec[key].forEach((member) => {
+          if (!map[member.id]) map[member.id] = { member: member, anchors: [], winAnchors: [], warn: false, peer: false };
+          if (member.win) {
+            map[member.id].member = member;
+            if (map[member.id].winAnchors.indexOf(node.id) < 0) map[member.id].winAnchors.push(node.id);
+          } else if (map[member.id].anchors.indexOf(node.id) < 0) {
+            map[member.id].anchors.push(node.id);
+          }
+          map[member.id].warn = map[member.id].warn || !!member.warn;
+          map[member.id].peer = map[member.id].peer || (member.warn && peer);
+        });
+      });
+      return Object.keys(map).map((id) => {
+        const row = map[id];
+        const won = row.winAnchors.length > 0;
+        const anchors = won ? row.winAnchors : row.anchors;
+        return blankItem({
+          nodeId: id,
+          title: row.member.name,
+          kind: key === "bidders" ? "bidder" : "expert",
+          bidder: key === "bidders" ? row.member : null,
+          anchors: anchors,
+          cross: sources.length >= 2 ? anchors.length === sources.length : row.peer,
+          warn: row.warn,
+          win: won
+        });
+      });
+    }
+    function partyItems(sources, fromField, toField, kind) {
+      const map = {};
+      sources.forEach((node) => {
+        projectList.forEach((rec) => {
+          if (rec[fromField] !== node.name || !rec[toField]) return;
+          const id = kind === "owner" ? ownerNodeId(rec[toField]) : agencyNodeId(rec[toField]);
+          if (!map[id]) map[id] = blankItem({ nodeId: id, title: rec[toField], kind: kind, anchors: [], level: rec.level || "无预警", cat: rec.cat });
+          if (map[id].anchors.indexOf(node.id) < 0) map[id].anchors.push(node.id);
+        });
+      });
+      return Object.keys(map).map((id) => {
+        map[id].cross = map[id].anchors.length === sources.length;
+        return map[id];
+      });
+    }
+    function companyNodeFor(orgName) {
+      const known = Object.keys(catalog).map((id) => catalog[id]).find((node) => (node.fullName || node.name) === orgName && ["bidder", "owner", "agency"].indexOf(node.type) >= 0);
+      if (known) return blankItem({ nodeId: known.id, title: known.fullName || known.name, kind: known.type, warn: !!known.risk });
+      for (let i = 0; i < projectList.length; i += 1) {
+        const hit = projectList[i].bidders.find((bidder) => (bidder.full || bidder.name) === orgName);
+        if (hit) return blankItem({ nodeId: hit.id, title: hit.full || hit.name, kind: "bidder", bidder: hit, warn: !!hit.warn });
+      }
+      if (projectList.some((rec) => rec.owner === orgName)) return blankItem({ nodeId: ownerNodeId(orgName), title: orgName, kind: "owner" });
+      if (projectList.some((rec) => rec.agency === orgName)) return blankItem({ nodeId: agencyNodeId(orgName), title: orgName, kind: "agency" });
+      return null;
+    }
+    function companyItems(sources) {
+      const map = {};
+      sources.forEach((node) => {
+        const org = personOrg(node);
+        const found = org && org !== "—" ? companyNodeFor(org) : null;
+        if (!found) return;
+        if (!map[found.nodeId]) map[found.nodeId] = found;
+        if (map[found.nodeId].anchors.indexOf(node.id) < 0) map[found.nodeId].anchors.push(node.id);
+      });
+      return Object.keys(map).map((id) => map[id]);
+    }
+    function unitLegal(fullName) {
+      const people = (gz && gz.peopleByUnit && gz.peopleByUnit[fullName]) || [];
+      const hit = people.find((person) => /法定代表人/.test(person.role || ""));
+      return hit ? hit.name : "";
+    }
+    function supplierItems(sources) {
+      const items = [];
+      sources.forEach((source) => {
+        const rows = [];
+        const seen = {};
+        function pushBidder(bidder) {
+          if (!bidder || !bidder.id || seen[bidder.id]) return;
+          seen[bidder.id] = true;
+          rows.push(bidder);
+        }
+        if (source.type === "project") {
+          const rec = recordOf(source);
+          ((rec && rec.bidders) || []).forEach(pushBidder);
+        } else {
+          const full = source.fullName || source.name;
+          projectList.forEach((rec) => {
+            const mine = (rec.bidders || []).some((bidder) => bidder.id === source.id || (bidder.full || bidder.name) === full);
+            if (!mine) return;
+            (rec.bidders || []).forEach((bidder) => {
+              if (bidder.id === source.id || (bidder.full || bidder.name) === full) return;
+              pushBidder(bidder);
+            });
+          });
+          const mineLegal = unitLegal(full);
+          if (mineLegal) {
+            Object.keys((gz && gz.peopleByUnit) || {}).forEach((unit) => {
+              if (unit === full) return;
+              const same = (gz.peopleByUnit[unit] || []).some((person) => person.name === mineLegal && /法定代表人/.test(person.role || ""));
+              if (!same || rows.some((bidder) => (bidder.full || bidder.name) === unit)) return;
+              pushBidder({ id: hashId("sp-", unit), name: unit.replace(/^贵州/, "").slice(0, 6), full: unit, warn: false });
+            });
+          }
+        }
+        const pack = gz && gz.winnerSuppliers;
+        let packOn = false;
+        if (pack && source.type === "bidder" && (pack.winners || []).indexOf(source.id) >= 0) packOn = true;
+        if (pack && source.type === "project") {
+          const rec = recordOf(source);
+          const winner = rec && (rec.bidders || []).find((bidder) => bidder.win);
+          if (winner && (pack.winners || []).indexOf(winner.id) >= 0) packOn = true;
+        }
+        if (packOn) {
+          (pack.suppliers || []).forEach((supplier) => pushBidder({
+            id: supplier.id,
+            name: supplier.name,
+            full: supplier.full,
+            warn: false
+          }));
+        }
+        const groups = {};
+        rows.forEach((bidder) => {
+          const legal = unitLegal(bidder.full || bidder.name);
+          if (!legal) return;
+          if (!groups[legal]) groups[legal] = [];
+          groups[legal].push(bidder);
+        });
+        const overlapOf = {};
+        const mineLegal = source.type === "project" ? "" : unitLegal(source.fullName || source.name);
+        Object.keys(groups).forEach((legal) => {
+          const list = groups[legal];
+          const hit = source.type === "project" ? list.length >= 2 : legal === mineLegal;
+          if (!hit) return;
+          list.forEach((bidder) => { overlapOf[bidder.id] = legal; });
+        });
+        if (packOn) (pack.suppliers || []).forEach((supplier) => { overlapOf[supplier.id] = pack.legal; });
+        rows.forEach((bidder) => {
+          items.push(blankItem({
+            nodeId: bidder.id,
+            title: bidder.name,
+            kind: "bidder",
+            bidder: bidder,
+            anchors: [source.id],
+            warn: !!bidder.warn,
+            win: !!bidder.win,
+            overlap: !!overlapOf[bidder.id]
+          }));
+        });
+        const persons = {};
+        Object.keys(overlapOf).forEach((id) => {
+          const legal = overlapOf[id];
+          const bidder = rows.find((item) => item.id === id);
+          if (!persons[legal]) persons[legal] = [];
+          if (bidder) persons[legal].push(bidder.full || bidder.name);
+        });
+        Object.keys(persons).forEach((legal) => {
+          items.push(blankItem({
+            nodeId: hashId("lp-", legal),
+            title: legal,
+            kind: "person",
+            anchors: [source.id],
+            role: "法定代表人",
+            legal: true,
+            overlap: true,
+            orgName: persons[legal].join("、")
+          }));
+        });
+      });
+      const map = {};
+      const order = [];
+      items.forEach((item) => {
+        if (!map[item.nodeId]) {
+          map[item.nodeId] = item;
+          order.push(item.nodeId);
+          return;
+        }
+        item.anchors.forEach((id) => {
+          if (map[item.nodeId].anchors.indexOf(id) < 0) map[item.nodeId].anchors.push(id);
+        });
+        map[item.nodeId].overlap = map[item.nodeId].overlap || item.overlap;
+        map[item.nodeId].win = map[item.nodeId].win || item.win;
+      });
+      return order.map((id) => map[id]);
+    }
+    function universe(direction) {
+      const sources = sourcesFor(direction);
+      if (!sources.length) return [];
+      if (direction === "bidProjects") return bidProjectItems(sources);
+      if (direction === "reviewProjects") return reviewProjectItems(sources);
+      if (direction === "tenderProjects") return orgProjectItems(sources, "owner");
+      if (direction === "agencyProjects") return orgProjectItems(sources, "agency");
+      if (direction === "staff") return staffItems(sources);
+      if (direction === "legal") return staffItems(sources).filter((item) => item.legal);
+      if (direction === "bidders") return memberItems(sources, "bidders");
+      if (direction === "suppliers") return supplierItems(sources);
+      if (direction === "experts") return memberItems(sources, "experts");
+      if (direction === "clients") return partyItems(sources, "agency", "owner", "owner");
+      if (direction === "agencies") return partyItems(sources, "owner", "agency", "agency");
+      if (direction === "companies") return companyItems(sources);
+      return [];
+    }
+    function testCond(item, cond) {
+      if (cond.field === "cross") return (cond.value === "是") === !!item.cross;
+      if (cond.field === "win") return (cond.value === "是") === !!item.win;
+      if (cond.field === "overlap") return (cond.value === "是") === !!item.overlap;
+      if (cond.field === "level") return (item.level || "无预警") === cond.value;
+      if (cond.field === "cat") return item.cat === cond.value;
+      if (cond.field === "warn") return (cond.value === "有预警") === !!item.warn;
+      if (cond.field === "legal") return (cond.value === "是") === !!item.legal;
+      if (cond.field === "role") {
+        const role = item.role || "";
+        if (cond.value === "其他") return !/法定代表人|项目经理|技术负责人|投标专员|总经理/.test(role);
+        return role.indexOf(cond.value) >= 0;
+      }
+      return true;
+    }
+    function matchBlock(block) {
+      const items = universe(block.direction);
+      const conds = (block.conditions || []).filter((cond) => cond.field && cond.value);
+      if (!conds.length) return items;
+      return items.filter((item) => conds.every((cond) => testCond(item, cond)));
+    }
+    function menuKeys() {
+      const keys = [];
+      pickedNodes().forEach((node) => {
+        (TYPE_DIRS[node.type] || []).forEach((key) => {
+          if (keys.indexOf(key) < 0) keys.push(key);
+        });
+      });
+      return keys;
+    }
+    function fieldSpec(direction, key) {
+      return (REL_FIELDS[direction] || []).find((field) => field.key === key) || null;
+    }
+    function defaultConditions(direction) {
+      if (direction === "bidders") return [{ field: "win", value: "是" }];
+      if (direction === "suppliers") return [{ field: "overlap", value: "是" }];
+      if (direction === "bidProjects" || direction === "reviewProjects" || direction === "experts") {
+        return [{ field: "cross", value: "是" }];
+      }
+      if (direction === "staff") return [{ field: "legal", value: "否" }];
+      return [];
+    }
+    function addRelBlock(direction) {
+      if (!REL_DIRS[direction]) return;
+      relBlocks.push({ id: relSeq, direction: direction, conditions: defaultConditions(direction) });
+      relSeq += 1;
+    }
+    function optionHtml(options, value) {
+      return options.map((item) => "<option" + (item === value ? " selected" : "") + ">" + esc(item) + "</option>").join("");
+    }
+    function closeRelMenu() {
+      const menu = document.getElementById("relMenu");
+      if (menu) menu.hidden = true;
+    }
+    function openRelMenu(anchor) {
+      const menu = document.getElementById("relMenu");
+      const options = menuKeys().map((key) => ({ key: key, label: REL_DIRS[key].label, count: universe(key).length }));
+      if (!options.length) {
+        closeRelMenu();
+        return;
+      }
+      if (!menu.hidden && menu.dataset.anchor === (anchor.dataset.menu || "")) {
+        closeRelMenu();
+        return;
+      }
+      menu.innerHTML = options.map((item) => "<button type=\"button\" data-dir=\"" + item.key + "\">" + esc(item.label) + " <em>(" + item.count + ")</em></button>").join("");
+      menu.hidden = false;
+      menu.dataset.anchor = anchor.dataset.menu || "";
+      const panel = relate.getBoundingClientRect();
+      const rect = anchor.getBoundingClientRect();
+      let left = rect.right - panel.left + 8;
+      let top = rect.top - panel.top - 6;
+      if (left + 168 > panel.width - 8) {
+        left = Math.max(12, rect.left - panel.left);
+        top = rect.bottom - panel.top + 6;
+      }
+      menu.style.left = left + "px";
+      menu.style.top = top + "px";
+    }
+    function bidderPayload(id) {
+      for (let i = 0; i < projectList.length; i += 1) {
+        const hit = projectList[i].bidders.find((bidder) => bidder.id === id);
+        if (hit) return hit;
+      }
+      return null;
+    }
+    function materialize(item) {
+      const won = !!(item.win || (item.bidder && item.bidder.win));
+      if (catalog[item.nodeId]) {
+        if (won) catalog[item.nodeId].win = true;
+        return item.nodeId;
+      }
+      if (item.kind === "project" && item.spec) {
+        make({
+          id: item.nodeId,
+          type: "project",
+          name: item.spec.name,
+          group: "project",
+          icon: "folder",
+          risk: item.spec.level === "高风险",
+          levels: ["normal", "normal", "normal", "normal"],
+          attrs: [["项目名称", item.spec.name], ["行业领域", item.spec.cat || "—"], ["风险等级", item.spec.level || "无预警"], ["招标人", item.spec.owner || "—"], ["招标代理", item.spec.agency || "—"]]
+        });
+      } else if (item.kind === "person") {
+        make({
+          id: item.nodeId,
+          type: "person",
+          name: item.title,
+          orgName: item.orgName,
+          job: item.role,
+          levels: ["normal"],
+          attrs: [["证件号码", "—"], ["职务", item.role || "职员"], ["关联企业", item.orgName || "—"]]
+        });
+      } else if (item.kind === "bidder") {
+        const bidder = item.bidder || bidderPayload(item.nodeId) || { name: item.title, full: item.title, warn: item.warn };
+        const node = make({
+          id: item.nodeId,
+          type: "bidder",
+          name: bidder.name,
+          fullName: bidder.full || bidder.name,
+          group: bidder.warn ? "risk" : "normal",
+          icon: "org",
+          risk: !!bidder.warn,
+          win: !!(bidder.win || item.win),
+          levels: [bidder.warn ? "warn" : "normal", "normal", "normal"],
+          attrs: [["企业名称", bidder.full || bidder.name], ["关联项目", project.name]]
+        });
+        node.fullName = bidder.full || bidder.name;
+      } else if (item.kind === "expert") {
+        make({
+          id: item.nodeId,
+          type: "expert",
+          name: item.title,
+          group: "expert",
+          icon: "person",
+          risk: !!item.warn,
+          levels: [item.warn ? "warn" : "normal"],
+          attrs: [["姓名", item.title], ["关联项目", project.name]]
+        });
+      } else if (item.kind === "owner" || item.kind === "agency") {
+        make({
+          id: item.nodeId,
+          type: item.kind,
+          name: item.title,
+          group: item.kind,
+          icon: "org",
+          levels: ["normal", "normal", "normal", "normal"],
+          attrs: [["名称", item.title], ["关联项目", project.name]]
+        });
+      }
+      return item.nodeId;
+    }
+    function applyRelBlock(block) {
+      const dir = REL_DIRS[block.direction];
+      if (!dir) return;
+      const items = matchBlock(block);
+      sourcesFor(block.direction).forEach((source) => {
+        const mine = items.filter((item) => item.anchors.indexOf(source.id) >= 0);
+        const index = state.open.findIndex((frame) => frame.id === source.id && frame.op === dir.op);
+        source.rel[dir.op] = mine.map((item) => materialize(item));
+        if (mine.length && index < 0) state.open.push({ id: source.id, op: dir.op, label: dir.label });
+        if (!mine.length && index >= 0) state.open.splice(index, 1);
+      });
+      render();
+    }
+    function renderRelate() {
+      const body = document.getElementById("relateBody");
+      if (!body) return;
+      const scroll = body.scrollTop;
+      closeRelMenu();
+      const keys = menuKeys();
+      const chips = pickedNodes().map((node) => {
+        const icon = glyphs[node.icon] || glyphs.org;
+        const label = node.fullName || node.name;
+        return "<div class=\"rel-chip\">" + icon + "<b title=\"" + esc(label) + "\">" + esc(label) + "</b><button type=\"button\" data-rm-chip=\"" + esc(node.id) + "\" aria-label=\"移除\">×</button></div>";
+      }).join("");
+      const pickedHtml = relatePick.length
+        ? chips
+        : "<p class=\"rel-empty\">点选图中的节点后，这里列出选中主体。可以连续点选多家，再按条件筛选关联对象。</p>";
+      const addBtn = "<button class=\"rel-add\" type=\"button\" data-add-rel data-menu=\"top\"" + (keys.length ? "" : " disabled") + ">+添加关联</button>";
+      const cards = relBlocks.map((block) => {
+        const dir = REL_DIRS[block.direction];
+        const fields = REL_FIELDS[block.direction] || [];
+        const dirKeys = keys.indexOf(block.direction) < 0 ? [block.direction].concat(keys) : keys.slice();
+        const dirHtml = dirKeys.map((key) => "<option value=\"" + key + "\"" + (key === block.direction ? " selected" : "") + ">" + esc(REL_DIRS[key].label) + "</option>").join("");
+        const conds = (block.conditions || []).map((cond, index) => {
+          const spec = fieldSpec(block.direction, cond.field) || fields[0];
+          const fieldHtml = fields.map((field) => "<option value=\"" + field.key + "\"" + (field.key === cond.field ? " selected" : "") + ">" + esc(field.label) + "</option>").join("");
+          const values = spec ? spec.options : [];
+          return "<div class=\"rel-cond\"><select data-block=\"" + block.id + "\" data-cond=\"" + index + "\" data-part=\"field\">" + fieldHtml + "</select><select data-block=\"" + block.id + "\" data-cond=\"" + index + "\" data-part=\"value\">" + optionHtml(values, cond.value) + "</select><button class=\"rel-trash\" type=\"button\" data-block=\"" + block.id + "\" data-rm-cond=\"" + index + "\" aria-label=\"删除条件\"><svg viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" aria-hidden=\"true\"><path d=\"M3 4.5h10M6.2 4.5V3.2h3.6v1.3M4.2 4.5l.6 8.2h6.4l.6-8.2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.2\" stroke-linecap=\"round\"/></svg></button></div>";
+        }).join("");
+        const matched = matchBlock(block);
+        const kindText = block.direction === "suppliers" && matched.some((item) => item.kind === "person") ? "施工单位及法人" : dir.kind;
+        const condBox = fields.length
+          ? "<div class=\"rel-sec\">条件设置</div>" + conds + "<button class=\"rel-more\" type=\"button\" data-block=\"" + block.id + "\" data-add-cond>+添加条件</button>"
+          : "";
+        return "<section class=\"rel-card\"><div class=\"rel-line\"><span>关联方向</span><select data-block=\"" + block.id + "\" data-role=\"direction\">" + dirHtml + "</select></div>" + condBox + "<div class=\"rel-result-k\">符合条件结果(" + matched.length + ")</div><div class=\"rel-result\"><div class=\"rel-kind\">" + esc(kindText) + "</div><div class=\"rel-count\">" + matched.length + "</div><button class=\"rel-go\" type=\"button\" data-apply=\"" + block.id + "\"" + (matched.length ? "" : " disabled") + ">添加到图中</button></div></section>";
+      }).join("");
+      const more = relBlocks.length ? "<button class=\"rel-add\" type=\"button\" data-add-rel data-menu=\"bottom\"" + (keys.length ? "" : " disabled") + ">+添加关联</button>" : "";
+      const clear = relatePick.length ? "<button class=\"rel-clear\" type=\"button\" data-clear-pick>清空</button>" : "";
+      body.innerHTML = "<div class=\"rel-head\"><span class=\"rel-k\">选中实体</span>" + clear + "</div>" + pickedHtml + addBtn + cards + more;
+      body.scrollTop = scroll;
+      syncGraphState();
+    }
+    function toggleRelatePick(id) {
+      if (!catalog[id]) return;
+      const index = relatePick.indexOf(id);
+      if (index >= 0) relatePick.splice(index, 1);
+      else relatePick.push(id);
+      renderRelate();
+    }
+    relate.addEventListener("click", (event) => {
+      const target = event.target.closest ? event.target : null;
+      if (!target || !target.closest) return;
+      if (target.closest("[data-add-rel]")) {
+        event.stopPropagation();
+        openRelMenu(target.closest("[data-add-rel]"));
+        return;
+      }
+      const dirBtn = target.closest("[data-dir]");
+      if (dirBtn) {
+        addRelBlock(dirBtn.dataset.dir);
+        renderRelate();
+        return;
+      }
+      const removeChip = target.closest("[data-rm-chip]");
+      if (removeChip) {
+        const index = relatePick.indexOf(removeChip.dataset.rmChip);
+        if (index >= 0) relatePick.splice(index, 1);
+        renderRelate();
+        return;
+      }
+      if (target.closest("[data-clear-pick]")) {
+        relatePick.length = 0;
+        renderRelate();
+        return;
+      }
+      const addCond = target.closest("[data-add-cond]");
+      if (addCond) {
+        const block = relBlocks.find((item) => String(item.id) === addCond.dataset.block);
+        const fields = block ? (REL_FIELDS[block.direction] || []) : [];
+        if (!block || !fields.length) return;
+        const used = block.conditions.map((cond) => cond.field);
+        const spec = fields.find((field) => used.indexOf(field.key) < 0) || fields[0];
+        block.conditions.push({ field: spec.key, value: spec.options[0] });
+        renderRelate();
+        return;
+      }
+      const removeCond = target.closest("[data-rm-cond]");
+      if (removeCond) {
+        const block = relBlocks.find((item) => String(item.id) === removeCond.dataset.block);
+        if (!block) return;
+        block.conditions.splice(Number(removeCond.dataset.rmCond), 1);
+        renderRelate();
+        return;
+      }
+      const applyBtn = target.closest("[data-apply]");
+      if (applyBtn && !applyBtn.disabled) {
+        const block = relBlocks.find((item) => String(item.id) === applyBtn.dataset.apply);
+        if (block) applyRelBlock(block);
+      }
+    });
+    relate.addEventListener("change", (event) => {
+      const select = event.target;
+      const block = relBlocks.find((item) => String(item.id) === select.dataset.block);
+      if (!block) return;
+      if (select.dataset.role === "direction") {
+        block.direction = select.value;
+        block.conditions = defaultConditions(select.value);
+        renderRelate();
+        return;
+      }
+      const cond = block.conditions[Number(select.dataset.cond)];
+      if (!cond) return;
+      if (select.dataset.part === "field") {
+        cond.field = select.value;
+        const spec = fieldSpec(block.direction, cond.field);
+        if (spec && spec.options.indexOf(cond.value) < 0) cond.value = spec.options[0];
+      } else {
+        cond.value = select.value;
+      }
+      renderRelate();
+    });
+    document.addEventListener("click", () => closeRelMenu());
+
+    function selectNode(id) {
+      if (relate.classList.contains("open")) {
+        toggleRelatePick(id);
+        state.selected = id;
+        state.line = "";
+        state.alert = "";
+        state.focus = false;
+        state.tab = "warn";
+        detail.classList.add("open");
+        renderDetail();
+        renderTimeline();
+        renderTable();
+        fit();
+        return;
+      }
+      if (state.focus && state.selected === id && !state.line && !state.alert) {
+        state.focus = false;
+      } else {
+        state.selected = id;
+        state.line = "";
+        state.alert = "";
+        state.focus = true;
+        state.tab = "warn";
+      }
+      detail.classList.add("open");
+      renderDetail();
+      renderTimeline();
+      renderTable();
+      syncGraphState();
+      fit();
+    }
+    function selectLine(key) {
+      if (state.focus && state.line === key && !state.alert) {
+        state.line = "";
+        state.focus = false;
+      } else {
+        state.line = key;
+        state.alert = "";
+        state.focus = true;
+        state.tab = "warn";
+        const ends = key.split("|");
+        if (catalog[ends[0]]) state.selected = ends[0];
+      }
+      detail.classList.add("open");
+      renderDetail();
+      renderTimeline();
+      renderTable();
+      syncGraphState();
+      fit();
+    }
+
+    function insets() {
+      const pad = 12;
+      const left = pad + (detail.classList.contains("open") ? 320 + pad : 0);
+      const reportWide = document.getElementById("reportDrawer").classList.contains("is-open") ? 456 : 0;
+      const right = pad + (relate.classList.contains("open") ? 360 + pad : 0) + reportWide;
+      const timeH = timePanel.classList.contains("is-collapsed") ? 40 : timeHeight;
+      return { left: left, right: right, top: pad, bottom: pad + timeH + pad };
+    }
+
+    let panX = 0;
+    let panY = 0;
+    let panMoved = false;
+    function fit() {
+      const box = insets();
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      const availW = Math.max(cw - box.left - box.right, 280);
+      const availH = Math.max(ch - box.top - box.bottom, 200);
+      const scale = Math.max(Math.min(availW / (stage.offsetWidth + 48), availH / (stage.offsetHeight + 36), 1), 0.34);
+      const dx = box.left + (cw - box.left - box.right) / 2 - cw / 2;
+      const dy = box.top + (ch - box.top - box.bottom) / 2 - ch / 2;
+      stage.style.transform = "translate(" + (dx + panX) + "px," + (dy + panY) + "px) scale(" + scale + ")";
+      const crumb = document.getElementById("crumb");
+      crumb.style.left = (box.left + (cw - box.left - box.right) / 2) + "px";
+      const sheet = canvas.querySelector(".sheet");
+      sheet.style.left = box.left + "px";
+      sheet.style.top = box.top + "px";
+      sheet.style.right = box.right + "px";
+      sheet.style.bottom = box.bottom + "px";
+    }
+
+    function render() {
+      sceneNow = null;
+      pruneOpen();
+      renderDetail();
+      renderGraph();
+      renderTable();
+      renderTimeline();
+      renderCrumb();
+      canvas.classList.toggle("is-table", state.mode === "table");
+      document.getElementById("modeGraph").classList.toggle("is-on", state.mode === "graph");
+      document.getElementById("modeTable").classList.toggle("is-on", state.mode === "table");
+      document.getElementById("modeGraph").setAttribute("aria-pressed", state.mode === "graph");
+      document.getElementById("modeTable").setAttribute("aria-pressed", state.mode === "table");
+      const clueFab = document.getElementById("clueFab");
+      clueFab.hidden = state.mode !== "graph";
+      clueFab.textContent = "添加线索";
+      fit();
+    }
+
+    function setDrawer(which) {
+      const showing = which === "warn" ? state.tab === "warn" : state.tab !== "warn";
+      if (detail.classList.contains("open") && showing) {
+        detail.classList.remove("open");
+      } else {
+        state.tab = which === "warn" ? "warn" : (state.tab === "time" ? "time" : "attr");
+        detail.classList.add("open");
+      }
+      applyTimeBox(timePanel.classList.contains("is-collapsed") ? 40 : timeHeight);
+      renderDetail();
+      fit();
+    }
+    document.getElementById("tabDetail").addEventListener("click", () => setDrawer("detail"));
+    document.getElementById("tabWarn").addEventListener("click", () => setDrawer("warn"));
+    document.getElementById("relateTab").addEventListener("click", () => {
+      const open = !relate.classList.contains("open");
+      relate.classList.toggle("open", open);
+      if (open) {
+        report.open = false;
+        renderReport();
+        renderRelate();
+      } else syncGraphState();
+      applyTimeBox(timePanel.classList.contains("is-collapsed") ? 40 : timeHeight);
+      fit();
+    });
+    document.getElementById("reportTab").addEventListener("click", () => {
+      report.open = !report.open;
+      if (report.open) {
+        relate.classList.remove("open");
+        syncGraphState();
+      }
+      renderReport();
+      applyTimeBox(timePanel.classList.contains("is-collapsed") ? 40 : timeHeight);
+      fit();
+    });
+    const wireTip = document.getElementById("wireTip");
+    function placeWireTip(event) {
+      const rect = canvas.getBoundingClientRect();
+      wireTip.style.left = (event.clientX - rect.left + 14) + "px";
+      wireTip.style.top = (event.clientY - rect.top + 16) + "px";
+      const tip = wireTip.getBoundingClientRect();
+      if (tip.right > rect.right - 8) wireTip.style.left = (event.clientX - rect.left - tip.width - 14) + "px";
+      if (tip.bottom > rect.bottom - 8) wireTip.style.top = (event.clientY - rect.top - tip.height - 12) + "px";
+    }
+    function showWireTip(wire, event) {
+      const names = (wire.dataset.warn || "").split("|").filter(Boolean);
+      if (!names.length) {
+        wireTip.hidden = true;
+        return;
+      }
+      wireTip.innerHTML = '<div class="wire-tip-k">违规预警</div>' + names.map((name) => '<div class="wire-tip-name">' + esc(name) + "</div>").join("");
+      wireTip.hidden = false;
+      placeWireTip(event);
+    }
+    wires.addEventListener("mouseover", (event) => {
+      const wire = event.target.closest ? event.target.closest(".wire") : null;
+      if (!wire) return;
+      showWireTip(wire, event);
+    });
+    wires.addEventListener("mousemove", (event) => {
+      if (!wireTip.hidden) placeWireTip(event);
+    });
+    wires.addEventListener("mouseout", (event) => {
+      const wire = event.target.closest ? event.target.closest(".wire") : null;
+      if (!wire) return;
+      const next = event.relatedTarget && event.relatedTarget.closest ? event.relatedTarget.closest(".wire") : null;
+      if (next !== wire) wireTip.hidden = true;
+    });
+    wires.addEventListener("click", (event) => {
+      const wire = event.target.closest ? event.target.closest(".wire") : null;
+      if (!wire || !wire.dataset.line) return;
+      event.stopPropagation();
+      wireTip.hidden = true;
+      selectLine(wire.dataset.line);
+    });
+    stage.addEventListener("click", (event) => {
+      if (panMoved) {
+        panMoved = false;
+        return;
+      }
+      if (event.target.closest && (event.target.closest(".node") || event.target.closest(".wire"))) return;
+      if (!state.focus && !state.line && !state.alert) return;
+      state.focus = false;
+      state.line = "";
+      state.alert = "";
+      renderDetail();
+      syncGraphState();
+    });
+    canvas.addEventListener("pointerdown", (event) => {
+      if (state.mode !== "graph" || event.button !== 0) return;
+      if (event.target.closest && event.target.closest(".node, .wire, .crumb, .sheet, button, a, input, select, textarea")) return;
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const originX = panX;
+      const originY = panY;
+      panMoved = false;
+      canvas.classList.add("is-panning");
+      function move(nextEvent) {
+        const dx = nextEvent.clientX - startX;
+        const dy = nextEvent.clientY - startY;
+        if (Math.abs(dx) + Math.abs(dy) > 4) panMoved = true;
+        panX = originX + dx;
+        panY = originY + dy;
+        fit();
+      }
+      function end() {
+        canvas.classList.remove("is-panning");
+        canvas.removeEventListener("pointermove", move);
+        canvas.removeEventListener("pointerup", end);
+        canvas.removeEventListener("pointercancel", end);
+      }
+      canvas.setPointerCapture(event.pointerId);
+      canvas.addEventListener("pointermove", move);
+      canvas.addEventListener("pointerup", end);
+      canvas.addEventListener("pointercancel", end);
+    });
+    document.getElementById("detailBody").addEventListener("click", (event) => {
+      const tab = event.target.closest ? event.target.closest("[data-tab]") : null;
+      if (tab) {
+        state.tab = tab.dataset.tab;
+        renderDetail();
+        return;
+      }
+      const addNode = event.target.closest ? event.target.closest("[data-add-node]") : null;
+      if (addNode) {
+        event.stopPropagation();
+        addNodeClue();
+        return;
+      }
+      const add = event.target.closest ? event.target.closest("[data-add-clue]") : null;
+      if (add) {
+        event.stopPropagation();
+        addClue(add.dataset.addClue);
+        return;
+      }
+      const card = event.target.closest ? event.target.closest("[data-alert]") : null;
+      if (!card) return;
+      const item = allAlerts().find((row) => row.id === card.dataset.alert);
+      state.focus = true;
+      const onLine = item && (item.line === state.line || (item.lines || []).indexOf(state.line) >= 0);
+      if (!(state.line && onLine)) state.line = "";
+      state.alert = state.alert === card.dataset.alert ? "" : card.dataset.alert;
+      state.tab = "warn";
+      renderDetail();
+      syncGraphState();
+    });
+    document.getElementById("back").addEventListener("click", () => {
+      state.open = [];
+      if (!nodes.some((node) => node.id === state.selected)) state.selected = "project";
+      render();
+    });
+    document.getElementById("fold").addEventListener("click", () => {
+      const panel = document.getElementById("timePanel");
+      const collapsed = panel.classList.toggle("is-collapsed");
+      document.getElementById("fold").textContent = collapsed ? "展开" : "收起";
+      applyTimeBox(collapsed ? 40 : openTimeHeight);
+      fit();
+    });
+    document.getElementById("modeGraph").addEventListener("click", () => { state.mode = "graph"; render(); });
+    document.getElementById("modeTable").addEventListener("click", () => { state.mode = "table"; render(); });
+    document.getElementById("godView").addEventListener("click", () => {
+      const node = current();
+      const org = ((node.attrs || []).find((row) => row[0] === "关联企业") || [])[1] || "";
+      const agencySide = node.id === "agency"
+        || ["lp-a", "st-a1", "st-a2", "st-a3", "p3", "p4"].indexOf(node.id) >= 0
+        || (node.type === "person" && org === project.agency);
+      const entryFrom = params.get("from") || "";
+      const entryRole = params.get("role") || "";
+      const agencyPortfolio = entryFrom === "agency" || entryRole === "招标代理";
+      const next = new URLSearchParams();
+      next.set("from", agencyPortfolio ? (entryFrom === "company" ? "company" : "agency") : "project");
+      if (agencyPortfolio && entryRole) next.set("role", entryRole);
+      next.set("name", project.name);
+      next.set("bidder", project.bidder);
+      next.set("agency", project.agency);
+      next.set("level", project.level);
+      next.set("date", project.date);
+      next.set("cat", project.cat);
+      next.set("view", "layers");
+      next.set("node", node.id);
+      if (state.alert) next.set("alert", state.alert);
+      next.set("focus", node.type === "person" && !agencySide ? (org || node.name) : node.name);
+      location.href = "insight.html?" + next.toString();
+    });
+    document.getElementById("sheetBody").addEventListener("click", (event) => {
+      const row = event.target.closest("tr");
+      if (row && row.dataset.id) selectNode(row.dataset.id);
+    });
+    document.getElementById("search").addEventListener("input", (event) => {
+      state.query = event.target.value;
+      renderGraph();
+      renderTable();
+    });
+    relate.querySelectorAll("[data-filter]").forEach((input) => {
+      input.addEventListener("change", () => {
+        state.filters[input.dataset.filter] = input.checked;
+        render();
+      });
+    });
+    window.addEventListener("resize", fit);
+
+    const report = { open: false, clues: [], files: [], generated: "" };
+    const reportDrawer = document.getElementById("reportDrawer");
+    const reportConclusion = document.getElementById("reportConclusion");
+    const processBody = document.getElementById("processBody");
+    const processCount = document.getElementById("processCount");
+    const setPop = document.getElementById("setPop");
+    const reportStatus = document.getElementById("reportStatus");
+    const reportGo = document.getElementById("reportGo");
+    const reportFileList = document.getElementById("reportFileList");
+    const reportFiles = document.getElementById("reportFiles");
+    let clueSeq = 1;
+    let typeGen = 0;
+    function canSummarize(item) {
+      return !!(item && (item.note || item.model || (item.steps && item.steps.length)));
+    }
+    function autoConclusion() {
+      const ready = report.clues.filter(canSummarize);
+      if (!ready.length) return "";
+      const names = [];
+      ready.forEach((item) => item.whoNames.forEach((name) => { if (names.indexOf(name) < 0) names.push(name); }));
+      const lines = ready.map((item, index) => (index + 1) + ". " + item.whoNames.join("与") + "：" + item.title + "。" + item.note);
+      return "围绕" + (names.join("、") || project.name) + "，本次归集 " + ready.length + " 条预警线索。\n" + lines.join("\n") + "\n综合上述情形，相关交易存在需核查的异常关联，建议责任部门结合关系图与模型分析过程开展核查。";
+    }
+    function syncConclusion() {
+      const text = autoConclusion();
+      typeGen += 1;
+      const gen = typeGen;
+      reportConclusion.placeholder = "暂未能自动总结原因，请输入描述及查办指引";
+      if (!text) {
+        if (!report.userEdited) reportConclusion.value = "";
+        return;
+      }
+      report.userEdited = false;
+      if (!report.open) {
+        reportConclusion.value = text;
+        return;
+      }
+      reportConclusion.value = "";
+      let index = 0;
+      const timer = window.setInterval(() => {
+        if (gen !== typeGen) { window.clearInterval(timer); return; }
+        index = Math.min(text.length, index + 2);
+        reportConclusion.value = text.slice(0, index);
+        if (index >= text.length) window.clearInterval(timer);
+      }, 16);
+    }
+    function renderAttach() {
+      reportFileList.innerHTML = report.files.map((file, index) =>
+        '<li><span>' + esc(file.name) + '</span><button type="button" data-remove-file="' + index + '">删除</button></li>'
+      ).join("");
+    }
+    function renderReport() {
+      reportDrawer.classList.toggle("is-open", report.open);
+      document.getElementById("reportTab").classList.toggle("is-on", report.open);
+      document.getElementById("relateTab").classList.toggle("is-on", relate.classList.contains("open"));
+      reportDrawer.inert = !report.open;
+      reportDrawer.setAttribute("aria-hidden", report.open ? "false" : "true");
+      processCount.textContent = String(report.clues.length);
+      const foldAll = document.getElementById("foldAll");
+      const allOpen = report.clues.length > 0 && report.clues.every((item) => item.open);
+      foldAll.disabled = report.clues.length === 0;
+      foldAll.classList.toggle("is-open", allOpen);
+      foldAll.querySelector("span").textContent = allOpen ? "全部收起" : "全部展开";
+      reportGo.disabled = report.clues.length === 0;
+      reportStatus.textContent = report.generated;
+      if (!report.clues.length) {
+        processBody.innerHTML = '<p class="process-empty">尚未添加线索</p>';
+        return;
+      }
+      processBody.innerHTML = report.clues.map((item) => {
+        const tone = item.level === "中风险" ? " mid" : item.level === "低风险" ? " low" : "";
+        const steps = item.steps.map((step) => "<li>" + esc(step) + "</li>").join("");
+        const analysis = item.model ? '<div class="analysis-row"><p class="clue-line"><em>分析</em>' + esc(item.model) + '</p><button type="button" class="model-toggle" data-toggle-clue="' + esc(item.uid) + '" aria-label="' + (item.open ? "收起分析" : "展开分析") + '"><i class="chev" aria-hidden="true"></i></button></div><div class="model-body"><ol>' + steps + "</ol></div>" : "";
+        return '<article class="clue-item' + tone + (item.open ? "" : " is-folded") + '"><div class="clue-top"><span class="sev">' + esc(item.level === "线索" ? "线索" : item.level) + "</span><strong>" + esc(item.title) + '</strong><button type="button" class="clue-del" data-remove-clue="' + esc(item.uid) + '">删除</button></div><p class="clue-line"><em>涉及主体</em>' + esc(item.whoNames.join("、")) + '</p><p class="clue-line"><em>事项</em>' + esc(item.note || "待补充原因") + "</p>" + analysis + "</article>";
+      }).join("");
+    }
+    function pushClue(item) {
+      report.clues.push({
+        uid: "c" + (clueSeq++),
+        alertId: item.id,
+        level: item.level,
+        title: item.title,
+        note: item.note,
+        whoNames: item.whoNames.length ? item.whoNames.slice() : (item.who ? [item.who] : []),
+        model: item.model,
+        steps: item.steps.slice(),
+        open: true
+      });
+    }
+    function showReport() {
+      report.open = true;
+      relate.classList.remove("open");
+      syncGraphState();
+      renderReport();
+      fit();
+    }
+    function addClues(ids) {
+      const rows = ids.map((id) => allAlerts().find((row) => row.id === id)).filter(Boolean);
+      if (!rows.length) return;
+      rows.forEach((item) => {
+        if (!report.clues.some((clue) => clue.alertId === item.id)) pushClue(item);
+      });
+      report.generated = "";
+      syncConclusion();
+      showReport();
+    }
+    function addNodeClue() {
+      const rows = state.alert ? [state.alert] : listedAlerts().map((item) => item.id);
+      if (rows.length) {
+        addClues(rows);
+        return;
+      }
+      const node = current();
+      if (!report.clues.some((clue) => clue.manual && clue.nodeId === node.id)) {
+        report.clues.push({
+          uid: "c" + (clueSeq++),
+          alertId: "",
+          nodeId: node.id,
+          manual: true,
+          level: "线索",
+          title: node.name,
+          note: "",
+          whoNames: [node.fullName || node.name],
+          model: "",
+          steps: [],
+          open: true
+        });
+      }
+      report.generated = "";
+      syncConclusion();
+      showReport();
+    }
+    function addClue(alertId) {
+      state.alert = alertId;
+      state.tab = "warn";
+      state.focus = true;
+      detail.classList.add("open");
+      render();
+      addClues([alertId]);
+    }
+    document.getElementById("clueFab").addEventListener("click", () => addNodeClue());
+    document.getElementById("reportClose").addEventListener("click", () => {
+      report.open = false;
+      renderReport();
+      fit();
+    });
+    document.getElementById("foldAll").addEventListener("click", () => {
+      const open = !(report.clues.length && report.clues.every((item) => item.open));
+      report.clues.forEach((item) => { item.open = open; });
+      renderReport();
+    });
+    processBody.addEventListener("click", (event) => {
+      const toggle = event.target.closest("[data-toggle-clue]");
+      if (toggle) {
+        const clue = report.clues.find((item) => item.uid === toggle.dataset.toggleClue);
+        if (clue) clue.open = !clue.open;
+        renderReport();
+        return;
+      }
+      const button = event.target.closest("[data-remove-clue]");
+      if (!button) return;
+      report.clues = report.clues.filter((item) => item.uid !== button.dataset.removeClue);
+      report.generated = "";
+      syncConclusion();
+      renderReport();
+    });
+    document.getElementById("reportSettings").addEventListener("click", (event) => {
+      event.stopPropagation();
+      setPop.hidden = !setPop.hidden;
+      event.currentTarget.setAttribute("aria-expanded", setPop.hidden ? "false" : "true");
+    });
+    document.addEventListener("click", (event) => {
+      if (setPop.hidden || event.target.closest("#setPop") || event.target.closest("#reportSettings")) return;
+      setPop.hidden = true;
+      document.getElementById("reportSettings").setAttribute("aria-expanded", "false");
+    });
+    reportConclusion.addEventListener("input", () => { typeGen += 1; report.userEdited = true; });
+    const reportConclusionBox = document.getElementById("reportConclusionBox");
+    document.getElementById("reportGrip").addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      const startY = event.clientY;
+      const startH = reportConclusionBox.getBoundingClientRect().height;
+      const max = Math.max(160, reportDrawer.clientHeight - 180);
+      function move(nextEvent) {
+        reportConclusionBox.style.height = Math.min(max, Math.max(128, startH + nextEvent.clientY - startY)) + "px";
+      }
+      function end() {
+        reportGrip.removeEventListener("pointermove", move);
+        reportGrip.removeEventListener("pointerup", end);
+        reportGrip.removeEventListener("pointercancel", end);
+      }
+      const reportGrip = document.getElementById("reportGrip");
+      reportGrip.setPointerCapture(event.pointerId);
+      reportGrip.addEventListener("pointermove", move);
+      reportGrip.addEventListener("pointerup", end);
+      reportGrip.addEventListener("pointercancel", end);
+    });
+    reportFiles.addEventListener("change", () => {
+      [...reportFiles.files].forEach((file) => {
+        if (!report.files.some((item) => item.name === file.name && item.size === file.size)) report.files.push(file);
+      });
+      reportFiles.value = "";
+      renderAttach();
+    });
+    reportFileList.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-remove-file]");
+      if (!button) return;
+      report.files.splice(Number(button.dataset.removeFile), 1);
+      renderAttach();
+    });
+    function reportStamp() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      return {
+        text: now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()) + " " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds()),
+        file: now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + "-" + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds())
+      };
+    }
+    function reportLines() {
+      const lines = ["线索报告"];
+      lines.push("");
+      lines.push(reportConclusion.value || autoConclusion());
+      lines.push("", "分析过程");
+      if (!report.clues.length) lines.push("尚未添加线索");
+      report.clues.forEach((item, index) => {
+        lines.push("", (index + 1) + ". " + item.title + "（" + item.level + "）");
+        lines.push("涉及主体：" + item.whoNames.join("、"));
+        lines.push("事项：" + item.note);
+        lines.push("模型：" + item.model);
+        item.steps.forEach((step, stepIndex) => lines.push((stepIndex + 1) + "）" + step));
+      });
+      lines.push("", "附件");
+      if (!report.files.length) lines.push("无");
+      report.files.forEach((file) => lines.push(file.name));
+      return lines;
+    }
+    function downloadBlob(bytes, name, type) {
+      const blob = bytes instanceof Blob ? bytes : new Blob([bytes], { type: type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+    function paintReport() {
+      const width = 900;
+      const max = width - 96;
+      const probe = document.createElement("canvas").getContext("2d");
+      probe.font = "16px PingFang SC, Microsoft YaHei, sans-serif";
+      const lines = [];
+      reportLines().forEach((text) => {
+        if (!text) { lines.push(""); return; }
+        let line = "";
+        for (const ch of text) {
+          if (probe.measureText(line + ch).width > max) { lines.push(line); line = ch; }
+          else line += ch;
+        }
+        lines.push(line);
+      });
+      const board = document.createElement("canvas");
+      board.width = width;
+      board.height = Math.max(480, 80 + lines.length * 28);
+      const g = board.getContext("2d");
+      g.fillStyle = "#ffffff";
+      g.fillRect(0, 0, board.width, board.height);
+      g.fillStyle = "#16324f";
+      g.font = "16px PingFang SC, Microsoft YaHei, sans-serif";
+      lines.forEach((line, index) => g.fillText(line, 48, 56 + index * 28));
+      return board;
+    }
+    function jpegPdf(board) {
+      const raw = atob(board.toDataURL("image/jpeg", 0.86).split(",")[1]);
+      const img = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i += 1) img[i] = raw.charCodeAt(i);
+      const pageW = 595;
+      const pageH = Math.max(420, Math.round(pageW * board.height / board.width));
+      const enc = new TextEncoder();
+      const chunks = [];
+      let length = 0;
+      const offsets = [];
+      function push(part) {
+        const bytes = typeof part === "string" ? enc.encode(part) : part;
+        offsets.push(length);
+        chunks.push(bytes);
+        length += bytes.length;
+      }
+      push("%PDF-1.4\n");
+      const at = () => offsets[offsets.length - 1];
+      const o1 = length; push("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+      const o2 = length; push("2 0 obj\n<< /Type /Pages /Count 1 /Kids [3 0 R] >>\nendobj\n");
+      const o3 = length; push("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + pageW + " " + pageH + "] /Contents 4 0 R /Resources << /XObject << /Im0 5 0 R >> >> >>\nendobj\n");
+      const stream = "q\n" + pageW + " 0 0 " + pageH + " 0 0 cm\n/Im0 Do\nQ";
+      const o4 = length; push("4 0 obj\n<< /Length " + enc.encode(stream).length + " >>\nstream\n" + stream + "\nendstream\nendobj\n");
+      const o5 = length; push("5 0 obj\n<< /Type /XObject /Subtype /Image /Width " + board.width + " /Height " + board.height + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + img.length + " >>\nstream\n");
+      push(img);
+      push("\nendstream\nendobj\n");
+      const xrefAt = length;
+      let xref = "xref\n0 6\n0000000000 65535 f \n";
+      [o1, o2, o3, o4, o5].forEach((offset) => { xref += String(offset).padStart(10, "0") + " 00000 n \n"; });
+      push(xref);
+      push("trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" + xrefAt + "\n%%EOF");
+      const out = new Uint8Array(length);
+      let cursor = 0;
+      chunks.forEach((chunk) => { out.set(chunk, cursor); cursor += chunk.length; });
+      return out;
+    }
+    reportGo.addEventListener("click", () => {
+      if (!report.clues.length) return;
+      const format = document.getElementById("reportFormat").value;
+      const when = reportStamp();
+      const base = "线索报告-" + when.file;
+      if (format === "word") {
+        const blocks = reportLines().map((line) => "<p>" + (line ? esc(line) : "&nbsp;") + "</p>").join("");
+        const html = "<html><head><meta charset='utf-8'><title>线索报告</title></head><body>" + blocks + "</body></html>";
+        downloadBlob(new TextEncoder().encode(html), base + ".doc", "application/msword");
+      } else {
+        downloadBlob(jpegPdf(paintReport()), base + ".pdf", "application/pdf");
+      }
+      report.generated = "已生成 " + format + " 报告 · " + when.text;
+      renderReport();
+    });
+    syncConclusion();
+    renderReport();
+
+    const packDialog = document.getElementById("packDialog");
+    const clueName = document.getElementById("clueName");
+    const clueNo = document.getElementById("clueNo");
+    const clueDesc = document.getElementById("clueDesc");
+    const clueErr = document.getElementById("clueErr");
+    const clueFiles = document.getElementById("clueFiles");
+    const fileList = document.getElementById("fileList");
+    const pickedFiles = [];
+    function renderFiles() {
+      fileList.innerHTML = pickedFiles.map((file, index) =>
+        "<li><span title=\"" + esc(file.name) + "\">" + esc(file.name) + "</span><button type=\"button\" data-remove=\"" + index + "\">删除</button></li>"
+      ).join("");
+    }
+    function addFiles(files) {
+      [...files].forEach((file) => {
+        const same = pickedFiles.some((item) => item.name === file.name && item.size === file.size && item.lastModified === file.lastModified);
+        if (!same) pickedFiles.push(file);
+      });
+      renderFiles();
+    }
+    function makeClueNo() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      const day = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate());
+      const seq = pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
+      return "XS" + day + seq;
+    }
+    function makeClueDesc() {
+      const nameEl = document.getElementById("entityName");
+      const focus = (nameEl && nameEl.textContent.trim()) || (current() && current().name) || project.name;
+      return "围绕「" + project.name + "」形成监管线索。当前分析视图以「" + focus + "」为中心，关联招标人" + project.bidder + "、招标代理" + project.agency + "及相关投标主体。项目类别为" + project.cat + "，风险等级" + project.level + "，关键时点" + project.date + "。本次打包纳入当前视图内容、主体属性、交易时序和预警记录，并以分析图、数据表一并归档，供责任部门核查围标串标、资质挂靠、程序异常和利益关联等情形，作为后续核查、约谈和移交的依据。";
+    }
+    const draftKey = "clue-draft:analysis:" + project.name;
+    const packSaved = document.getElementById("packSaved");
+    function formatSaved(date) {
+      const pad = (n) => String(n).padStart(2, "0");
+      return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate()) + " " + pad(date.getHours()) + ":" + pad(date.getMinutes()) + ":" + pad(date.getSeconds());
+    }
+    function showSaved(text) {
+      packSaved.textContent = text ? "上次保存：" + text : "上次保存：—";
+    }
+    function readDraft() {
+      try { return JSON.parse(localStorage.getItem(draftKey) || "null"); } catch (error) { return null; }
+    }
+    function collectDraft() {
+      const checked = (name) => [...packDialog.querySelectorAll('input[name="' + name + '"]')].filter((input) => input.checked).map((input) => input.value);
+      return {
+        savedAt: formatSaved(new Date()),
+        name: clueName.value,
+        no: clueNo.value,
+        desc: clueDesc.value,
+        dept: document.getElementById("clueDept").value,
+        content: checked("content"),
+        form: checked("form"),
+        files: pickedFiles.map((file) => ({ name: file.name, size: file.size || 0, lastModified: file.lastModified || 0 }))
+      };
+    }
+    function applyDraft(draft) {
+      clueName.value = draft.name || "";
+      clueNo.value = draft.no || makeClueNo();
+      clueDesc.value = draft.desc || "";
+      const dept = document.getElementById("clueDept");
+      if ([...dept.options].some((option) => option.value === draft.dept)) dept.value = draft.dept;
+      packDialog.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+        const group = input.name === "content" ? draft.content : draft.form;
+        input.checked = Array.isArray(group) && group.includes(input.value);
+      });
+      pickedFiles.length = 0;
+      (draft.files || []).forEach((file) => pickedFiles.push(file));
+      renderFiles();
+    }
+    function resetPack() {
+      clueName.value = project.name + "监管线索";
+      clueNo.value = makeClueNo();
+      clueDesc.value = makeClueDesc();
+      packDialog.querySelectorAll('input[type="checkbox"]').forEach((input) => { input.checked = true; });
+      document.getElementById("clueDept").selectedIndex = 0;
+      pickedFiles.length = 0;
+      renderFiles();
+    }
+    function openPack() {
+      const draft = readDraft();
+      if (draft) {
+        applyDraft(draft);
+        showSaved(draft.savedAt);
+      } else {
+        resetPack();
+        showSaved("");
+      }
+      clueFiles.value = "";
+      clueErr.hidden = true;
+      packDialog.showModal();
+      clueName.focus();
+    }
+    document.getElementById("packDraft").addEventListener("click", () => {
+      const draft = collectDraft();
+      try { localStorage.setItem(draftKey, JSON.stringify(draft)); } catch (error) {}
+      showSaved(draft.savedAt);
+    });
+    document.getElementById("packCancel").addEventListener("click", () => packDialog.close());
+    document.getElementById("packClose").addEventListener("click", () => packDialog.close());
+    clueName.addEventListener("input", () => { clueErr.hidden = true; });
+    clueFiles.addEventListener("change", () => {
+      addFiles(clueFiles.files);
+      clueFiles.value = "";
+    });
+    fileList.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-remove]");
+      if (!button) return;
+      pickedFiles.splice(Number(button.dataset.remove), 1);
+      renderFiles();
+    });
+    document.getElementById("packForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!clueName.value.trim()) {
+        clueErr.hidden = false;
+        clueName.focus();
+        return;
+      }
+      try { localStorage.removeItem(draftKey); } catch (error) {}
+      packDialog.close();
+    });
+
+    renderTimeline();
+    render();
+  </script>
+</body>
+</html>

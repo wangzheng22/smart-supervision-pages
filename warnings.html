@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>预警列表</title>
+  <style>
+    :root {
+      --ink: #16324f;
+      --muted: #6d7f95;
+      --line: #e4ebf5;
+      --blue: #2f78f6;
+      --risk: #ef3b3b;
+      --shadow: 0 10px 30px rgba(22, 62, 112, 0.08);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      color: var(--ink);
+      font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      background: #e7eef6;
+    }
+    button, input, select { font-family: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 2px solid rgba(47, 120, 246, 0.35);
+      outline-offset: 1px;
+    }
+    .topbar {
+      flex: none;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 12px;
+      background: #fff;
+      border-bottom: 1px solid #e6eaf0;
+    }
+    .top-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: none;
+      color: #24364c;
+      text-decoration: none;
+    }
+    .logo { width: 24px; height: 24px; object-fit: contain; display: block; }
+    .split { width: 1px; height: 16px; background: #d7dee8; flex: none; }
+    .subject {
+      font-size: 16px;
+      font-weight: 650;
+      color: #24364c;
+      white-space: nowrap;
+    }
+    .page {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+    .tabs button {
+      flex: 1;
+      min-width: 0;
+      height: 36px;
+      padding: 0 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
+      background: #fff;
+      color: #3d4e64;
+      font-size: 13px;
+    }
+    .tabs button svg {
+      width: 16px;
+      height: 16px;
+      flex: none;
+    }
+    .tabs button em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tabs button b {
+      color: var(--blue);
+      font-weight: 650;
+    }
+    .tabs button.is-on {
+      background: #eef4ff;
+      color: var(--blue);
+      border-color: #b9d0fb;
+    }
+    .filters, .table-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+    .filters { padding: 16px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px 16px;
+    }
+    .field { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .field > span:first-child {
+      flex: none;
+      width: 128px;
+      color: #5e7088;
+      font-size: 13px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .field > input, .field > select, .field > .range {
+      flex: 1 1 0;
+      width: 0;
+      min-width: 0;
+    }
+    .field input, .field select {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .field .range {
+      text-align: left;
+      color: var(--ink);
+      height: 32px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 10px;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
+      background: #fff;
+    }
+    .range input {
+      flex: 1 1 0;
+      width: 0;
+      min-width: 0;
+      height: 28px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .range i { flex: none; color: #8b97a6; font-style: normal; font-size: 13px; }
+    .actions { margin-top: 12px; }
+    .search-btn {
+      height: 32px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 6px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 13px;
+    }
+    .table-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+    .table-scroll { overflow: auto; }
+    table { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid #eef2f6;
+      background: #fff;
+      white-space: nowrap;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #f7f9fc;
+      color: #6d7f95;
+      font-weight: 600;
+    }
+    th.pin, td.pin { position: sticky; z-index: 3; }
+    th.pin { z-index: 4; background: #f7f9fc; }
+    td.pin { background: #fff; }
+    .pin.l1 { left: 0; width: var(--pin1, 148px); min-width: var(--pin1, 148px); max-width: var(--pin1, 148px); }
+    .pin.l2 { left: var(--pin1, 148px); width: var(--pin2, 240px); min-width: var(--pin2, 240px); max-width: var(--pin2, 240px); box-shadow: 8px 0 8px -8px rgba(22, 62, 112, 0.28); }
+    .pin.r { right: 0; width: 148px; min-width: 148px; box-shadow: -8px 0 8px -8px rgba(22, 62, 112, 0.28); }
+    td.name { white-space: normal; }
+    td.point { white-space: normal; min-width: 280px; color: #3d4e64; }
+    tr.is-empty td {
+      position: static;
+      left: auto;
+      width: auto;
+      min-width: 0;
+      max-width: none;
+      box-shadow: none;
+    }
+    .high { color: var(--risk); font-weight: 650; }
+    .mid { color: #e5922a; font-weight: 650; }
+    .low { color: #2f9e6b; font-weight: 650; }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 650;
+      line-height: 1;
+    }
+    .tag.high { color: var(--risk); background: #fff1f0; }
+    .tag.mid { color: #d48806; background: #fff7e8; }
+    .tag.low { color: #2f9e6b; background: #eef8f3; }
+    td.num { font-variant-numeric: tabular-nums; }
+    .ops { display: flex; gap: 8px; }
+    .ops button {
+      height: 26px;
+      padding: 0 8px;
+      border: 0;
+      border-radius: 4px;
+      background: none;
+      color: var(--blue);
+      font-size: 13px;
+      transition: background-color .15s ease, color .15s ease;
+    }
+    .ops button:hover:not([disabled]) { background: #eef4ff; color: #1a5fd0; }
+    .ops button[disabled],
+    .ops button[disabled]:hover { color: #8b97a6; background: none; cursor: default; }
+    .th-box { display: flex; align-items: center; gap: 4px; }
+    .th-sort, .th-filter {
+      border: 0;
+      padding: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+    .th-sort { display: inline-flex; align-items: center; gap: 4px; }
+    .th-sort:hover, .th-sort.is-on { color: var(--blue); }
+    .th-filter {
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      color: #8b97a6;
+      flex: none;
+    }
+    .th-filter svg { width: 14px; height: 14px; fill: currentColor; }
+    .th-filter:hover, .th-filter.is-on { color: var(--blue); background: #eef4ff; }
+    .sort-ico { width: 12px; height: 12px; flex: none; }
+    .sort-ico .up, .sort-ico .down { fill: #c5ced8; }
+    .sort-ico.asc .up, .sort-ico.desc .down { fill: var(--blue); }
+    .cell-pick {
+      display: inline;
+      max-width: 100%;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    td.point .cell-pick { white-space: normal; }
+    .cell-pick:hover, .cell-pick.is-on { color: var(--blue); }
+    .col-pop[hidden] { display: none; }
+    .col-pop {
+      position: fixed;
+      z-index: 30;
+      width: 260px;
+      max-height: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid #e4ebf5;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 12px 32px rgba(22, 62, 112, 0.14);
+    }
+    .col-pop.wide { width: 360px; }
+    .col-pop strong { font-size: 13px; font-weight: 650; color: #24364c; }
+    .col-pop input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .col-list { min-height: 0; overflow: auto; display: flex; flex-direction: column; }
+    .col-list label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 32px;
+      padding: 4px 2px;
+      color: #24364c;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .col-list label:hover { color: var(--blue); }
+    .col-list span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .col-list input { accent-color: var(--blue); flex: none; }
+    .col-empty { padding: 12px 2px; color: var(--muted); font-size: 13px; }
+    .col-foot { display: flex; justify-content: flex-end; gap: 8px; }
+    .col-foot button { height: 32px; padding: 0 12px; border-radius: 6px; font-size: 13px; }
+    .col-foot .ghost { border: 0; background: none; color: #5e7088; }
+    .col-foot .ok { border: 0; background: var(--blue); color: #fff; }
+    .empty { padding: 28px; color: var(--muted); text-align: center; }
+    .pager {
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid #eef2f6;
+      color: #5e7088;
+      font-size: 13px;
+    }
+    .pager select {
+      height: 32px;
+      padding: 0 8px;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .pager button {
+      min-width: 32px;
+      height: 32px;
+      padding: 0 8px;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
+      background: #fff;
+      color: #3d4e64;
+      font-size: 13px;
+    }
+    .pager button.is-on { background: #eef4ff; color: var(--blue); border-color: #b9d0fb; }
+    .pager button[disabled] { color: #b7c0cc; cursor: default; }
+    .pager .total { margin-right: 4px; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="top-left">
+      <a class="brand" href="cockpit.html" title="返回首页">
+        <img class="logo" src="logo.png" alt="工程交易" />
+      </a>
+      <span class="split" aria-hidden="true"></span>
+      <div class="subject">预警列表</div>
+    </div>
+  </header>
+  <main class="page">
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <form class="filters" id="filters">
+      <div class="grid" id="filterGrid"></div>
+      <div class="actions"><button class="search-btn" type="submit">搜索</button></div>
+    </form>
+    <section class="table-card">
+      <div class="table-scroll" id="tableScroll">
+        <table>
+          <thead>
+            <tr>
+              <th class="pin l1">项目编号</th>
+              <th class="pin l2">项目名称</th>
+              <th>项目资金规模(万元)</th>
+              <th>项目进场时间</th>
+              <th>所属交易中心</th>
+              <th>项目所属行业</th>
+              <th>招标人</th>
+              <th>项目风险度</th>
+              <th>项目风险点内容</th>
+              <th>查看记录</th>
+              <th>可信度</th>
+              <th class="pin r">操作</th>
+            </tr>
+          </thead>
+          <tbody id="body"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="pager"></div>
+    </section>
+    <div class="col-pop" id="colPop" hidden>
+      <strong id="colTitle"></strong>
+      <input id="colQuery" type="search" placeholder="搜索筛选项" />
+      <div class="col-list" id="colList"></div>
+      <div class="col-foot">
+        <button class="ghost" id="colClear" type="button">清除</button>
+        <button class="ok" id="colOk" type="button">确定</button>
+      </div>
+    </div>
+  </main>
+  <script src="mock-data.js?v=129"></script>
+  <script>
+    const icon = (paths) => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + "</svg>";
+    const tabs = [
+      { id: "project", label: "项目预警", icon: icon('<path d="M2 5.5 8 2.5l6 3L8 8.5 2 5.5Z"/><path d="m2 8.5 6 3 6-3"/><path d="m2 11.5 6 3 6-3"/>') },
+      { id: "owner", label: "招标人预警", icon: icon('<path d="M3 14V6.5L8 3l5 3.5V14"/><path d="M6.5 14v-4h3v4"/><path d="M2 14h12"/>') },
+      { id: "agency", label: "招标代理预警", icon: icon('<rect x="2.2" y="5" width="11.6" height="8" rx="1.2"/><path d="M6 5V3.8A1 1 0 0 1 7 2.8h2a1 1 0 0 1 1 1V5"/><path d="M2.2 8.6h11.6"/>') },
+      { id: "bidder", label: "投标人预警", icon: icon('<circle cx="6" cy="5.4" r="2"/><circle cx="11.1" cy="6" r="1.5"/><path d="M2.4 13.2c.5-2.1 2-3.2 3.6-3.2s3.1 1.1 3.6 3.2"/><path d="M10 10.3c1.1-.3 2.2.1 3 1.2"/>') },
+      { id: "expert", label: "专家预警", icon: icon('<circle cx="8" cy="5" r="2.1"/><path d="M3.4 13.4c.6-2.3 2.4-3.5 4.6-3.5s4 1.2 4.6 3.5"/><path d="M12.2 2.6 12.6 3.6h1.1l-.9.7.3 1.1-.9-.6-.9.6.3-1.1-.9-.7h1.1l.4-1Z"/>') },
+      { id: "staff", label: "工作人员预警", icon: icon('<rect x="3" y="2.4" width="10" height="11.2" rx="1.2"/><circle cx="8" cy="6.3" r="1.5"/><path d="M5.4 11.4c.4-1.2 1.4-1.8 2.6-1.8s2.2.6 2.6 1.8"/>') }
+    ];
+    const base = {
+      "GC202609186": ["贵阳市观山湖区金融城二期市政道路工程", "18,600", "2026-09-26", "贵阳市公共资源交易中心", "建设工程", "贵阳城市发展投资集团有限公司", "公开招标", "招标中", "贵阳市", "贵州建工招标代理有限公司"],
+      "GC202609142": ["遵义市中心城区供水管网改造工程", "46,500", "2026-09-25", "遵义市公共资源交易中心", "建设工程", "遵义市水务投资有限责任公司", "公开招标", "招标中", "遵义市", "遵义宏达招标代理有限公司"],
+      "ZFCG202609088": ["贵州省疾病预防控制中心实验室检验设备采购", "2,360", "2026-09-29", "贵州省公共资源交易中心", "政府采购", "贵州省疾病预防控制中心", "公开招标", "已定标", "贵阳市", "贵阳贵咨招标有限公司"],
+      "GQ202609077": ["贵州高速公路集团服务区电梯更新采购", "890", "2026-09-28", "贵州省公共资源交易中心", "国企采购", "贵州高速公路集团有限公司", "邀请招标", "招标中", "贵阳市", "贵州通用招标代理有限公司"],
+      "GC202609031": ["毕节市七星关区农村公路安全生命防护工程", "6,200", "2026-09-20", "毕节市公共资源交易中心", "建设工程", "毕节市交通运输局", "公开招标", "进场前", "毕节市", "毕节市招标投标代理有限公司"],
+      "NY202609012": ["威宁自治县么站风电场二期扩建工程", "31,000", "2026-09-16", "毕节市公共资源交易中心", "能源行业", "贵州金元股份有限公司", "公开招标", "进场前", "毕节市", "贵州通用招标代理有限公司"],
+      "ZFCG202609054": ["贵州交通职业技术学院汽车实训设备采购", "1,560", "2026-09-12", "贵阳市公共资源交易中心", "政府采购", "贵州交通职业技术学院", "竞争性谈判", "招标中", "贵阳市", "贵阳贵咨招标有限公司"],
+      "GC202609201": ["贵阳轨道交通3号线一期土建施工第二标段", "128,000", "2026-09-24", "贵阳市公共资源交易中心", "建设工程", "贵阳市城市轨道交通有限公司", "公开招标", "招标中", "贵阳市", "贵州建工招标代理有限公司"],
+      "GC202609118": ["六盘水市钟山区城市更新配套道路及管网工程", "9,800", "2026-09-22", "六盘水市公共资源交易中心", "建设工程", "六盘水市城市建设投资有限公司", "公开招标", "招标中", "六盘水市", "六盘水公共资源招标代理有限公司"],
+      "GC202609096": ["安顺市西秀区污水处理厂提标改造工程", "7,400", "2026-09-18", "安顺市公共资源交易中心", "建设工程", "安顺市水务投资有限责任公司", "公开招标", "已定标", "安顺市", "安顺黔中招标代理有限公司"],
+      "ZFCG202609061": ["铜仁市碧江区中小学食堂食材配送服务", "420", "2026-09-15", "铜仁市公共资源交易中心", "政府采购", "铜仁市教育局", "公开招标", "已定标", "铜仁市", "铜仁梵净招标代理有限公司"],
+      "GC202609073": ["黔南州贵定县城乡供水一体化工程", "15,200", "2026-09-14", "黔南州公共资源交易中心", "建设工程", "黔南州水务局", "公开招标", "招标中", "黔南州", "黔南州招标咨询有限公司"],
+      "GC202609055": ["凯里市民族文化宫室内装修工程", "3,100", "2026-09-11", "黔东南州公共资源交易中心", "建设工程", "凯里市文化旅游局", "公开招标", "招标中", "黔东南州", "黔东南州公共招标代理有限公司"],
+      "GC202609040": ["兴义市环城快速路东段工程", "27,600", "2026-09-08", "黔西南州公共资源交易中心", "建设工程", "黔西南州交通运输局", "公开招标", "招标中", "黔西南州", "黔西南州工程咨询招标有限公司"],
+      "GC202609033": ["贵安新区大学城学生公寓二期工程", "18,900", "2026-09-06", "贵州省公共资源交易中心", "建设工程", "贵安新区开发投资有限公司", "公开招标", "招标中", "贵安新区", "贵州建工招标代理有限公司"],
+      "ZFCG202609027": ["六盘水市人民医院医用影像设备采购", "6,800", "2026-09-04", "六盘水市公共资源交易中心", "政府采购", "六盘水市人民医院", "公开招标", "招标中", "六盘水市", "贵阳贵咨招标有限公司"],
+      "NY202609019": ["盘州市响水煤矿安全改造工程", "9,400", "2026-09-03", "六盘水市公共资源交易中心", "能源行业", "贵州盘江精煤股份有限公司", "邀请招标", "进场前", "六盘水市", "六盘水公共资源招标代理有限公司"],
+      "GC202609008": ["仁怀市茅台镇配套道路改扩建工程", "5,600", "2026-09-02", "遵义市公共资源交易中心", "建设工程", "仁怀市交通运输局", "公开招标", "进场前", "遵义市", "遵义宏达招标代理有限公司"]
+    };
+    function row(tab, code, level, point, views, trust, warnType, source, subject) {
+      const item = base[code];
+      return {
+        tab, code,
+        name: item[0], money: item[1], date: item[2], regulator: item[3], trade: item[4],
+        bidder: subject || item[5], agency: item[9],
+        level, point, views, trust, warnType, source,
+        form: item[6], stage: item[7], region: item[8]
+      };
+    }
+    const rows = window.GUIZHOU.rows;
+
+    const params = new URLSearchParams(location.search);
+    const regionOpts = ["全省", "贵阳市", "遵义市", "六盘水市", "安顺市", "毕节市", "铜仁市", "黔西南州", "黔东南州", "黔南州", "贵安新区"];
+    const sourceOpts = ["全部", "交易系统", "监管报送"];
+    const levelOpts = ["全部", "高风险", "中风险", "低风险"];
+    const statusOpts = ["全部", "未查看", "已查看"];
+    const tradeOpts = ["全部", "建设工程", "政府采购", "国企采购", "能源行业"];
+    const opsCol = { key: "ops", label: "操作", pin: "r" };
+    const views = {
+      project: {
+        pin1: "148px", pin2: "240px",
+        filters: [
+          { key: "keyword", label: "项目名称/编号", type: "search", placeholder: "请输入项目名称或编号", keys: ["code", "name"] },
+          { key: "trade", label: "行业类型", type: "select", all: "全部", options: tradeOpts },
+          { key: "region", label: "地区", type: "select", all: "全省", options: regionOpts },
+          { key: "form", label: "组织形式", type: "select", all: "全部", options: ["全部", "公开招标", "邀请招标", "竞争性谈判"] },
+          { key: "warnType", label: "预警类型", type: "select", all: "全部", options: ["全部", "投标人特征识别", "围标串标", "中标率异常", "拆分项目", "应进未进", "资格条件定制"] },
+          { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
+          { key: "level", label: "预警等级", type: "select", all: "全部", options: levelOpts },
+          { key: "stage", label: "项目进展时间", type: "select", all: "全部", options: ["全部", "进场前", "招标中", "已定标"] },
+          { key: "range", label: "进场时间", type: "range" }
+        ],
+        columns: [
+          { key: "code", label: "项目编号", pin: "l1" },
+          { key: "name", label: "项目名称", pin: "l2", wrap: true },
+          { key: "money", label: "项目资金规模(万元)", sort: true, num: true },
+          { key: "date", label: "项目进场时间", sort: true },
+          { key: "regulator", label: "所属交易中心", filter: true },
+          { key: "trade", label: "项目所属行业", filter: true },
+          { key: "bidder", label: "招标人", filter: true },
+          { key: "level", label: "项目风险度", sort: true, rank: true },
+          { key: "point", label: "项目风险点内容", filter: true },
+          { key: "views", label: "查看记录", sort: true, num: true },
+          { key: "trust", label: "可信度", sort: true, rank: true },
+          opsCol
+        ]
+      },
+      owner: {
+        pin1: "220px", pin2: "188px",
+        filters: [
+          { key: "keyword", label: "招标人名称/代码", type: "search", placeholder: "请输入名称或信用代码", keys: ["name", "credit"] },
+          { key: "region", label: "地区", type: "select", all: "全省", options: regionOpts },
+          { key: "trade", label: "所属行业", type: "select", all: "全部", options: tradeOpts },
+          { key: "handled", label: "经办项目数", type: "min", placeholder: "≥10" },
+          { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
+          { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
+          { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "中标集中", "倾向性条款", "任职关联", "需求代编"] },
+          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts }
+        ],
+        columns: [
+          { key: "name", label: "招标人名称", pin: "l1", wrap: true },
+          { key: "credit", label: "统一社会信用代码", pin: "l2" },
+          { key: "region", label: "地区", filter: true },
+          { key: "trade", label: "所属行业", filter: true },
+          { key: "handled", label: "经办项目数", sort: true, num: true },
+          { key: "level", label: "项目风险度", sort: true, rank: true },
+          { key: "point", label: "风险点内容", filter: true },
+          { key: "views", label: "查看记录", sort: true, num: true },
+          { key: "trust", label: "可信度", sort: true, rank: true },
+          opsCol
+        ]
+      },
+      agency: {
+        pin1: "220px", pin2: "188px",
+        filters: [
+          { key: "keyword", label: "代理机构名称/代码", type: "search", placeholder: "请输入名称或信用代码", keys: ["name", "credit"] },
+          { key: "region", label: "地区", type: "select", all: "全省", options: regionOpts },
+          { key: "jobs", label: "承揽项目数", type: "min", placeholder: "≥50" },
+          { key: "years", label: "机构成立年限", type: "select", all: "全部", options: ["全部", "1年以内", "1至3年", "3至8年", "8年以上"] },
+          { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
+          { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
+          { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "文件同源", "新成立承接", "投诉集中", "资格条件定制"] },
+          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts }
+        ],
+        columns: [
+          { key: "name", label: "代理机构名称", pin: "l1", wrap: true },
+          { key: "credit", label: "统一社会信用代码", pin: "l2" },
+          { key: "region", label: "地区", filter: true },
+          { key: "jobs", label: "承揽项目数", sort: true, num: true },
+          { key: "level", label: "项目风险度", sort: true, rank: true },
+          { key: "point", label: "风险点内容", filter: true },
+          { key: "views", label: "查看记录", sort: true, num: true },
+          { key: "trust", label: "可信度", sort: true, rank: true },
+          opsCol
+        ]
+      },
+      bidder: {
+        pin1: "220px", pin2: "188px",
+        filters: [
+          { key: "keyword", label: "投标人名称/代码", type: "search", placeholder: "请输入名称或信用代码", keys: ["name", "credit"] },
+          { key: "region", label: "地区", type: "select", all: "全省", options: regionOpts },
+          { key: "qualify", label: "资质等级", type: "select", all: "全部", options: ["全部", "施工总承包一级", "施工总承包二级", "市政公用一级", "市政公用二级", "无"] },
+          { key: "trade", label: "所属行业", type: "select", all: "全部", options: tradeOpts },
+          { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
+          { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
+          { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "机器码一致", "围标串标", "中标率异常", "实名制异常"] },
+          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts }
+        ],
+        columns: [
+          { key: "name", label: "投标人名称", pin: "l1", wrap: true },
+          { key: "credit", label: "统一社会信用代码", pin: "l2" },
+          { key: "region", label: "地区", filter: true },
+          { key: "qualify", label: "资质等级", filter: true },
+          { key: "projects", label: "参与项目数", sort: true, num: true },
+          { key: "wins", label: "中标次数", sort: true, num: true },
+          { key: "level", label: "项目风险度", sort: true, rank: true },
+          { key: "point", label: "风险点内容", filter: true },
+          { key: "views", label: "查看记录", sort: true, num: true },
+          { key: "trust", label: "可信度", sort: true, rank: true },
+          opsCol
+        ]
+      },
+      expert: {
+        pin1: "96px", pin2: "96px",
+        filters: [
+          { key: "keyword", label: "专家姓名/编号", type: "search", placeholder: "请输入姓名或编号", keys: ["name", "code"] },
+          { key: "major", label: "评标专业", type: "select", all: "全部", options: ["全部", "工程造价", "市政工程", "房屋建筑", "水利水电", "政府采购"] },
+          { key: "region", label: "抽取地区", type: "select", all: "全省", options: regionOpts },
+          { key: "reviews", label: "参评次数", type: "min", placeholder: "≥100" },
+          { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
+          { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
+          { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "打分偏离", "单位关联"] },
+          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts }
+        ],
+        columns: [
+          { key: "name", label: "专家姓名", pin: "l1" },
+          { key: "code", label: "专家编号", pin: "l2" },
+          { key: "major", label: "评标专业", filter: true },
+          { key: "region", label: "抽取地区", filter: true },
+          { key: "reviews", label: "参评次数", sort: true, num: true },
+          { key: "level", label: "项目风险度", sort: true, rank: true },
+          { key: "point", label: "风险点内容", filter: true },
+          { key: "views", label: "查看记录", sort: true, num: true },
+          { key: "trust", label: "可信度", sort: true, rank: true },
+          opsCol
+        ]
+      },
+      staff: {
+        pin1: "88px", pin2: "220px",
+        filters: [
+          { key: "keyword", label: "姓名", type: "search", placeholder: "请输入姓名", keys: ["name"] },
+          { key: "unit", label: "所属单位", type: "select", all: "全部", options: ["全部", "贵州省公共资源交易中心", "遵义市公共资源交易中心", "贵州建工招标代理有限公司", "贵阳贵咨招标有限公司"] },
+          { key: "post", label: "岗位", type: "select", all: "全部", options: ["全部", "交易系统运维", "评标场所管理", "项目负责人", "信息审核"] },
+          { key: "region", label: "地区", type: "select", all: "全省", options: regionOpts },
+          { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
+          { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
+          { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "异常登录", "异常访问", "任职关联"] },
+          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts }
+        ],
+        columns: [
+          { key: "name", label: "姓名", pin: "l1" },
+          { key: "unit", label: "所属单位", pin: "l2", wrap: true, filter: true },
+          { key: "post", label: "岗位", filter: true },
+          { key: "region", label: "地区", filter: true },
+          { key: "level", label: "风险度", sort: true, rank: true },
+          { key: "point", label: "风险点内容", filter: true },
+          { key: "views", label: "查看记录", sort: true, num: true },
+          { key: "trust", label: "可信度", sort: true, rank: true },
+          opsCol
+        ]
+      }
+    };
+    function cols() { return views[state.tab].columns; }
+    function emptyColFilters() {
+      const bag = {};
+      cols().forEach((col) => { if (col.filter) bag[col.key] = []; });
+      return bag;
+    }
+    const rank = { "高风险": 3, "中风险": 2, "低风险": 1, "高": 3, "中": 2, "低": 1 };
+    const state = {
+      tab: tabs.some((item) => item.id === params.get("tab")) ? params.get("tab") : "project",
+      page: 1,
+      pageSize: 10,
+      sort: { key: "", dir: "" },
+      colFilters: {},
+      openFilter: ""
+    };
+
+    function esc(value) {
+      return String(value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+    }
+    function tone(level) {
+      if (level === "高风险" || level === "高") return "high";
+      if (level === "中风险" || level === "中") return "mid";
+      return "low";
+    }
+    function yearBand(value) {
+      if (value < 1) return "1年以内";
+      if (value < 3) return "1至3年";
+      if (value < 8) return "3至8年";
+      return "8年以上";
+    }
+    function renderFilters() {
+      const grid = document.getElementById("filterGrid");
+      grid.innerHTML = views[state.tab].filters.map((field) => {
+        if (field.type === "range") {
+          return "<label class=\"field\"><span>进场时间</span><span class=\"range\"><input id=\"f-from\" type=\"date\" value=\"2023-01-01\" /><i>至</i><input id=\"f-to\" type=\"date\" value=\"2026-10-13\" /></span></label>";
+        }
+        if (field.type === "select") {
+          return "<label class=\"field\"><span>" + esc(field.label) + "</span><select id=\"f-" + field.key + "\">" + field.options.map((value) => "<option value=\"" + esc(value) + "\">" + esc(value) + "</option>").join("") + "</select></label>";
+        }
+        return "<label class=\"field\"><span>" + esc(field.label) + "</span><input id=\"f-" + field.key + "\" type=\"" + (field.type === "min" ? "text" : "search") + "\" placeholder=\"" + esc(field.placeholder || "") + "\" /></label>";
+      }).join("");
+    }
+    function readFilters() {
+      const filters = {};
+      views[state.tab].filters.forEach((field) => {
+        if (field.type === "range") {
+          filters.from = document.getElementById("f-from").value;
+          filters.to = document.getElementById("f-to").value;
+        } else {
+          const input = document.getElementById("f-" + field.key);
+          filters[field.key] = input ? input.value.trim() : "";
+        }
+      });
+      return filters;
+    }
+    function matched(row, filters) {
+      if (row.tab !== state.tab) return false;
+      return views[state.tab].filters.every((field) => {
+        if (field.type === "search") {
+          const query = filters[field.key];
+          return !query || field.keys.some((key) => String(row[key] || "").indexOf(query) >= 0);
+        }
+        if (field.type === "select") {
+          const value = filters[field.key];
+          if (!value || value === field.all) return true;
+          if (field.key === "viewState") return value === "未查看" ? row.views === 0 : row.views > 0;
+          if (field.key === "years") return yearBand(row.years) === value;
+          return String(row[field.key]) === value;
+        }
+        if (field.type === "min") {
+          const raw = filters[field.key];
+          if (!raw) return true;
+          const limit = Number(String(raw).replace(/[^\d.]/g, ""));
+          return !limit || Number(row[field.key]) >= limit;
+        }
+        if (field.type === "range") {
+          if (filters.from && row.date && row.date < filters.from) return false;
+          if (filters.to && row.date && row.date > filters.to) return false;
+        }
+        return true;
+      });
+    }
+    function openInsight(row) {
+      const next = new URLSearchParams();
+      if (row.level) next.set("level", row.level);
+      if (row.date) next.set("date", row.date);
+      if (row.trade) next.set("cat", row.trade);
+      next.set("view", "layers");
+      if (row.tab === "agency") {
+        next.set("from", "agency");
+        next.set("agency", row.name);
+        next.set("node", "agency");
+        next.set("focus", row.name);
+      } else if (row.tab === "owner") {
+        next.set("from", "company");
+        next.set("role", "招标人");
+        next.set("name", row.name);
+        next.set("bidder", row.name);
+        next.set("node", "owner");
+        next.set("focus", row.name);
+      } else if (row.tab === "project") {
+        next.set("from", "project");
+        next.set("name", row.name);
+        if (row.bidder) next.set("bidder", row.bidder);
+        if (row.agency) next.set("agency", row.agency);
+        if (row.regulator) next.set("regulator", row.regulator);
+        next.set("node", "project");
+        next.set("focus", row.name);
+      } else {
+        next.set("from", "project");
+        next.set("focus", row.name);
+        if (row.bidder) next.set("bidder", row.bidder);
+        if (row.agency) next.set("agency", row.agency);
+      }
+      location.href = "insight.html?" + next.toString();
+    }
+    function renderTabs() {
+      const box = document.getElementById("tabs");
+      box.replaceChildren();
+      tabs.forEach((item) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = item.id === state.tab ? "is-on" : "";
+        button.innerHTML = item.icon + "<em>" + esc(item.label) + "</em><b>" + rows.filter((row) => row.tab === item.id).length + "</b>";
+        button.addEventListener("click", () => {
+          state.tab = item.id;
+          state.page = 1;
+          state.sort = { key: "", dir: "" };
+          closePop();
+          renderFilters();
+          state.colFilters = emptyColFilters();
+          const next = new URLSearchParams(location.search);
+          next.set("tab", item.id);
+          history.replaceState(null, "", "warnings.html?" + next.toString());
+          renderTabs();
+          render();
+        });
+        box.appendChild(button);
+      });
+    }
+    function renderPager(total) {
+      const pages = Math.max(1, Math.ceil(total / state.pageSize));
+      if (state.page > pages) state.page = pages;
+      const box = document.getElementById("pager");
+      const buttons = [];
+      for (let i = 1; i <= pages; i += 1) buttons.push(i);
+      box.innerHTML =
+        "<span class=\"total\">共 " + total + " 条</span>" +
+        "<select id=\"pageSize\" aria-label=\"每页条数\">" +
+        [10, 20, 50].map((size) => "<option value=\"" + size + "\"" + (size === state.pageSize ? " selected" : "") + ">" + size + "条/页</option>").join("") +
+        "</select>" +
+        "<button type=\"button\" data-page=\"prev\"" + (state.page <= 1 ? " disabled" : "") + ">上一页</button>" +
+        buttons.map((page) => "<button type=\"button\" data-page=\"" + page + "\" class=\"" + (page === state.page ? "is-on" : "") + "\">" + page + "</button>").join("") +
+        "<button type=\"button\" data-page=\"next\"" + (state.page >= pages ? " disabled" : "") + ">下一页</button>";
+      box.querySelector("#pageSize").addEventListener("change", (event) => {
+        state.pageSize = Number(event.target.value);
+        state.page = 1;
+        render();
+      });
+      box.querySelectorAll("button").forEach((button) => {
+        button.addEventListener("click", () => {
+          const mark = button.dataset.page;
+          if (mark === "prev") state.page -= 1;
+          else if (mark === "next") state.page += 1;
+          else state.page = Number(mark);
+          render();
+        });
+      });
+    }
+    function colMatch(row, skip) {
+      return cols().every((col) => {
+        if (!col.filter || col.key === skip) return true;
+        const picked = state.colFilters[col.key] || [];
+        return !picked.length || picked.indexOf(String(row[col.key])) >= 0;
+      });
+    }
+    function sortValue(row, key) {
+      const col = cols().find((item) => item.key === key) || {};
+      if (col.rank) return rank[row[key]] || 0;
+      if (col.num) return Number(String(row[key]).replace(/,/g, "")) || 0;
+      return row[key] || "";
+    }
+    function sortIcon(key) {
+      const dir = state.sort.key === key ? state.sort.dir : "";
+      return '<svg class="sort-ico ' + dir + '" viewBox="0 0 16 16" aria-hidden="true"><path class="up" d="M8 3.2 11.2 7H4.8Z"/><path class="down" d="M4.8 9h6.4L8 12.8Z"/></svg>';
+    }
+    function filterIcon() {
+      return '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1.8 2.8h12.4L9.4 8.1v3.4l-2.8 1.5V8.1L1.8 2.8Z"/></svg>';
+    }
+    function renderHead() {
+      const sheet = views[state.tab];
+      const table = document.querySelector("table");
+      table.style.setProperty("--pin1", sheet.pin1);
+      table.style.setProperty("--pin2", sheet.pin2);
+      document.querySelector("thead tr").innerHTML = cols().map((col) => {
+        const pin = col.pin ? ' class="pin ' + col.pin + '"' : "";
+        if (col.sort) {
+          const on = state.sort.key === col.key ? " is-on" : "";
+          const aria = state.sort.key === col.key ? (state.sort.dir === "asc" ? "ascending" : "descending") : "none";
+          return "<th" + pin + " aria-sort=\"" + aria + "\"><button type=\"button\" class=\"th-sort" + on + "\" data-sort=\"" + col.key + "\"><span>" + esc(col.label) + "</span>" + sortIcon(col.key) + "</button></th>";
+        }
+        if (col.filter) {
+          const on = (state.colFilters[col.key] || []).length ? " is-on" : "";
+          return "<th" + pin + "><div class=\"th-box\"><span>" + esc(col.label) + "</span><button type=\"button\" class=\"th-filter" + on + "\" data-filter=\"" + col.key + "\" aria-label=\"筛选" + esc(col.label) + "\">" + filterIcon() + "</button></div></th>";
+        }
+        return "<th" + pin + ">" + esc(col.label) + "</th>";
+      }).join("");
+    }
+    function pickCell(row, key, className) {
+      const picked = state.colFilters[key] || [];
+      const on = picked.length && picked.indexOf(String(row[key])) >= 0 ? " is-on" : "";
+      const cls = className ? ' class="' + className + '"' : "";
+      return "<td" + cls + "><button type=\"button\" class=\"cell-pick" + on + "\" data-col=\"" + key + "\" title=\"按此筛选\">" + esc(row[key]) + "</button></td>";
+    }
+    function closePop() {
+      state.openFilter = "";
+      document.getElementById("colPop").hidden = true;
+    }
+    function placePop(anchor) {
+      const pop = document.getElementById("colPop");
+      const rect = anchor.getBoundingClientRect();
+      const margin = 8;
+      const width = pop.offsetWidth;
+      const height = pop.offsetHeight;
+      let left = Math.min(Math.max(margin, rect.right - width), window.innerWidth - width - margin);
+      let top = rect.bottom + 6;
+      if (top + height > window.innerHeight - margin) top = Math.max(margin, rect.top - height - 6);
+      pop.style.left = left + "px";
+      pop.style.top = top + "px";
+    }
+    function fillPop(key) {
+      const col = cols().find((item) => item.key === key);
+      document.getElementById("colTitle").textContent = col.label;
+      const query = document.getElementById("colQuery").value.trim();
+      const picked = state.colFilters[key] || [];
+      const filters = readFilters();
+      const values = [];
+      rows.forEach((row) => {
+        if (!matched(row, filters) || !colMatch(row, key)) return;
+        if (values.indexOf(row[key]) < 0) values.push(row[key]);
+      });
+      values.sort((a, b) => {
+        const ap = picked.indexOf(a) >= 0 ? 0 : 1;
+        const bp = picked.indexOf(b) >= 0 ? 0 : 1;
+        if (ap !== bp) return ap - bp;
+        return String(a).localeCompare(String(b), "zh");
+      });
+      const list = document.getElementById("colList");
+      list.replaceChildren();
+      const shown = values.filter((value) => !query || String(value).indexOf(query) >= 0);
+      if (!shown.length) {
+        const empty = document.createElement("div");
+        empty.className = "col-empty";
+        empty.textContent = "没有匹配项";
+        list.appendChild(empty);
+        return;
+      }
+      shown.forEach((value) => {
+        const label = document.createElement("label");
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.value = value;
+        input.checked = picked.indexOf(value) >= 0;
+        const span = document.createElement("span");
+        span.textContent = value;
+        span.title = value;
+        label.appendChild(input);
+        label.appendChild(span);
+        list.appendChild(label);
+      });
+    }
+    function openFilter(key, anchor) {
+      const pop = document.getElementById("colPop");
+      if (state.openFilter === key && !pop.hidden) {
+        closePop();
+        return;
+      }
+      state.openFilter = key;
+      document.getElementById("colQuery").value = "";
+      pop.classList.toggle("wide", key === "point");
+      pop.hidden = false;
+      fillPop(key);
+      placePop(anchor);
+    }
+    function syncPop() {
+      if (!state.openFilter) return;
+      const anchor = document.querySelector('[data-filter="' + state.openFilter + '"]');
+      if (!anchor) return;
+      fillPop(state.openFilter);
+      placePop(anchor);
+    }
+    function render() {
+      renderHead();
+      const filters = readFilters();
+      const list = rows.filter((row) => matched(row, filters) && colMatch(row));
+      if (state.sort.key) {
+        const key = state.sort.key;
+        const dir = state.sort.dir === "asc" ? 1 : -1;
+        list.sort((a, b) => {
+          const av = sortValue(a, key);
+          const bv = sortValue(b, key);
+          const cmp = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv), "zh");
+          return cmp * dir;
+        });
+      }
+      const pages = Math.max(1, Math.ceil(list.length / state.pageSize) || 1);
+      if (state.page > pages) state.page = pages;
+      if (state.page < 1) state.page = 1;
+      const view = list.slice((state.page - 1) * state.pageSize, state.page * state.pageSize);
+      const body = document.getElementById("body");
+      if (!view.length) {
+        body.innerHTML = '<tr class="is-empty"><td class="empty" colspan="' + cols().length + '">当前条件下没有预警</td></tr>';
+        renderPager(0);
+        syncPop();
+        return;
+      }
+      body.innerHTML = view.map((row) => (
+        "<tr data-i=\"" + rows.indexOf(row) + "\">" +
+        cols().map((col) => {
+          if (col.key === "ops") {
+            return "<td class=\"pin r\"><div class=\"ops\"><button type=\"button\" data-act=\"view\">查看</button><button type=\"button\" data-act=\"clue\"" + (row.clue ? " disabled" : "") + ">" + (row.clue ? "已转线索" : "转为线索") + "</button></div></td>";
+          }
+          const bits = [];
+          if (col.pin) bits.push("pin", col.pin);
+          if (col.wrap) bits.push("name");
+          if (col.key === "point") bits.push("point");
+          if (col.num) bits.push("num");
+          if (col.key === "trust") bits.push(tone(row.trust));
+          const cls = bits.join(" ");
+          if (col.filter) return pickCell(row, col.key, cls);
+          if (col.key === "level") return "<td class=\"" + cls + "\"><span class=\"tag " + tone(row.level) + "\">" + esc(row.level) + "</span></td>";
+          const raw = row[col.key];
+          return "<td" + (cls ? " class=\"" + cls + "\"" : "") + ">" + esc(raw === 0 || raw ? raw : "—") + "</td>";
+        }).join("") +
+        "</tr>"
+      )).join("");
+      renderPager(list.length);
+      syncPop();
+    }
+    document.getElementById("filters").addEventListener("submit", (event) => {
+      event.preventDefault();
+      state.page = 1;
+      render();
+    });
+    document.querySelector("thead").addEventListener("click", (event) => {
+      const filterBtn = event.target.closest("[data-filter]");
+      if (filterBtn) {
+        openFilter(filterBtn.dataset.filter, filterBtn);
+        return;
+      }
+      const sortBtn = event.target.closest("[data-sort]");
+      if (!sortBtn) return;
+      const key = sortBtn.dataset.sort;
+      closePop();
+      if (state.sort.key !== key) state.sort = { key, dir: "desc" };
+      else if (state.sort.dir === "desc") state.sort.dir = "asc";
+      else state.sort = { key: "", dir: "" };
+      state.page = 1;
+      render();
+    });
+    document.getElementById("body").addEventListener("click", (event) => {
+      const pick = event.target.closest(".cell-pick");
+      if (pick) {
+        const row = rows[Number(pick.closest("tr").dataset.i)];
+        state.colFilters[pick.dataset.col] = [row[pick.dataset.col]];
+        state.page = 1;
+        closePop();
+        render();
+        return;
+      }
+      const button = event.target.closest(".ops button");
+      if (!button || button.disabled) return;
+      const row = rows[Number(button.closest("tr").dataset.i)];
+      if (button.dataset.act === "view") openInsight(row);
+      else {
+        row.clue = true;
+        render();
+      }
+    });
+    let skipClose = false;
+    document.getElementById("colList").addEventListener("change", () => {
+      const key = state.openFilter;
+      if (!key) return;
+      skipClose = true;
+      state.colFilters[key] = [...document.querySelectorAll("#colList input:checked")].map((input) => input.value);
+      state.page = 1;
+      render();
+    });
+    document.getElementById("colQuery").addEventListener("input", () => {
+      if (state.openFilter) fillPop(state.openFilter);
+    });
+    document.getElementById("colClear").addEventListener("click", () => {
+      if (!state.openFilter) return;
+      state.colFilters[state.openFilter] = [];
+      state.page = 1;
+      render();
+    });
+    document.getElementById("colOk").addEventListener("click", closePop);
+    document.getElementById("tableScroll").addEventListener("scroll", () => {
+      if (state.openFilter) closePop();
+    });
+    document.querySelector(".page").addEventListener("scroll", () => {
+      if (state.openFilter) closePop();
+    });
+    document.addEventListener("click", (event) => {
+      if (skipClose) {
+        skipClose = false;
+        return;
+      }
+      if (!state.openFilter) return;
+      if (event.target.closest("#colPop") || event.target.closest("[data-filter]")) return;
+      closePop();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && state.openFilter) closePop();
+    });
+    function syncFilterOptions() {
+      ["project", "owner", "agency", "bidder", "expert", "staff"].forEach((tab) => {
+        views[tab].filters.forEach((field) => {
+          if (field.type !== "select" || field.key === "viewState" || field.key === "years" || field.key === "level" || field.key === "source") return;
+          const values = [];
+          rows.forEach((row) => {
+            if (row.tab !== tab) return;
+            const value = row[field.key];
+            if (value && values.indexOf(value) < 0) values.push(value);
+          });
+          if (values.length) field.options = [field.all].concat(values);
+        });
+      });
+    }
+    syncFilterOptions();
+    renderFilters();
+    state.colFilters = emptyColFilters();
+    renderTabs();
+    render();
+  </script>
+</body>
+</html>
