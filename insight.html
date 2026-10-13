@@ -923,7 +923,8 @@
 
     .time-panel {
       flex: none;
-      height: 178px;
+      height: auto;
+      max-height: 46vh;
       background: #fff;
       border-top: 1px solid #e6eaf0;
       padding: 10px 16px 12px;
@@ -931,9 +932,52 @@
       flex-direction: column;
       min-width: 0;
     }
+    .time-head {
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
     .time-name { font-size: 13px; color: #8b97a6; flex: none; }
-    .time-scroll { flex: 1; min-height: 0; overflow-x: auto; overflow-y: hidden; }
+    .time-scroll { flex: 1; min-height: 0; overflow: auto; }
+    .time-stage { position: relative; min-width: 860px; }
+    .time-cards {
+      position: absolute;
+      z-index: 3;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .time-cards:empty { display: none; }
+    .time-cards .warn-card {
+      flex: 0 0 232px;
+      width: 232px;
+      max-height: 118px;
+      overflow: auto;
+      padding: 8px 8px 8px 10px;
+    }
+    .time-cards .warn-card p {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .time-cards .warn-empty { margin: 4px 0 8px; }
     .time-body { position: relative; height: 140px; min-width: 860px; margin: 0 12px; }
+    .time-stage.has-cards .time-body { height: 268px; }
+    .time-stage.has-cards .band { top: 148px; }
+    .time-stage.has-cards .band.row-1 { top: 174px; }
+    .time-stage.has-cards .axis { top: 228px; }
+    .time-stage.has-cards .dot { top: 224px; }
+    .time-stage.has-cards .pill { top: 186px; }
+    .time-stage.has-cards .pill.lane-1 { top: 160px; }
+    .time-stage.has-cards .when { top: 244px; }
     .band {
       position: absolute;
       top: 0;
@@ -1031,7 +1075,7 @@
       </table>
     </div>
 
-    <div class="dock left open" id="dockLeft">
+    <div class="dock left" id="dockLeft">
       <aside class="panel" id="detailPanel" aria-label="详情"></aside>
       <div class="tab-col">
         <button class="tab" id="tabDetail" type="button">详情</button>
@@ -1091,10 +1135,16 @@
     </aside>
   </main>
 
-  <section class="time-panel" aria-label="时序图">
-    <div class="time-name" id="timeName">项目历程图</div>
+  <section class="time-panel" id="timePanel" aria-label="时序图">
+    <div class="time-head">
+      <div class="time-name" id="timeName">项目历程图</div>
+      <button type="button" class="clue-mini" id="timeAddAll" data-add-all>添加全部线索</button>
+    </div>
     <div class="time-scroll">
-      <div class="time-body" id="timeBody"></div>
+      <div class="time-stage" id="timeStage">
+        <div class="time-cards" id="timeCards"></div>
+        <div class="time-body" id="timeBody"></div>
+      </div>
     </div>
   </section>
 
@@ -1276,7 +1326,7 @@
     let nodes = buildNodes();
     let links = buildLinks();
     const typeOn = { "招标人": true, "招标代理": true, "项目": true, "投标单位": true, "专家": true, "施工单位": true, "监理单位": true };
-    const state = { mode: "graph", query: "", abnormalOnly: false, selection: null, left: true, alert: null, subject: null, drawer: "warn", detailTab: "attr" };
+    const state = { mode: "graph", query: "", abnormalOnly: false, selection: null, left: false, alert: null, subject: null, drawer: "warn", detailTab: "attr" };
     (function restoreGraphFocus() {
       const bag = gz && gz.graphs && gz.graphs[project.name];
       const node = params.get("node") || "";
@@ -1665,55 +1715,50 @@
       return [["主体角色", "项目"], ["项目名称", project.name], ["预警分类", project.cat], ["招标人", project.bidder], ["招标代理", project.agency], ["监管部门", project.regulator], ["预警等级", project.level], ["预警时间", project.date]];
     }
 
+    function warnCardHtml(item) {
+      const on = state.alert === item.id ? " on" : "";
+      const tone = item.level === "中风险" ? " mid" : item.level === "低风险" ? " low" : " high";
+      return '<div class="warn-card' + tone + on + '" data-alert="' + item.id + '"><div class="warn-head"><span class="sev">' + esc(item.level) + "</span><h3>" + esc(item.title) + '</h3></div><div class="who">' + esc(item.who) + "</div><p>" + esc(item.note) + '</p><div class="warn-foot"><button type="button" class="clue-mini" data-add-clue="' + item.id + '">添加线索</button></div></div>';
+    }
+
     function renderPanel() {
-      const rows = visibleAlerts();
-      const drawer = state.left ? (state.drawer || "warn") : "";
+      const drawer = state.left ? (state.drawer || "detail") : "";
       document.getElementById("tabDetail").classList.toggle("is-on", drawer === "detail");
-      document.getElementById("tabWarn").classList.toggle("is-on", drawer === "warn");
-      if (state.drawer === "detail") {
-        const entry = entrySubject();
-        const tab = state.detailTab === "time" ? "time" : "attr";
-        const tabs = [["attr", "属性"], ["time", "时序"]].map(([key, label]) => {
-          const on = key === tab;
-          return '<button type="button" data-detail-tab="' + key + '" class="' + (on ? "is-on" : "") + '" role="tab" aria-selected="' + (on ? "true" : "false") + '">' + label + "</button>";
-        }).join("");
-        const body = tab === "attr"
-          ? '<dl class="attr">' + attrFacts().map(([label, value]) => "<dt>" + esc(label) + "</dt><dd>" + esc(value) + "</dd>").join("") + "</dl>"
-          : '<ol class="vline">' + timelines[entry.time].events.filter((item) => !item.bare).map((item) => '<li><span class="rail"><i></i></span><time>' + esc(item.text) + '</time><b>' + esc(item.label) + "</b></li>").join("") + "</ol>";
-        detailPanel.innerHTML = '<div class="warn-title"><h2 class="panel-name">' + esc(entry.name) + '</h2><button type="button" class="clue-mini" data-add-node>添加线索</button></div><div class="tabs" role="tablist">' + tabs + "</div>" + body;
-        detailPanel.setAttribute("aria-label", "详情");
+      document.getElementById("tabWarn").classList.toggle("is-on", state.drawer === "warn");
+      if (!state.left || state.drawer !== "detail") {
+        detailPanel.innerHTML = "";
         return;
       }
-      const cards = rows.length ? rows.map((item) => {
-        const on = state.alert === item.id ? " on" : "";
-        const tone = item.level === "中风险" ? " mid" : item.level === "低风险" ? " low" : " high";
-        return '<div class="warn-card' + tone + on + '" data-alert="' + item.id + '"><div class="warn-head"><span class="sev">' + esc(item.level) + "</span><h3>" + esc(item.title) + '</h3></div><div class="who">' + esc(item.who) + "</div><p>" + esc(item.note) + '</p><div class="warn-foot"><button type="button" class="clue-mini" data-add-clue="' + item.id + '">添加线索</button></div></div>';
-      }).join("") : '<p class="warn-empty">当前主体暂无预警信息</p>';
-      detailPanel.innerHTML = '<div class="warn-title"><h2>预警信息</h2><button type="button" class="clue-mini" data-add-all' + (rows.length ? "" : " disabled") + '>添加全部线索</button></div><div class="warn-list">' + cards + "</div>";
-      detailPanel.setAttribute("aria-label", "预警");
+      const entry = entrySubject();
+      const tab = state.detailTab === "time" ? "time" : "attr";
+      const tabs = [["attr", "属性"], ["time", "时序"]].map(([key, label]) => {
+        const on = key === tab;
+        return '<button type="button" data-detail-tab="' + key + '" class="' + (on ? "is-on" : "") + '" role="tab" aria-selected="' + (on ? "true" : "false") + '">' + label + "</button>";
+      }).join("");
+      const body = tab === "attr"
+        ? '<dl class="attr">' + attrFacts().map(([label, value]) => "<dt>" + esc(label) + "</dt><dd>" + esc(value) + "</dd>").join("") + "</dl>"
+        : '<ol class="vline">' + timelines[entry.time].events.filter((item) => !item.bare).map((item) => '<li><span class="rail"><i></i></span><time>' + esc(item.text) + '</time><b>' + esc(item.label) + "</b></li>").join("") + "</ol>";
+      detailPanel.innerHTML = '<div class="warn-title"><h2 class="panel-name">' + esc(entry.name) + '</h2><button type="button" class="clue-mini" data-add-node>添加线索</button></div><div class="tabs" role="tablist">' + tabs + "</div>" + body;
+      detailPanel.setAttribute("aria-label", "详情");
+    }
+
+    function renderTimeCards() {
+      const rows = visibleAlerts();
+      const host = document.getElementById("timeCards");
+      const addAll = document.getElementById("timeAddAll");
+      addAll.disabled = rows.length === 0;
+      host.innerHTML = rows.length
+        ? rows.map(warnCardHtml).join("")
+        : '<p class="warn-empty">当前主体暂无预警信息</p>';
+      document.getElementById("timeStage").classList.toggle("has-cards", true);
       revealSelectedAlert();
     }
 
     function revealSelectedAlert() {
-      if (!state.left || state.drawer !== "warn" || !state.alert) return;
-      const card = detailPanel.querySelector(".warn-card.on");
-      if (!card) return;
-      const panelBox = detailPanel.getBoundingClientRect();
-      const cardBox = card.getBoundingClientRect();
-      const pad = 8;
-      if (cardBox.top >= panelBox.top + pad && cardBox.bottom <= panelBox.bottom - pad) return;
-      const first = card === detailPanel.querySelector(".warn-card");
-      const topAtRest = cardBox.top + detailPanel.scrollTop;
-      const bottomAtRest = cardBox.bottom + detailPanel.scrollTop;
-      if (first && topAtRest >= panelBox.top + pad && bottomAtRest <= panelBox.bottom - pad) {
-        detailPanel.scrollTop = 0;
-        return;
-      }
-      if (cardBox.top < panelBox.top + pad || cardBox.height > panelBox.height - pad * 2) {
-        detailPanel.scrollTop += cardBox.top - panelBox.top - pad;
-      } else {
-        detailPanel.scrollTop += cardBox.bottom - panelBox.bottom + pad;
-      }
+      if (!state.alert) return;
+      const host = document.getElementById("timeCards");
+      const card = host.querySelector(".warn-card.on");
+      if (card) card.scrollIntoView({ block: "nearest", inline: "nearest" });
     }
 
     function graphAlerts() {
@@ -1771,6 +1816,7 @@
         return pill + '<i class="dot" style="' + left + '"></i><div class="when" style="' + left + '">' + esc(item.event.text) + "</div>";
       }).join("");
       body.innerHTML = bands + '<div class="axis"></div>' + marks;
+      renderTimeCards();
     }
 
     function render() {
@@ -1828,15 +1874,23 @@
       plane.style.setProperty("--shift-y", ((stageBox.top + stageBox.bottom) / 2 - (box.t + box.b) / 2) + "px");
     }
 
-    document.getElementById("subject").textContent = "概览视图";
+    document.getElementById("subject").textContent = project.name;
     function godTitle() {
-      document.getElementById("subject").textContent = "概览视图";
-      document.title = "概览视图";
+      document.getElementById("subject").textContent = project.name;
+      document.title = project.name;
     }
     function toggleDrawer(which) {
-      if (state.left && state.drawer === which) state.left = false;
+      if (which === "warn") {
+        state.drawer = "warn";
+        state.left = false;
+        render();
+        const card = document.querySelector("#timeCards .warn-card.on") || document.querySelector("#timeCards .warn-card");
+        if (card) card.scrollIntoView({ block: "nearest", inline: "nearest" });
+        return;
+      }
+      if (state.left && state.drawer === "detail") state.left = false;
       else {
-        state.drawer = which;
+        state.drawer = "detail";
         state.left = true;
       }
       render();
@@ -1934,10 +1988,24 @@
         addClue(add.dataset.addClue);
         return;
       }
+    });
+    document.getElementById("timePanel").addEventListener("click", (event) => {
+      const addAll = event.target.closest("[data-add-all]");
+      if (addAll) {
+        event.stopPropagation();
+        addClues(visibleAlerts().map((item) => item.id));
+        return;
+      }
+      const add = event.target.closest("[data-add-clue]");
+      if (add) {
+        event.stopPropagation();
+        addClue(add.dataset.addClue);
+        return;
+      }
       const card = event.target.closest("[data-alert]");
       if (!card) return;
       state.alert = state.alert === card.dataset.alert ? null : card.dataset.alert;
-      state.left = true;
+      state.drawer = "warn";
       postGraphFocus();
       render();
     });
@@ -1950,14 +2018,14 @@
         if ("subject" in event.data) state.subject = event.data.subject || null;
         if (event.data.name) state.subjectName = event.data.name;
         state.drawer = "warn";
-        state.left = true;
+        state.left = false;
         render();
       } else if (event.data && event.data.type === "select-subject") {
         state.subject = event.data.id || null;
         state.subjectName = event.data.name || "";
         state.alert = null;
         state.drawer = "warn";
-        state.left = true;
+        state.left = false;
         render();
       }
     });
@@ -2084,7 +2152,7 @@
 
     function addClue(alertId) {
       state.alert = alertId;
-      state.left = true;
+      state.drawer = "warn";
       postGraphFocus();
       addClues([alertId]);
     }
