@@ -924,7 +924,7 @@
     .time-panel {
       flex: none;
       height: auto;
-      max-height: 46vh;
+      max-height: 62vh;
       background: #fff;
       border-top: 1px solid #e6eaf0;
       padding: 10px 16px 12px;
@@ -941,43 +941,68 @@
       margin-bottom: 6px;
     }
     .time-name { font-size: 13px; color: #8b97a6; flex: none; }
+    .time-head .warn-empty { margin: 0; white-space: nowrap; }
     .time-scroll { flex: 1; min-height: 0; overflow: auto; }
     .time-stage { position: relative; min-width: 860px; }
-    .time-cards {
+    .time-body { position: relative; height: 140px; min-width: 860px; margin: 0 12px; }
+    .time-body.has-pins { height: var(--body, 180px); }
+    .time-body.has-pins .axis { top: var(--axis); }
+    .time-body.has-pins .dot { top: calc(var(--axis) - 4px); }
+    .time-body.has-pins .when { top: calc(var(--axis) + 14px); }
+    .time-body.has-pins .pill { top: calc(var(--axis) + 34px); }
+    .time-body.has-pins .pill.lane-1 { top: calc(var(--axis) + 56px); }
+    .warn-pin {
       position: absolute;
       z-index: 3;
-      top: 0;
-      left: 0;
-      right: 0;
+      transform: translateX(-50%);
       display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 4px;
+      align-items: center;
+      gap: 6px;
+      height: 24px;
+      max-width: 156px;
+      margin: 0;
+      padding: 0 8px 0 3px;
+      border: 1px solid #f3c3c8;
+      border-radius: 4px;
+      background: #fff;
+      color: #e23d55;
+      font: inherit;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(28, 39, 58, 0.06);
     }
-    .time-cards:empty { display: none; }
-    .time-cards .warn-card {
-      flex: 0 0 232px;
-      width: 232px;
-      max-height: 118px;
-      overflow: auto;
-      padding: 8px 8px 8px 10px;
+    .warn-pin .sev {
+      flex: none;
+      height: 18px;
+      padding: 0 4px;
+      border-radius: 3px;
+      background: #fdecee;
+      color: #e23d55;
+      font-size: 11px;
+      line-height: 18px;
+      font-weight: 650;
     }
-    .time-cards .warn-card p {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
+    .warn-pin b {
+      min-width: 0;
       overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 650;
     }
-    .time-cards .warn-empty { margin: 4px 0 8px; }
-    .time-body { position: relative; height: 140px; min-width: 860px; margin: 0 12px; }
-    .time-stage.has-cards .time-body { height: 268px; }
-    .time-stage.has-cards .band { top: 148px; }
-    .time-stage.has-cards .band.row-1 { top: 174px; }
-    .time-stage.has-cards .axis { top: 228px; }
-    .time-stage.has-cards .dot { top: 224px; }
-    .time-stage.has-cards .pill { top: 186px; }
-    .time-stage.has-cards .pill.lane-1 { top: 160px; }
-    .time-stage.has-cards .when { top: 244px; }
+    .warn-pin.mid { border-color: #f5d7b4; color: #e5922a; }
+    .warn-pin.mid .sev { background: #fff4e8; color: #e5922a; }
+    .warn-pin.low { border-color: #c9e6d6; color: #2f9e6b; }
+    .warn-pin.low .sev { background: #eef8f3; color: #2f9e6b; }
+    .warn-pin.on { box-shadow: 0 0 0 2px currentColor; }
+    .warn-pin.has-stem::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 100%;
+      width: 1px;
+      height: var(--stem, 8px);
+      background: #c5d0de;
+    }
     .band {
       position: absolute;
       top: 0;
@@ -1138,11 +1163,11 @@
   <section class="time-panel" id="timePanel" aria-label="时序图">
     <div class="time-head">
       <div class="time-name" id="timeName">项目历程图</div>
+      <p class="warn-empty" id="timeEmpty" hidden>当前主体暂无预警信息</p>
       <button type="button" class="clue-mini" id="timeAddAll" data-add-all>添加全部线索</button>
     </div>
     <div class="time-scroll">
       <div class="time-stage" id="timeStage">
-        <div class="time-cards" id="timeCards"></div>
         <div class="time-body" id="timeBody"></div>
       </div>
     </div>
@@ -1715,10 +1740,57 @@
       return [["主体角色", "项目"], ["项目名称", project.name], ["预警分类", project.cat], ["招标人", project.bidder], ["招标代理", project.agency], ["监管部门", project.regulator], ["预警等级", project.level], ["预警时间", project.date]];
     }
 
-    function warnCardHtml(item) {
-      const on = state.alert === item.id ? " on" : "";
-      const tone = item.level === "中风险" ? " mid" : item.level === "低风险" ? " low" : " high";
-      return '<div class="warn-card' + tone + on + '" data-alert="' + item.id + '"><div class="warn-head"><span class="sev">' + esc(item.level) + "</span><h3>" + esc(item.title) + '</h3></div><div class="who">' + esc(item.who) + "</div><p>" + esc(item.note) + '</p><div class="warn-foot"><button type="button" class="clue-mini" data-add-clue="' + item.id + '">添加线索</button></div></div>';
+    const ALERT_PHASES = [
+      [/应招未招|规避招标|虚构项目|批小招大/, /立项|备案/],
+      [/澄清|量身定制|新代理/, /公告|发标|编制|委托/],
+      [/突击注册/, /下载|招标文件|购标/],
+      [/CA锁|特征码|相邻时间|报价异常|资质挂靠/, /递交|投标|开标/],
+      [/打分偏离|查看标书|应回避/, /评标|评审|评分|打分/],
+      [/排名变更|放弃中标|非候选人/, /公示|候选人|定标|中标结果|结果/],
+      [/合同签订/, /合同/],
+      [/保证金/, /通知书|合同/],
+      [/施工许可|转包|分包/, /施工|竣工|许可/],
+      [/投诉|多次入场|交易场所/, /开标|进场|入场/]
+    ];
+
+    function anchorEvent(title, events) {
+      const dated = events.filter((event) => !event.bare && /\d/.test(event.text || ""));
+      for (let i = 0; i < ALERT_PHASES.length; i += 1) {
+        if (!ALERT_PHASES[i][0].test(title || "")) continue;
+        const hit = dated.find((event) => ALERT_PHASES[i][1].test(event.label || ""));
+        if (hit) return hit;
+      }
+      return dated.length ? dated[Math.floor((dated.length - 1) / 2)] : (events[0] || null);
+    }
+
+    function layoutAlertPins(alerts, events, stageWidth) {
+      const collide = 164 / stageWidth * 100;
+      const items = alerts.map((alert) => {
+        const event = anchorEvent(alert.title, events);
+        return { alert: alert, x: event ? event.pos * 100 : 50, when: event ? event.text : "" };
+      }).sort((a, b) => a.x - b.x || String(a.alert.title).localeCompare(String(b.alert.title), "zh"));
+      const ends = [];
+      const floors = {};
+      items.forEach((item) => {
+        let lane = 0;
+        while (lane < ends.length && item.x < ends[lane] + collide) lane += 1;
+        ends[lane] = item.x;
+        item.lane = lane;
+        const key = item.x.toFixed(2);
+        floors[key] = Math.max(floors[key] || 0, lane);
+      });
+      items.forEach((item) => { item.stem = item.lane === floors[item.x.toFixed(2)]; });
+      return { items: items, lanes: items.length ? ends.length : 0 };
+    }
+
+    function pinHtml(item, axisTop) {
+      const alert = item.alert;
+      const tone = alert.level === "中风险" ? "mid" : alert.level === "低风险" ? "low" : "high";
+      const on = state.alert === alert.id ? " on" : "";
+      const top = item.lane * 26;
+      const stem = Math.max(axisTop - top - 24, 8);
+      const tip = alert.level + "  " + alert.title + (item.when ? "  " + item.when : "");
+      return '<button type="button" class="warn-pin ' + tone + on + (item.stem ? " has-stem" : "") + '" data-alert="' + esc(alert.id) + '" style="left:' + item.x + "%;top:" + top + "px;--stem:" + stem + 'px" title="' + esc(tip) + '"><span class="sev">' + esc(alert.level) + "</span><b>" + esc(alert.title) + "</b></button>";
     }
 
     function renderPanel() {
@@ -1742,22 +1814,9 @@
       detailPanel.setAttribute("aria-label", "详情");
     }
 
-    function renderTimeCards() {
-      const rows = visibleAlerts();
-      const host = document.getElementById("timeCards");
-      const addAll = document.getElementById("timeAddAll");
-      addAll.disabled = rows.length === 0;
-      host.innerHTML = rows.length
-        ? rows.map(warnCardHtml).join("")
-        : '<p class="warn-empty">当前主体暂无预警信息</p>';
-      document.getElementById("timeStage").classList.toggle("has-cards", true);
-      revealSelectedAlert();
-    }
-
     function revealSelectedAlert() {
       if (!state.alert) return;
-      const host = document.getElementById("timeCards");
-      const card = host.querySelector(".warn-card.on");
+      const card = document.querySelector("#timeBody .warn-pin.on");
       if (card) card.scrollIntoView({ block: "nearest", inline: "nearest" });
     }
 
@@ -1802,21 +1861,39 @@
 
     function renderTimeline() {
       const data = timelines[timelineKey()];
+      const rows = visibleAlerts();
       document.getElementById("timeName").textContent = data.title;
+      document.getElementById("timeAddAll").disabled = rows.length === 0;
+      document.getElementById("timeEmpty").hidden = rows.length > 0;
       const body = document.getElementById("timeBody");
-      const placed = data.events.map((event) => ({ event, x: event.pos, lane: 0 }));
-      const bands = data.bands.map((band) => {
+      const stage = document.getElementById("timeStage");
+      const stageWidth = Math.max(980, data.events.length * 168);
+      stage.style.minWidth = stageWidth + "px";
+      body.style.minWidth = (stageWidth - 24) + "px";
+      const placed = layoutAlertPins(rows, data.events, stageWidth);
+      const axisTop = placed.lanes ? placed.lanes * 26 + 8 : 100;
+      if (placed.lanes) {
+        body.classList.add("has-pins");
+        body.style.setProperty("--axis", axisTop + "px");
+        body.style.setProperty("--body", (axisTop + 70) + "px");
+      } else {
+        body.classList.remove("has-pins");
+        body.style.removeProperty("--axis");
+        body.style.removeProperty("--body");
+      }
+      const bands = placed.lanes ? "" : data.bands.map((band) => {
         const left = band.pos * 100;
         const width = Math.max((band.end - band.pos) * 100, 8);
         return '<div class="band row-' + band.row + '" style="left:' + left + '%;width:' + width + '%">' + esc(band.label) + "</div>";
       }).join("");
-      const marks = placed.map((item) => {
-        const left = "left:" + (item.x * 100) + "%";
-        const pill = item.event.bare ? "" : '<div class="pill lane-' + item.lane + '" style="' + left + '">' + esc(item.event.label) + "</div>";
-        return pill + '<i class="dot" style="' + left + '"></i><div class="when" style="' + left + '">' + esc(item.event.text) + "</div>";
+      const marks = data.events.map((event) => {
+        const left = "left:" + (event.pos * 100) + "%";
+        const pill = event.bare ? "" : '<div class="pill lane-0" style="' + left + '">' + esc(event.label) + "</div>";
+        return pill + '<i class="dot" style="' + left + '"></i><div class="when" style="' + left + '">' + esc(event.text) + "</div>";
       }).join("");
-      body.innerHTML = bands + '<div class="axis"></div>' + marks;
-      renderTimeCards();
+      const pins = placed.items.map((item) => pinHtml(item, axisTop)).join("");
+      body.innerHTML = pins + bands + '<div class="axis"></div>' + marks;
+      revealSelectedAlert();
     }
 
     function render() {
@@ -1884,7 +1961,7 @@
         state.drawer = "warn";
         state.left = false;
         render();
-        const card = document.querySelector("#timeCards .warn-card.on") || document.querySelector("#timeCards .warn-card");
+        const card = document.querySelector("#timeBody .warn-pin.on") || document.querySelector("#timeBody .warn-pin");
         if (card) card.scrollIntoView({ block: "nearest", inline: "nearest" });
         return;
       }
