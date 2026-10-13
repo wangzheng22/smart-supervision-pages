@@ -642,19 +642,19 @@
     .seg-label {
       position: absolute;
       left: 0;
-      top: -40px;
+      top: -90px;
       transform: translateX(-50%);
       font-size: 12px;
       font-weight: 650;
       line-height: 1;
       white-space: nowrap;
-      opacity: 1;
+      opacity: 0;
       pointer-events: none;
       text-shadow: 0 0 4px #e8eaee, 0 0 4px #e8eaee, 0 1px 1px #fff;
-      transition: top 0.22s ease;
+      transition: opacity 0.16s ease;
     }
     .seg-label.is-flip { transform: translateX(-50%) rotate(180); }
-    .node:hover .seg-label { top: -90px; }
+    .node:hover .seg-label { opacity: 1; }
     .mark {
       position: relative;
       z-index: 3;
