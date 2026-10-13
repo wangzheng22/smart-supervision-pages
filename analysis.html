@@ -1314,6 +1314,35 @@
       height: var(--stem, 8px);
       background: #c5d0de;
     }
+    .warn-pin .more {
+      flex: none;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      background: #24364c;
+      color: #fff;
+      font-size: 11px;
+      line-height: 18px;
+      font-weight: 700;
+    }
+    .pin-hold { position: absolute; z-index: 4; }
+    .pin-hold > .warn-pin { position: relative; left: auto; top: auto; transform: translateX(-50%); }
+    .warn-pop {
+      display: none;
+      position: fixed;
+      z-index: 40;
+      width: max-content;
+      max-width: 280px;
+      max-height: 240px;
+      overflow: auto;
+      padding: 6px;
+      border: 1px solid #e4eaf2;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(20, 34, 54, 0.16);
+    }
+    .warn-pop.is-open { display: grid; gap: 4px; }
+    .warn-pop .warn-pin { position: relative; left: auto; top: auto; transform: none; max-width: 260px; width: 100%; }
   </style>
 </head>
 <body>
@@ -1341,11 +1370,10 @@
   </header>
 
   <main class="workspace">
-    <aside class="detail" id="detail">
+    <aside class="detail open" id="detail">
       <div class="body" id="detailBody"></div>
       <div class="vtab-col">
-        <button class="vtab" id="tabDetail" type="button"><span>详情</span></button>
-        <button class="vtab is-on" id="tabWarn" type="button"><span>预警</span></button>
+        <button class="vtab is-on" id="tabDetail" type="button"><span>详情</span></button>
       </div>
     </aside>
     <div class="graph-tools" id="graphTools">
@@ -1870,7 +1898,7 @@
     });
 
     const state = {
-      tab: "warn",
+      tab: "attr",
       mode: "graph",
       query: "",
       selected: "project",
@@ -1902,12 +1930,12 @@
       if (hit) {
         state.alert = hit.id;
         state.focus = true;
-        state.tab = "warn";
+        state.tab = "attr";
       }
       if (!id) return;
       state.selected = id;
       state.focus = true;
-      state.tab = "warn";
+      state.tab = "attr";
       if (nodes.some((node) => node.id === id)) return;
       nodes.some((parent) => {
         const rel = parent.rel || {};
@@ -2403,34 +2431,22 @@
       const node = current();
       const body = document.getElementById("detailBody");
       const open = detail.classList.contains("open");
-      document.getElementById("tabDetail").classList.toggle("is-on", open && state.tab !== "warn");
-      document.getElementById("tabWarn").classList.toggle("is-on", state.tab === "warn");
-      if (state.tab === "warn") {
+      document.getElementById("tabDetail").classList.toggle("is-on", open);
+      state.tab = "attr";
+      if (!open) {
         body.innerHTML = "";
         return;
       }
-      if (state.tab !== "warn") {
-        const tab = state.tab === "time" ? "time" : "attr";
-        const tabs = [["attr", "属性"], ["time", "时序"]].map(([key, label]) => {
-          const on = key === tab;
-          return '<button type="button" data-tab="' + key + '" class="' + (on ? "is-on" : "") + '" role="tab" aria-selected="' + (on ? "true" : "false") + '">' + label + "</button>";
-        }).join("");
-        let inner = "";
-        if (tab === "attr") {
-          const rows = [["主体角色", node.role]].concat(attrsOf(node));
-          if (node.type !== "project" && node.type !== "person" && !rows.some((row) => row[0] === "关联项目")) {
-            const titles = ((node.rel && node.rel.projects) || []).map((id) => catalog[id] && catalog[id].name).filter(Boolean);
-            rows.push(["关联项目", titles.length ? titles.join("、") : project.name]);
-          }
-          inner = '<dl class="attr">' + rows.map(([label, value]) => "<dt>" + esc(label) + "</dt><dd>" + esc(value) + "</dd>").join("") + "</dl>";
-        } else {
-          inner = '<ol class="vline">' + node.timeline.events.map((item) => '<li><span class="rail"><i></i></span><time>' + esc(item.when) + "</time><b>" + esc(item.label) + "</b></li>").join("") + "</ol>";
-        }
-        body.innerHTML = '<div class="warn-title"><h1 class="entity-name" id="entityName">' + glyphs[node.icon] + "<span>" + esc(node.name) + '</span></h1><button type="button" class="clue-mini" data-add-node>添加线索</button></div><div class="tabs" role="tablist">' + tabs + "</div>" + inner;
-        const name = document.getElementById("entityName");
-        if (node.type !== "project" && node.tone) name.classList.add("lv-" + node.tone);
-        else if (node.risk || node.id === "project") name.classList.add("is-risk");
+      const rows = [["主体角色", node.role]].concat(attrsOf(node));
+      if (node.type !== "project" && node.type !== "person" && !rows.some((row) => row[0] === "关联项目")) {
+        const titles = ((node.rel && node.rel.projects) || []).map((id) => catalog[id] && catalog[id].name).filter(Boolean);
+        rows.push(["关联项目", titles.length ? titles.join("、") : project.name]);
       }
+      const inner = '<dl class="attr">' + rows.map(([label, value]) => "<dt>" + esc(label) + "</dt><dd>" + esc(value) + "</dd>").join("") + "</dl>";
+      body.innerHTML = '<div class="warn-title"><h1 class="entity-name" id="entityName">' + glyphs[node.icon] + "<span>" + esc(node.name) + '</span></h1><button type="button" class="clue-mini" data-add-node>添加线索</button></div>' + inner;
+      const name = document.getElementById("entityName");
+      if (node.type !== "project" && node.tone) name.classList.add("lv-" + node.tone);
+      else if (node.risk || node.id === "project") name.classList.add("is-risk");
     }
 
     let graphKey = "";
@@ -2951,25 +2967,39 @@
         chartWidth = Math.min(4800, Math.max(980, Math.ceil(span * (200 / 32))));
         const collide = 164 / Math.max(chartWidth - 148, 320) * 100;
         raw.sort((a, b) => a.x - b.x || String(a.alert.title).localeCompare(String(b.alert.title), "zh"));
-        const ends = [];
-        const floors = {};
+        const columns = [];
         raw.forEach((item) => {
-          let lane = 0;
-          while (lane < ends.length && item.x < ends[lane] + collide) lane += 1;
-          ends[lane] = item.x;
-          item.lane = lane;
-          const key = item.x.toFixed(2);
-          floors[key] = Math.max(floors[key] || 0, lane);
+          const last = columns[columns.length - 1];
+          if (last && item.x < last.anchor + collide) last.items.push(item);
+          else columns.push({ anchor: item.x, items: [item] });
         });
-        const pinLanes = raw.length ? ends.length : 0;
+        const visible = [];
+        columns.forEach((col) => {
+          const xs = col.items.map((item) => item.x).sort((a, b) => a - b);
+          const x = xs[Math.floor((xs.length - 1) / 2)];
+          const count = Math.min(3, col.items.length);
+          for (let lane = 0; lane < count; lane += 1) {
+            const item = col.items[lane];
+            item.lane = lane;
+            item.x = x;
+            item.stem = lane === count - 1;
+            item.more = 0;
+            item.group = null;
+            if (col.items.length > 3 && lane === 2) {
+              item.more = col.items.length - 3;
+              item.group = col.items.slice();
+            }
+            visible.push(item);
+          }
+        });
+        const pinLanes = visible.length ? 3 : 0;
         const axisTop = 42 + pinLanes * 26;
-        raw.forEach((item) => {
-          item.stem = item.lane === floors[item.x.toFixed(2)];
+        visible.forEach((item) => {
           item.stemPx = Math.max(axisTop - item.lane * 26 - 24, 8);
         });
-        rows[pinHost].pins = raw;
+        rows[pinHost].pins = visible;
         rows[pinHost].pinLanes = pinLanes;
-        if (!raw.length) chartWidth = 980;
+        if (!visible.length) chartWidth = 980;
       }
       const ticks = [];
       const step = (max - min) > 800 ? 3 : 1;
@@ -3018,9 +3048,21 @@
         }).join("");
         const pinBlock = (row.pinLanes || 0) * 26;
         const pins = (row.pins || []).map((pin) => {
-          const on = state.alert === pin.alert.id ? " on" : "";
-          const tip = pin.alert.level + "  " + pin.alert.title + (pin.when ? "  " + pin.when : "");
-          return '<button type="button" class="warn-pin ' + pin.alert.tone + on + (pin.stem ? " has-stem" : "") + '" data-alert="' + esc(pin.alert.id) + '" style="left:' + pin.x + "%;top:" + (pin.lane * 26) + "px;--stem:" + pin.stemPx + 'px" title="' + esc(tip) + '"><span class="sev">' + esc(pin.alert.level) + "</span><b>" + esc(pin.alert.title) + "</b></button>";
+          const grouped = pin.group || [];
+          const selected = state.alert === pin.alert.id || grouped.some((row) => row.alert.id === state.alert);
+          const on = selected ? " on" : "";
+          const tip = pin.more ? "" : pin.alert.level + "  " + pin.alert.title + (pin.when ? "  " + pin.when : "");
+          const more = pin.more ? '<span class="more">+' + pin.more + "</span>" : "";
+          const ids = grouped.map((row) => row.alert.id).join(",");
+          const top = pin.lane * 26;
+          const place = pin.more ? "" : "left:" + pin.x + "%;top:" + top + "px;";
+          const button = '<button type="button" class="warn-pin ' + pin.alert.tone + on + (pin.stem ? " has-stem" : "") + (pin.more ? " has-more" : "") + '" data-alert="' + esc(pin.alert.id) + '"' + (ids ? ' data-ids="' + esc(ids) + '"' : "") + ' style="' + place + "--stem:" + pin.stemPx + 'px" title="' + esc(tip) + '"><span class="sev">' + esc(pin.alert.level) + "</span><b>" + esc(pin.alert.title) + "</b>" + more + "</button>";
+          if (!pin.more) return button;
+          const rows = grouped.map((item) => {
+            const rowOn = state.alert === item.alert.id ? " on" : "";
+            return '<button type="button" class="warn-pin ' + item.alert.tone + rowOn + '" data-alert="' + esc(item.alert.id) + '"><span class="sev">' + esc(item.alert.level) + "</span><b>" + esc(item.alert.title) + "</b></button>";
+          }).join("");
+          return '<div class="pin-hold" style="left:' + pin.x + "%;top:" + top + 'px">' + button + '<div class="warn-pop">' + rows + "</div></div>";
         }).join("");
         const base = row.hasMarks ? (row.warn ? 86 : 58) : (row.warn ? 72 : 48);
         const heightClass = (row.hasMarks ? " has-marks" : "") + (row.warn ? " has-warn" : "");
@@ -3049,6 +3091,30 @@
       if (timePanel.classList.contains("is-collapsed")) return;
       applyTimeBox(px);
     }
+    function bindPinPops(root) {
+      root.querySelectorAll(".pin-hold").forEach((hold) => {
+        const pop = hold.querySelector(".warn-pop");
+        let timer = 0;
+        function place() {
+          clearTimeout(timer);
+          root.querySelectorAll(".warn-pop.is-open").forEach((el) => { if (el !== pop) el.classList.remove("is-open"); });
+          pop.classList.add("is-open");
+          const rect = hold.querySelector(".warn-pin").getBoundingClientRect();
+          pop.style.left = (rect.left + rect.width / 2) + "px";
+          pop.style.top = (rect.top - 8) + "px";
+          pop.style.transform = "translate(-50%, -100%)";
+          const box = pop.getBoundingClientRect();
+          if (box.top < 8) {
+            pop.style.top = (rect.bottom + 8) + "px";
+            pop.style.transform = "translate(-50%, 0)";
+          }
+        }
+        hold.addEventListener("mouseenter", place);
+        pop.addEventListener("mouseenter", () => clearTimeout(timer));
+        hold.addEventListener("mouseleave", () => { timer = setTimeout(() => pop.classList.remove("is-open"), 220); });
+        pop.addEventListener("mouseleave", () => { timer = setTimeout(() => pop.classList.remove("is-open"), 220); });
+      });
+    }
     function renderTimeline() {
       const view = timelineView();
       const warns = listedAlerts();
@@ -3060,8 +3126,9 @@
       timePanel.classList.add("is-multi");
       const chart = sharedChart(view.items, warns);
       body.innerHTML = chart.html;
+      bindPinPops(body);
       rememberTimeHeight(Math.max(178, Math.min(64 + chart.height, 560)));
-      const selected = body.querySelector(".warn-pin.on");
+      const selected = body.querySelector(".pin-hold > .warn-pin.on, .gantt-track > .warn-pin.on");
       if (selected) selected.scrollIntoView({ block: "nearest", inline: "nearest" });
     }
 
@@ -3752,7 +3819,7 @@
         state.line = "";
         state.alert = "";
         state.focus = false;
-        state.tab = "warn";
+        state.tab = "attr";
         renderDetail();
         renderTimeline();
         renderTable();
@@ -3766,7 +3833,7 @@
         state.line = "";
         state.alert = "";
         state.focus = true;
-        state.tab = "warn";
+        state.tab = "attr";
       }
       renderDetail();
       renderTimeline();
@@ -3782,7 +3849,7 @@
         state.line = key;
         state.alert = "";
         state.focus = true;
-        state.tab = "warn";
+        state.tab = "attr";
         const ends = key.split("|");
         if (catalog[ends[0]]) state.selected = ends[0];
       }
@@ -3843,35 +3910,14 @@
       fit();
     }
 
-    function setDrawer(which) {
-      if (which === "warn") {
-        state.tab = "warn";
-        detail.classList.remove("open");
-        const panel = document.getElementById("timePanel");
-        if (panel.classList.contains("is-collapsed")) {
-          panel.classList.remove("is-collapsed");
-          document.getElementById("fold").textContent = "收起";
-        }
-        renderDetail();
-        renderTimeline();
-        fit();
-        const card = document.querySelector("#timeBody .warn-pin.on") || document.querySelector("#timeBody .warn-pin");
-        if (card) card.scrollIntoView({ block: "nearest", inline: "nearest" });
-        return;
-      }
-      const showing = state.tab !== "warn";
-      if (detail.classList.contains("open") && showing) {
-        detail.classList.remove("open");
-      } else {
-        state.tab = state.tab === "time" ? "time" : "attr";
-        detail.classList.add("open");
-      }
+    function setDrawer() {
+      state.tab = "attr";
+      detail.classList.toggle("open");
       applyTimeBox(timePanel.classList.contains("is-collapsed") ? 40 : timeHeight);
       renderDetail();
       fit();
     }
-    document.getElementById("tabDetail").addEventListener("click", () => setDrawer("detail"));
-    document.getElementById("tabWarn").addEventListener("click", () => setDrawer("warn"));
+    document.getElementById("tabDetail").addEventListener("click", () => setDrawer());
     document.getElementById("relateTab").addEventListener("click", () => {
       const open = !relate.classList.contains("open");
       relate.classList.toggle("open", open);
@@ -4020,11 +4066,11 @@
       const onLine = item && (item.line === state.line || (item.lines || []).indexOf(state.line) >= 0);
       if (!(state.line && onLine)) state.line = "";
       state.alert = state.alert === alertId ? "" : alertId;
-      state.tab = "warn";
-      detail.classList.remove("open");
+      state.tab = "attr";
       renderDetail();
       document.querySelectorAll("#timeBody .warn-pin").forEach((pin) => {
-        pin.classList.toggle("on", pin.dataset.alert === state.alert);
+        const ids = (pin.dataset.ids || "").split(",").filter(Boolean);
+        pin.classList.toggle("on", pin.dataset.alert === state.alert || ids.indexOf(state.alert) >= 0);
       });
       const selectedPin = document.querySelector("#timeBody .warn-pin.on");
       if (selectedPin) selectedPin.scrollIntoView({ block: "nearest", inline: "nearest" });
@@ -4219,7 +4265,7 @@
     }
     function addClue(alertId) {
       state.alert = alertId;
-      state.tab = "warn";
+      state.tab = "attr";
       state.focus = true;
       render();
       addClues([alertId]);

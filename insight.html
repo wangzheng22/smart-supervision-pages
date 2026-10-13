@@ -1003,6 +1003,35 @@
       height: var(--stem, 8px);
       background: #c5d0de;
     }
+    .warn-pin .more {
+      flex: none;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      background: #24364c;
+      color: #fff;
+      font-size: 11px;
+      line-height: 18px;
+      font-weight: 700;
+    }
+    .pin-hold { position: absolute; z-index: 4; }
+    .pin-hold > .warn-pin { position: relative; left: auto; top: auto; transform: translateX(-50%); }
+    .warn-pop {
+      display: none;
+      position: fixed;
+      z-index: 40;
+      width: max-content;
+      max-width: 280px;
+      max-height: 240px;
+      overflow: auto;
+      padding: 6px;
+      border: 1px solid #e4eaf2;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(20, 34, 54, 0.16);
+    }
+    .warn-pop.is-open { display: grid; gap: 4px; }
+    .warn-pop .warn-pin { position: relative; left: auto; top: auto; transform: none; max-width: 260px; width: 100%; }
     .band {
       position: absolute;
       top: 0;
@@ -1100,11 +1129,10 @@
       </table>
     </div>
 
-    <div class="dock left" id="dockLeft">
+    <div class="dock left open" id="dockLeft">
       <aside class="panel" id="detailPanel" aria-label="详情"></aside>
       <div class="tab-col">
-        <button class="tab" id="tabDetail" type="button">详情</button>
-        <button class="tab is-on" id="tabWarn" type="button">预警</button>
+        <button class="tab is-on" id="tabDetail" type="button">详情</button>
       </div>
     </div>
     <div class="graph-tools" id="graphTools">
@@ -1351,7 +1379,7 @@
     let nodes = buildNodes();
     let links = buildLinks();
     const typeOn = { "招标人": true, "招标代理": true, "项目": true, "投标单位": true, "专家": true, "施工单位": true, "监理单位": true };
-    const state = { mode: "graph", query: "", abnormalOnly: false, selection: null, left: false, alert: null, subject: null, drawer: "warn", detailTab: "attr" };
+    const state = { mode: "graph", query: "", abnormalOnly: false, selection: null, left: true, alert: null, subject: null, drawer: "detail", detailTab: "attr" };
     (function restoreGraphFocus() {
       const bag = gz && gz.graphs && gz.graphs[project.name];
       const node = params.get("node") || "";
@@ -1769,35 +1797,91 @@
         const event = anchorEvent(alert.title, events);
         return { alert: alert, x: event ? event.pos * 100 : 50, when: event ? event.text : "" };
       }).sort((a, b) => a.x - b.x || String(a.alert.title).localeCompare(String(b.alert.title), "zh"));
-      const ends = [];
-      const floors = {};
+      return stackPins(items, collide);
+    }
+
+    function stackPins(items, collide) {
+      const columns = [];
       items.forEach((item) => {
-        let lane = 0;
-        while (lane < ends.length && item.x < ends[lane] + collide) lane += 1;
-        ends[lane] = item.x;
-        item.lane = lane;
-        const key = item.x.toFixed(2);
-        floors[key] = Math.max(floors[key] || 0, lane);
+        const last = columns[columns.length - 1];
+        if (last && item.x < last.anchor + collide) last.items.push(item);
+        else columns.push({ anchor: item.x, items: [item] });
       });
-      items.forEach((item) => { item.stem = item.lane === floors[item.x.toFixed(2)]; });
-      return { items: items, lanes: items.length ? ends.length : 0 };
+      const visible = [];
+      columns.forEach((col) => {
+        const xs = col.items.map((item) => item.x).sort((a, b) => a - b);
+        const x = xs[Math.floor((xs.length - 1) / 2)];
+        const count = Math.min(3, col.items.length);
+        for (let lane = 0; lane < count; lane += 1) {
+          const item = col.items[lane];
+          item.lane = lane;
+          item.x = x;
+          item.stem = lane === count - 1;
+          item.more = 0;
+          item.group = null;
+          if (col.items.length > 3 && lane === 2) {
+            item.more = col.items.length - 3;
+            item.group = col.items.slice();
+          }
+          visible.push(item);
+        }
+      });
+      return { items: visible, lanes: visible.length ? 3 : 0 };
+    }
+
+    function pinTone(level) {
+      return level === "中风险" ? "mid" : level === "低风险" ? "low" : "high";
     }
 
     function pinHtml(item, axisTop) {
       const alert = item.alert;
-      const tone = alert.level === "中风险" ? "mid" : alert.level === "低风险" ? "low" : "high";
-      const on = state.alert === alert.id ? " on" : "";
+      const tone = pinTone(alert.level);
+      const grouped = item.group || [];
+      const selected = state.alert === alert.id || grouped.some((row) => row.alert.id === state.alert);
+      const on = selected ? " on" : "";
       const top = item.lane * 26;
       const stem = Math.max(axisTop - top - 24, 8);
-      const tip = alert.level + "  " + alert.title + (item.when ? "  " + item.when : "");
-      return '<button type="button" class="warn-pin ' + tone + on + (item.stem ? " has-stem" : "") + '" data-alert="' + esc(alert.id) + '" style="left:' + item.x + "%;top:" + top + "px;--stem:" + stem + 'px" title="' + esc(tip) + '"><span class="sev">' + esc(alert.level) + "</span><b>" + esc(alert.title) + "</b></button>";
+      const tip = item.more ? "" : alert.level + "  " + alert.title + (item.when ? "  " + item.when : "");
+      const more = item.more ? '<span class="more">+' + item.more + "</span>" : "";
+      const ids = grouped.map((row) => row.alert.id).join(",");
+      const place = item.more ? "" : "left:" + item.x + "%;top:" + top + "px;";
+      const button = '<button type="button" class="warn-pin ' + tone + on + (item.stem ? " has-stem" : "") + (item.more ? " has-more" : "") + '" data-alert="' + esc(alert.id) + '"' + (ids ? ' data-ids="' + esc(ids) + '"' : "") + ' style="' + place + "--stem:" + stem + 'px" title="' + esc(tip) + '"><span class="sev">' + esc(alert.level) + "</span><b>" + esc(alert.title) + "</b>" + more + "</button>";
+      if (!item.more) return button;
+      const rows = grouped.map((row) => {
+        const rowOn = state.alert === row.alert.id ? " on" : "";
+        return '<button type="button" class="warn-pin ' + pinTone(row.alert.level) + rowOn + '" data-alert="' + esc(row.alert.id) + '"><span class="sev">' + esc(row.alert.level) + "</span><b>" + esc(row.alert.title) + "</b></button>";
+      }).join("");
+      return '<div class="pin-hold" style="left:' + item.x + "%;top:" + top + 'px">' + button + '<div class="warn-pop">' + rows + "</div></div>";
+    }
+
+    function bindPinPops(root) {
+      root.querySelectorAll(".pin-hold").forEach((hold) => {
+        const pop = hold.querySelector(".warn-pop");
+        let timer = 0;
+        function place() {
+          clearTimeout(timer);
+          root.querySelectorAll(".warn-pop.is-open").forEach((el) => { if (el !== pop) el.classList.remove("is-open"); });
+          pop.classList.add("is-open");
+          const rect = hold.querySelector(".warn-pin").getBoundingClientRect();
+          pop.style.left = (rect.left + rect.width / 2) + "px";
+          pop.style.top = (rect.top - 8) + "px";
+          pop.style.transform = "translate(-50%, -100%)";
+          const box = pop.getBoundingClientRect();
+          if (box.top < 8) {
+            pop.style.top = (rect.bottom + 8) + "px";
+            pop.style.transform = "translate(-50%, 0)";
+          }
+        }
+        hold.addEventListener("mouseenter", place);
+        pop.addEventListener("mouseenter", () => clearTimeout(timer));
+        hold.addEventListener("mouseleave", () => { timer = setTimeout(() => pop.classList.remove("is-open"), 220); });
+        pop.addEventListener("mouseleave", () => { timer = setTimeout(() => pop.classList.remove("is-open"), 220); });
+      });
     }
 
     function renderPanel() {
-      const drawer = state.left ? (state.drawer || "detail") : "";
-      document.getElementById("tabDetail").classList.toggle("is-on", drawer === "detail");
-      document.getElementById("tabWarn").classList.toggle("is-on", state.drawer === "warn");
-      if (!state.left || state.drawer !== "detail") {
+      document.getElementById("tabDetail").classList.toggle("is-on", state.left);
+      if (!state.left) {
         detailPanel.innerHTML = "";
         return;
       }
@@ -1871,7 +1955,7 @@
       stage.style.minWidth = stageWidth + "px";
       body.style.minWidth = (stageWidth - 24) + "px";
       const placed = layoutAlertPins(rows, data.events, stageWidth);
-      const axisTop = placed.lanes ? placed.lanes * 26 + 8 : 100;
+      const axisTop = placed.lanes ? 3 * 26 + 8 : 100;
       if (placed.lanes) {
         body.classList.add("has-pins");
         body.style.setProperty("--axis", axisTop + "px");
@@ -1893,6 +1977,7 @@
       }).join("");
       const pins = placed.items.map((item) => pinHtml(item, axisTop)).join("");
       body.innerHTML = pins + bands + '<div class="axis"></div>' + marks;
+      bindPinPops(body);
       revealSelectedAlert();
     }
 
@@ -1956,24 +2041,13 @@
       document.getElementById("subject").textContent = project.name;
       document.title = project.name;
     }
-    function toggleDrawer(which) {
-      if (which === "warn") {
-        state.drawer = "warn";
-        state.left = false;
-        render();
-        const card = document.querySelector("#timeBody .warn-pin.on") || document.querySelector("#timeBody .warn-pin");
-        if (card) card.scrollIntoView({ block: "nearest", inline: "nearest" });
-        return;
-      }
-      if (state.left && state.drawer === "detail") state.left = false;
-      else {
-        state.drawer = "detail";
-        state.left = true;
-      }
+    function toggleDrawer() {
+      state.drawer = "detail";
+      state.detailTab = "attr";
+      state.left = !state.left;
       render();
     }
-    document.getElementById("tabDetail").addEventListener("click", () => toggleDrawer("detail"));
-    document.getElementById("tabWarn").addEventListener("click", () => toggleDrawer("warn"));
+    document.getElementById("tabDetail").addEventListener("click", () => toggleDrawer());
     document.getElementById("modeGraph").addEventListener("click", () => {
       state.mode = "graph";
       render();
@@ -2082,7 +2156,7 @@
       const card = event.target.closest("[data-alert]");
       if (!card) return;
       state.alert = state.alert === card.dataset.alert ? null : card.dataset.alert;
-      state.drawer = "warn";
+      state.drawer = "detail";
       postGraphFocus();
       render();
     });
@@ -2094,15 +2168,13 @@
         state.alert = event.data.id || null;
         if ("subject" in event.data) state.subject = event.data.subject || null;
         if (event.data.name) state.subjectName = event.data.name;
-        state.drawer = "warn";
-        state.left = false;
+        state.drawer = "detail";
         render();
       } else if (event.data && event.data.type === "select-subject") {
         state.subject = event.data.id || null;
         state.subjectName = event.data.name || "";
         state.alert = null;
-        state.drawer = "warn";
-        state.left = false;
+        state.drawer = "detail";
         render();
       }
     });
@@ -2229,7 +2301,7 @@
 
     function addClue(alertId) {
       state.alert = alertId;
-      state.drawer = "warn";
+      state.drawer = "detail";
       postGraphFocus();
       addClues([alertId]);
     }
