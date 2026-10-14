@@ -1272,7 +1272,7 @@
     </form>
   </dialog>
 
-  <script src="mock-data.js?v=130"></script>
+  <script src="mock-data.js?v=133"></script>
   <script>
     const params = new URLSearchParams(location.search);
     const from = params.get("from") || "project";
@@ -1781,8 +1781,12 @@
       [/投诉|多次入场|交易场所/, /开标|进场|入场/]
     ];
 
-    function anchorEvent(title, events) {
+    function anchorEvent(title, events, anchor) {
       const dated = events.filter((event) => !event.bare && /\d/.test(event.text || ""));
+      if (anchor) {
+        const hit = dated.find((event) => event.label === anchor);
+        if (hit) return hit;
+      }
       for (let i = 0; i < ALERT_PHASES.length; i += 1) {
         if (!ALERT_PHASES[i][0].test(title || "")) continue;
         const hit = dated.find((event) => ALERT_PHASES[i][1].test(event.label || ""));
@@ -1794,7 +1798,7 @@
     function layoutAlertPins(alerts, events, stageWidth) {
       const collide = 164 / stageWidth * 100;
       const items = alerts.map((alert) => {
-        const event = anchorEvent(alert.title, events);
+        const event = anchorEvent(alert.title, events, alert.anchor);
         return { alert: alert, x: event ? event.pos * 100 : 50, when: event ? event.text : "" };
       }).sort((a, b) => a.x - b.x || String(a.alert.title).localeCompare(String(b.alert.title), "zh"));
       return stackPins(items, collide);
