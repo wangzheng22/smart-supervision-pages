@@ -220,19 +220,20 @@
     .tag .bd { display: flex; align-items: center; gap: 16px; margin-top: 14px; }
     .tag .num { font-size: 52px; font-weight: 720; line-height: 1; color: #e7f0fb; letter-spacing: -0.03em; }
     .tag .side { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
-    .tag .hi {
+    .tag .hi, .tag .mid {
       display: inline-flex;
       align-items: center;
       height: 28px;
       padding: 0 14px;
       border-radius: 999px;
-      background: #e23d3d;
       color: #fff;
       font-size: 16px;
       font-weight: 650;
       line-height: 1;
       white-space: nowrap;
     }
+    .tag .hi { background: #e23d3d; }
+    .tag .mid { background: #e5922a; }
     .tag .today { color: #c5d4e8; font-size: 18px; font-weight: 550; line-height: 1; white-space: nowrap; }
     .tag .today b { margin-left: 6px; color: #e8f2ff; font-weight: 700; }
     .right {
@@ -436,7 +437,7 @@
     </div>
   </div>
 
-  <script src="mock-data.js?v=130"></script>
+  <script src="mock-data.js?v=131"></script>
   <script type="module">
     import * as THREE from "three";
     const layers = [
@@ -465,7 +466,7 @@
           ["保证金罚没或延期退还预警模型", 4]
         ],
         alerts: [
-          ["贵州建工招标代理有限公司", "2026.9.11 09:26:40", "地区", "贵阳", "承揽", "89 个", "高", "多项目招标文件编制同源"],
+          ["贵州建工招标代理有限公司", "2026.9.11 09:26:40", "地区", "贵阳", "承揽", "89 个", "中", "多项目招标文件编制同源"],
           ["遵义宏达工程咨询有限公司", "2026.9.06 16:08:19", "成立", "不足 1 年", "承揽", "46 个", "中", "新成立即承接大额项目"],
           ["贵阳贵咨项目管理有限公司", "2026.9.18 11:22:05", "地区", "贵阳", "承揽", "120 个", "中", "有效投诉 12 件"]
         ]
@@ -655,7 +656,7 @@
         if (used.has(name)) continue;
         used.add(name);
         const item = row(name, layer.alerts.length);
-        item[6] = mix[layer.alerts.length % mix.length];
+        item[6] = id === "agency" ? "中" : mix[layer.alerts.length % mix.length];
         layer.alerts.push(item);
       }
     };
@@ -702,7 +703,12 @@
     ][n % 10]]);
     const riskCount = (layer, level) => layer.alerts.filter((item) => item[6] === level).length;
     layers.forEach((layer) => {
-      layer.count = riskCount(layer, "高");
+      if (layer.id === "agency") {
+        layer.alerts.forEach((item) => { item[6] = "中"; });
+        layer.count = riskCount(layer, "中");
+      } else {
+        layer.count = riskCount(layer, "高");
+      }
     });
 
     const floorColor = ["#1ec8ff", "#7b3ff0", "#ff8c1a", "#2ad98a", "#20e0d4", "#3b78ff"];
@@ -712,7 +718,9 @@
       tag.className = "tag";
       tag.dataset.id = layer.id;
       tag.style.setProperty("--c", floorColor[index]);
-      tag.innerHTML = `<div class="shell"><div class="in"><div class="hd"><i class="dot"></i><span class="nm">${layer.name}</span></div><div class="bd"><b class="num">${layer.count}</b><div class="side"><span class="hi">高风险</span><span class="today">今日 <b>${layer.today}</b></span></div></div></div></div>`;
+      const riskClass = layer.id === "agency" ? "mid" : "hi";
+      const riskText = layer.id === "agency" ? "中风险" : "高风险";
+      tag.innerHTML = `<div class="shell"><div class="in"><div class="hd"><i class="dot"></i><span class="nm">${layer.name}</span></div><div class="bd"><b class="num">${layer.count}</b><div class="side"><span class="${riskClass}">${riskText}</span><span class="today">今日 <b>${layer.today}</b></span></div></div></div></div>`;
       tag.addEventListener("click", () => select(layer.id));
       tagBox.appendChild(tag);
 
