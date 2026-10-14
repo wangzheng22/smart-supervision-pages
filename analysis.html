@@ -1787,6 +1787,16 @@
       }
       project.agency = askedAgency;
     }
+    function farmlandTitle(title) {
+      const name = String(title || "");
+      return name.indexOf("贵阳白云区基础设施补短板项目") === 0
+        || name === "遵义汇川区某物流园场平工程"
+        || name === "汇川区产业园能耗监测系统采购项目"
+        || name === "遵义汇川区产业园标准厂房二期";
+    }
+    if (agencyEntry && askedAgency === "贵州中鼎招标有限公司" && farmlandTitle(project.name)) {
+      project.cat = "高标准农田";
+    }
     document.getElementById("subject").textContent = project.name;
 
     const glyphs = {
@@ -1867,9 +1877,12 @@
       project: [["owner", "招标主体"], ["agency", "招标代理"], ["bidders", "投标企业"], ["experts", "专家"]],
       person: [["companies", "作为法人企业"]]
     };
-    function opsFor(type, levels) {
+    function opsFor(type, levels, name) {
       return OPSET[type].map(function (pair, index) {
-        return { key: pair[0], label: pair[1], level: (levels && levels[index]) || "normal" };
+        let level = (levels && levels[index]) || "normal";
+        if (name === "贵州金晟国有资本运营有限公司" && pair[1] === "招标代理") level = "risk";
+        if (name === "贵州中鼎招标有限公司" && pair[1] === "代理招标主体") level = "risk";
+        return { key: pair[0], label: pair[1], level: level };
       });
     }
     const markSize = 46;
@@ -1886,6 +1899,7 @@
       return null;
     }
     function projectCat(title) {
+      if (agencyEntry && askedAgency === "贵州中鼎招标有限公司" && farmlandTitle(title)) return "高标准农田";
       const meta = ((gz && gz.indexProjects) || []).find((row) => row.name === title);
       if (meta && meta.cat) return meta.cat;
       if (title === project.name) return project.cat || "";
@@ -1961,7 +1975,7 @@
         icon: spec.icon || (spec.type === "project" ? "folder" : (spec.type === "expert" || spec.type === "person" ? "person" : "org")),
         risk: Boolean(spec.risk),
         levels: spec.levels,
-        ops: opsFor(spec.type, spec.levels),
+        ops: opsFor(spec.type, spec.levels, spec.name),
         attrs: spec.attrs || defaultAttrs(spec),
         timeline: spec.timeline || defaultTimeline(spec),
         alerts: spec.alerts || [],
@@ -2034,7 +2048,7 @@
       pushNode(spec, chipStart + index * (chipW + chipGap), 408, w);
     });
     nodes.forEach((node) => {
-      node.ops = opsFor(node.type, node.levels);
+      node.ops = opsFor(node.type, node.levels, node.name);
       node.rel = {};
       catalog[node.id] = node;
     });
@@ -2087,7 +2101,7 @@
             icon: "folder",
             risk: meta.level === "高风险",
             levels: ["normal", "normal", "normal", "normal"],
-            attrs: [["项目名称", title], ["项目编码", item.id || ""], ["项目类别", meta.cat || "—"], ["行业领域", meta.cat || "—"], ["风险等级", meta.level || "无预警"], ["招标人", item.owner || "—"], ["招标代理", item.agency || "—"]].concat(bidPair(title))
+            attrs: [["项目名称", title], ["项目编码", item.id || ""], ["项目类别", projectCat(title) || meta.cat || "—"], ["行业领域", meta.cat || "—"], ["风险等级", meta.level || "无预警"], ["招标人", item.owner || "—"], ["招标代理", item.agency || "—"]].concat(bidPair(title))
           });
         }
         ids.push(id);
@@ -2800,6 +2814,36 @@
         return state.attrOn[row.label].indexOf(attrValue(node, row.label)) >= 0;
       });
     }
+    function extIdFor(label, value) {
+      return "ax-" + (EXTEND_KIND[label] || "x") + "-" + extKey(value);
+    }
+    function pinsOf(childId) {
+      const child = catalog[childId];
+      return (state.pinned || []).filter((pin) => {
+        if (!pin.value || pin.value === "—") return false;
+        if (extIdFor(pin.label, pin.value) === childId) return true;
+        return pin.label === "法人" && child && child.name === pin.value && (child.type === "person" || child.role === "法人" || child.ext);
+      });
+    }
+    function nodeLit(id, seen, cache) {
+      if (Object.prototype.hasOwnProperty.call(cache, id)) return cache[id];
+      if (passesAttrFilter(catalog[id])) {
+        cache[id] = true;
+        return true;
+      }
+      if (seen[id]) return false;
+      seen[id] = true;
+      const lit = pinsOf(id).some((pin) => nodeLit(pin.parentId, seen, cache));
+      delete seen[id];
+      cache[id] = lit;
+      return lit;
+    }
+    function linkLit(a, b, cache) {
+      if (!catalog[a] || !catalog[b]) return false;
+      if (passesAttrFilter(catalog[a]) && passesAttrFilter(catalog[b])) return true;
+      const linked = pinsOf(b).some((pin) => pin.parentId === a) || pinsOf(a).some((pin) => pin.parentId === b);
+      return linked && nodeLit(a, {}, cache) && nodeLit(b, {}, cache);
+    }
     const FUNNEL = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 3h12l-4.2 5.2V13l-3.6-1.6V8.2L2 3z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
     const EXTEND_ICON = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="3.2" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 5.2v2.4M4.8 10.2h6.4M8 7.6v5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
     function extentCovered(label) {
@@ -2825,7 +2869,7 @@
       });
     }
     const EXTEND_LABELS = { "招标人": true, "中标单位": true, "施工单位": true, "投标单位": true, "法人": true };
-    const PLAIN_LABELS = { "项目名称": true, "项目编码": true, "项目类别": true, "风险等级": true };
+    const PLAIN_LABELS = { "项目名称": true, "项目编码": true };
     function renderBatchDetail(body) {
       const nodes = batchNodeList();
       const chips = nodes.map((node) => '<span class="batch-chip">' + esc(node.name) + "</span>").join("");
@@ -2893,14 +2937,16 @@
       const pickedId = current().id;
       const lineEnds = state.line ? state.line.split("|") : [];
       const narrowed = filterNarrowed();
+      const litCache = {};
       stage.querySelectorAll(".node").forEach((button) => {
         const id = button.dataset.id;
         const mark = button.querySelector(".mark");
         if (mark && !mark.dataset.label) mark.dataset.label = mark.getAttribute("aria-label") || "";
+        const lit = !narrowed || nodeLit(id, {}, litCache);
         if (relateMulti || picking) {
           const bag = relateMulti ? relatePick : state.picked;
           const chosen = bag.indexOf(id) >= 0;
-          const visible = !(picking && narrowed) || (catalog[id] && passesAttrFilter(catalog[id]));
+          const visible = !(picking && narrowed) || lit;
           button.classList.toggle("is-on", picking && narrowed ? visible : chosen);
           button.classList.toggle("is-picked", chosen);
           button.classList.toggle("is-fade", picking && narrowed ? !visible : false);
@@ -2910,7 +2956,7 @@
           return;
         }
         const batchHit = state.batchIds && state.batchIds.indexOf(id) >= 0;
-        const visible = !narrowed || (catalog[id] && passesAttrFilter(catalog[id]));
+        const visible = !narrowed || lit;
         const on = narrowed
           ? visible
           : (state.batchIds
@@ -2921,7 +2967,7 @@
         button.classList.toggle("is-on", on);
         button.classList.toggle("is-picked", false);
         const keepNode = button.dataset.keep === "1";
-        button.classList.toggle("is-fade", !keepNode && (narrowed ? !visible : (!state.batchIds && Boolean(spec) && spec.ids.indexOf(id) < 0 && !opened.has(id))));
+        button.classList.toggle("is-fade", narrowed ? !visible : (!keepNode && !state.batchIds && Boolean(spec) && spec.ids.indexOf(id) < 0 && !opened.has(id)));
         button.classList.toggle("is-dim", !narrowed && !state.batchIds && !spec && button.dataset.match === "0");
         button.setAttribute("aria-pressed", on ? "true" : "false");
         if (mark) mark.setAttribute("aria-label", mark.dataset.label);
@@ -2930,7 +2976,7 @@
         const key = wire.dataset.line || "";
         const ends = key.split("|");
         if (narrowed) {
-          const hot = ends.length === 2 && ends.every((end) => catalog[end] && passesAttrFilter(catalog[end]));
+          const hot = ends.length === 2 && linkLit(ends[0], ends[1], litCache);
           wire.classList.toggle("is-hot", hot);
           wire.classList.toggle("is-fade", !hot);
           return;
