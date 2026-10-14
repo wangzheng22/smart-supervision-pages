@@ -248,7 +248,7 @@
     }
 
     .workspace {
-      --time-h: 178px;
+      --time-h: 40px;
       position: relative;
       flex: 1;
       min-height: 0;
@@ -1611,13 +1611,13 @@
       <div class="rel-menu" id="relMenu" hidden></div>
     </aside>
 
-    <section class="time-panel" id="timePanel" aria-label="时序图">
+    <section class="time-panel is-collapsed" id="timePanel" aria-label="时序图">
       <div class="time-head">
         <div class="time-name" id="timeName">项目历程图</div>
         <p class="warn-empty" id="timeEmpty" hidden>当前主体暂无预警信息</p>
         <div class="time-actions">
           <button type="button" class="clue-mini" id="timeAddNode" data-add-node>添加线索</button>
-          <button class="fold" id="fold" type="button">收起</button>
+          <button class="fold" id="fold" type="button">展开</button>
         </div>
       </div>
       <div class="time-scroll">
@@ -1918,6 +1918,14 @@
       const builder = winner !== "—" && (projectCat(title) === "建设工程" || /建设|建筑|市政|路桥/.test(winner)) ? winner : "—";
       return [["中标单位", winner], ["施工单位", builder]];
     }
+    function projectLegalName(title, owner) {
+      const winner = bidPair(title)[0][1];
+      if (winner && winner !== "—") {
+        const name = legalOf(winner);
+        if (name !== "—") return name;
+      }
+      return legalOf(owner);
+    }
     function defaultAttrs(spec) {
       if (spec.type === "person") {
         return [["证件号码", "—"], ["职务", spec.job || "职员"], ["关联企业", spec.orgName || "—"]];
@@ -1926,10 +1934,10 @@
         return [["姓名", spec.name], ["评标专业", spec.major || "—"], ["关联项目", project.name]];
       }
       if (spec.type === "project") {
-        return [["项目名称", spec.name], ["项目编码", (projectGraph(spec.name) && projectGraph(spec.name).id) || ""], ["项目类别", projectCat(spec.name) || project.cat], ["风险等级", project.level], ["招标人", project.bidder], ["招标代理", project.agency || "—"]].concat(bidPair(spec.name));
+        return [["项目名称", spec.name], ["项目编码", (projectGraph(spec.name) && projectGraph(spec.name).id) || ""], ["项目类别", projectCat(spec.name) || project.cat], ["风险等级", project.level], ["招标人", project.bidder], ["招标代理", project.agency || "—"]].concat(bidPair(spec.name), [["法人", projectLegalName(spec.name, project.bidder)]]);
       }
-      if (spec.type === "owner") return [["名称", spec.name], ["关联项目", project.name]];
-      if (spec.type === "agency") return [["名称", spec.name], ["关联项目", project.name]];
+      if (spec.type === "owner") return [["名称", spec.name], ["法人", legalOf(spec.name)], ["关联项目", project.name]];
+      if (spec.type === "agency") return [["名称", spec.name], ["法人", legalOf(spec.name)], ["关联项目", project.name]];
       return [["企业名称", spec.fullName || spec.name], ["法人", legalOf(spec.fullName || spec.name)], ["关联项目", project.name]];
     }
     function defaultTimeline(spec) {
@@ -2005,21 +2013,21 @@
     const cores = [{
       id: "owner", type: "owner", role: "招标主体", group: "owner", name: ownerName, icon: "org",
       levels: ["normal", "normal", "normal", "normal"],
-      attrs: [["名称", ownerName], ["关联项目", project.name]],
+      attrs: [["名称", ownerName], ["法人", legalOf(ownerName)], ["关联项目", project.name]],
       timeline: sheetTimeline("招标人时序", "owner")
     }];
     if (agencyName) {
       cores.push({
         id: "agency", type: "agency", role: "招标代理", group: "agency", name: agencyName, icon: "org",
         levels: ["normal", "normal", "normal", "normal"],
-        attrs: [["名称", agencyName], ["关联项目", project.name]],
+        attrs: [["名称", agencyName], ["法人", legalOf(agencyName)], ["关联项目", project.name]],
         timeline: sheetTimeline("招标代理时序", "agency")
       });
     }
     cores.push({
       id: "project", type: "project", role: "项目", group: "project", name: project.name, icon: "folder",
       levels: ["normal", "normal", warnedBidders.some((item) => item.warn) ? "warn" : "normal", warnedExperts.some((item) => item.warn) ? "warn" : "normal"],
-      attrs: [["项目名称", project.name], ["项目编码", (graph && graph.id) || ""], ["项目类别", project.cat], ["风险等级", quietPark ? "无预警" : project.level], ["招标人", ownerName], ["招标代理", agencyName || "—"]].concat(bidPair(project.name)),
+      attrs: [["项目名称", project.name], ["项目编码", (graph && graph.id) || ""], ["项目类别", project.cat], ["风险等级", quietPark ? "无预警" : project.level], ["招标人", ownerName], ["招标代理", agencyName || "—"]].concat(bidPair(project.name), [["法人", projectLegalName(project.name, ownerName)]]),
       timeline: sheetTimeline("项目历程图", "project")
     });
     cores.forEach((spec, index) => {
@@ -2101,7 +2109,7 @@
             icon: "folder",
             risk: meta.level === "高风险",
             levels: ["normal", "normal", "normal", "normal"],
-            attrs: [["项目名称", title], ["项目编码", item.id || ""], ["项目类别", projectCat(title) || meta.cat || "—"], ["行业领域", meta.cat || "—"], ["风险等级", meta.level || "无预警"], ["招标人", item.owner || "—"], ["招标代理", item.agency || "—"]].concat(bidPair(title))
+            attrs: [["项目名称", title], ["项目编码", item.id || ""], ["项目类别", projectCat(title) || meta.cat || "—"], ["行业领域", meta.cat || "—"], ["风险等级", meta.level || "无预警"], ["招标人", item.owner || "—"], ["招标代理", item.agency || "—"]].concat(bidPair(title), [["法人", projectLegalName(title, item.owner || "—")]])
           });
         }
         ids.push(id);
@@ -3582,8 +3590,7 @@
     }
     function rememberTimeHeight(px) {
       openTimeHeight = px;
-      if (timePanel.classList.contains("is-collapsed")) return;
-      applyTimeBox(px);
+      applyTimeBox(timePanel.classList.contains("is-collapsed") ? 40 : px);
     }
     function bindPinPops(root) {
       root.querySelectorAll(".pin-hold").forEach((hold) => {
@@ -4122,7 +4129,7 @@
           icon: "folder",
           risk: item.spec.level === "高风险",
           levels: ["normal", "normal", "normal", "normal"],
-          attrs: [["项目名称", item.spec.name], ["行业领域", item.spec.cat || "—"], ["风险等级", item.spec.level || "无预警"], ["招标人", item.spec.owner || "—"], ["招标代理", item.spec.agency || "—"]]
+          attrs: [["项目名称", item.spec.name], ["行业领域", item.spec.cat || "—"], ["风险等级", item.spec.level || "无预警"], ["招标人", item.spec.owner || "—"], ["招标代理", item.spec.agency || "—"], ["法人", projectLegalName(item.spec.name, item.spec.owner || "—")]]
         });
       } else if (item.kind === "person") {
         make({
@@ -4168,7 +4175,7 @@
           group: item.kind,
           icon: "org",
           levels: ["normal", "normal", "normal", "normal"],
-          attrs: [["名称", item.title], ["关联项目", project.name]]
+          attrs: [["名称", item.title], ["法人", legalOf(item.title)], ["关联项目", project.name]]
         });
       }
       return item.nodeId;
