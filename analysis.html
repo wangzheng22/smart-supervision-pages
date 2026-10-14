@@ -1743,7 +1743,7 @@
     </form>
   </dialog>
 
-  <script src="mock-data.js?v=132"></script>
+  <script src="mock-data.js?v=130"></script>
   <script>
     const params = new URLSearchParams(location.search);
     const gz = window.GUIZHOU;
@@ -2716,7 +2716,6 @@
           whoNames: (item.whoNames || []).slice(),
           model: item.model || item.title || "",
           steps: (item.steps || []).slice(),
-          when: item.when || "",
           subjects: (item.subjects || []).filter((sid) => !(quietPark && sid === "project")),
           line: lines[0] || "",
           lines: lines
@@ -2774,13 +2773,8 @@
       [/施工许可|转包|分包/, /施工|竣工|许可/],
       [/投诉|多次入场|交易场所/, /开标|进场|入场/]
     ];
-    function phaseAnchor(title, events, when) {
+    function phaseAnchor(title, events) {
       const dated = (events || []).filter((event) => dayOf(event.when) != null);
-      if (when) {
-        const wanted = String(when).replace(/-/g, ".");
-        const hit = dated.find((event) => String(event.when || "").replace(/-/g, ".") === wanted);
-        if (hit) return hit;
-      }
       for (let i = 0; i < ALERT_PHASES.length; i += 1) {
         if (!ALERT_PHASES[i][0].test(title || "")) continue;
         const hit = dated.find((event) => ALERT_PHASES[i][1].test(event.label || ""));
@@ -3466,7 +3460,7 @@
       let chartWidth = 980;
       if (pinHost >= 0 && warns.length) {
         const raw = warns.map((alert) => {
-          const event = phaseAnchor(alert.title, rows[pinHost].item.events, alert.when);
+          const event = phaseAnchor(alert.title, rows[pinHost].item.events);
           if (!event) return null;
           const day = dayOf(event.when);
           if (day == null) return null;
