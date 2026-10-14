@@ -4629,6 +4629,12 @@
       syncGraphState();
     });
     document.getElementById("batchOk").addEventListener("click", () => {
+      if (state.batchIds && state.batchIds.length) {
+        const toggle = document.getElementById("batchToggle");
+        toggle.checked = false;
+        toggle.dispatchEvent(new Event("change", { bubbles: true }));
+        return;
+      }
       if (!state.picked.length) return;
       state.batchIds = state.picked.slice();
       state.attrOn = {};
