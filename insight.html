@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache" />
   <title>概览视图</title>
+  <script>if (new URLSearchParams(location.search).get("bare") === "1") document.documentElement.classList.add("is-bare");</script>
+  <link rel="stylesheet" href="shell.css?v=4" />
+  <script src="shell.js?v=5" defer></script>
   <style>
     :root {
       --ink: #16324f;
@@ -58,6 +61,7 @@
       align-items: center;
       line-height: 0;
     }
+    html.is-bare .top-left .brand { display: none; }
     .logo {
       width: 24px;
       height: 24px;
@@ -959,9 +963,10 @@
       align-items: center;
       gap: 6px;
       height: 24px;
-      max-width: 156px;
+      width: 248px;
+      max-width: 248px;
       margin: 0;
-      padding: 0 8px 0 3px;
+      padding: 0 4px 0 3px;
       border: 1px solid #f3c3c8;
       border-radius: 4px;
       background: #fff;
@@ -982,12 +987,52 @@
       font-weight: 650;
     }
     .warn-pin b {
+      flex: 1;
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       font-size: 12px;
       font-weight: 650;
+      text-align: left;
+    }
+    .warn-pin .deal {
+      flex: none;
+      height: 18px;
+      padding: 0 4px;
+      border-radius: 3px;
+      font-size: 11px;
+      line-height: 18px;
+      font-weight: 650;
+    }
+    .warn-pin .deal.is-pending { background: #fff6eb; color: #e5922a; }
+    .warn-pin .deal.is-ignore { background: #f4f5f7; color: #8b97a6; }
+    .warn-pin .deal.is-clue { background: #eef4ff; color: #2f78f6; }
+    .warn-pin .deal.is-done { background: #eef8f3; color: #2f9e6b; }
+    .warn-pin .pin-add {
+      flex: none;
+      margin-left: auto;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #1f6feb;
+      color: #fff;
+      font-size: 14px;
+      line-height: 14px;
+      text-align: center;
+      font-weight: 700;
+    }
+    .pin-add-tip {
+      position: fixed;
+      z-index: 80;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #24364c;
+      color: #fff;
+      font-size: 12px;
+      line-height: 20px;
+      white-space: nowrap;
+      pointer-events: none;
     }
     .warn-pin.mid { border-color: #f5d7b4; color: #e5922a; }
     .warn-pin.mid .sev { background: #fff4e8; color: #e5922a; }
@@ -1691,6 +1736,7 @@
             next.set("level", project.level);
             next.set("date", project.date);
             next.set("cat", project.cat);
+            if (params.get("bare") === "1") next.set("bare", "1");
             location.href = "analysis.html?" + next.toString();
             return;
           }
@@ -1796,7 +1842,7 @@
     }
 
     function layoutAlertPins(alerts, events, stageWidth) {
-      const collide = 164 / stageWidth * 100;
+      const collide = 248 / stageWidth * 100;
       const items = alerts.map((alert) => {
         const event = anchorEvent(alert.title, events, alert.anchor);
         return { alert: alert, x: event ? event.pos * 100 : 50, when: event ? event.text : "" };
@@ -1837,6 +1883,57 @@
       return level === "中风险" ? "mid" : level === "低风险" ? "low" : "high";
     }
 
+    const dealStates = ["未处置", "已忽略", "已转线索", "已办结"];
+    const dealByAlert = {};
+    function dealOf(id) {
+      if (!dealByAlert[id]) {
+        const key = String(id || "");
+        let n = 0;
+        for (let i = 0; i < key.length; i += 1) n = (n * 33 + key.charCodeAt(i)) >>> 0;
+        dealByAlert[id] = dealStates[n % dealStates.length];
+      }
+      return dealByAlert[id];
+    }
+    function dealMark(id) {
+      const deal = dealOf(id);
+      const kind = deal === "已转线索" ? "is-clue" : deal === "已办结" ? "is-done" : deal === "已忽略" ? "is-ignore" : "is-pending";
+      return '<span class="deal ' + kind + '">' + esc(deal) + "</span>";
+    }
+    function pinAdd(id) {
+      if (dealOf(id) !== "未处置") return "";
+      return '<span class="pin-add" data-add-clue="' + esc(id) + '">+</span>';
+    }
+    function pinAddTip() {
+      let tip = document.getElementById("pinAddTip");
+      if (!tip) {
+        tip = document.createElement("div");
+        tip.id = "pinAddTip";
+        tip.className = "pin-add-tip";
+        tip.textContent = "添加线索";
+        tip.hidden = true;
+        document.body.appendChild(tip);
+      }
+      return tip;
+    }
+    function bindPinAdds(root) {
+      root.querySelectorAll(".pin-add").forEach((el) => {
+        el.addEventListener("mouseenter", () => {
+          const tip = pinAddTip();
+          const rect = el.getBoundingClientRect();
+          tip.hidden = false;
+          let top = rect.top - 6;
+          tip.style.transform = "translate(-50%, -100%)";
+          if (top < 28) {
+            top = rect.bottom + 6;
+            tip.style.transform = "translate(-50%, 0)";
+          }
+          tip.style.left = (rect.left + rect.width / 2) + "px";
+          tip.style.top = top + "px";
+        });
+        el.addEventListener("mouseleave", () => { pinAddTip().hidden = true; });
+      });
+    }
+
     function pinHtml(item, axisTop) {
       const alert = item.alert;
       const tone = pinTone(alert.level);
@@ -1845,15 +1942,15 @@
       const on = selected ? " on" : "";
       const top = item.lane * 26;
       const stem = Math.max(axisTop - top - 24, 8);
-      const tip = item.more ? "" : alert.level + "  " + alert.title + (item.when ? "  " + item.when : "");
+      const tip = item.more ? "" : dealOf(alert.id) + "  " + alert.level + "  " + alert.title + (item.when ? "  " + item.when : "");
       const more = item.more ? '<span class="more">+' + item.more + "</span>" : "";
       const ids = grouped.map((row) => row.alert.id).join(",");
       const place = item.more ? "" : "left:" + item.x + "%;top:" + top + "px;";
-      const button = '<button type="button" class="warn-pin ' + tone + on + (item.stem ? " has-stem" : "") + (item.more ? " has-more" : "") + '" data-alert="' + esc(alert.id) + '"' + (ids ? ' data-ids="' + esc(ids) + '"' : "") + ' style="' + place + "--stem:" + stem + 'px" title="' + esc(tip) + '"><span class="sev">' + esc(alert.level) + "</span><b>" + esc(alert.title) + "</b>" + more + "</button>";
+      const button = '<button type="button" class="warn-pin ' + tone + on + (item.stem ? " has-stem" : "") + (item.more ? " has-more" : "") + '" data-alert="' + esc(alert.id) + '"' + (ids ? ' data-ids="' + esc(ids) + '"' : "") + ' style="' + place + "--stem:" + stem + 'px" title="' + esc(tip) + '"><span class="sev">' + esc(alert.level) + "</span>" + dealMark(alert.id) + "<b>" + esc(alert.title) + "</b>" + more + pinAdd(alert.id) + "</button>";
       if (!item.more) return button;
       const rows = grouped.map((row) => {
         const rowOn = state.alert === row.alert.id ? " on" : "";
-        return '<button type="button" class="warn-pin ' + pinTone(row.alert.level) + rowOn + '" data-alert="' + esc(row.alert.id) + '"><span class="sev">' + esc(row.alert.level) + "</span><b>" + esc(row.alert.title) + "</b></button>";
+        return '<button type="button" class="warn-pin ' + pinTone(row.alert.level) + rowOn + '" data-alert="' + esc(row.alert.id) + '"><span class="sev">' + esc(row.alert.level) + "</span>" + dealMark(row.alert.id) + "<b>" + esc(row.alert.title) + "</b>" + pinAdd(row.alert.id) + "</button>";
       }).join("");
       return '<div class="pin-hold" style="left:' + item.x + "%;top:" + top + 'px">' + button + '<div class="warn-pop">' + rows + "</div></div>";
     }
@@ -1982,6 +2079,7 @@
       const pins = placed.items.map((item) => pinHtml(item, axisTop)).join("");
       body.innerHTML = pins + bands + '<div class="axis"></div>' + marks;
       bindPinPops(body);
+      bindPinAdds(body);
       revealSelectedAlert();
     }
 
@@ -2293,6 +2391,7 @@
     }
 
     function addClues(ids) {
+      ids.forEach((id) => { dealByAlert[id] = "已转线索"; });
       const rows = ids.map((id) => graphAlerts().find((row) => row.id === id)).filter(Boolean);
       if (!rows.length) return;
       rows.forEach(pushClue);
@@ -2575,6 +2674,7 @@
         next.set("from", from === "company" ? "company" : "agency");
         if (params.get("role")) next.set("role", params.get("role"));
       }
+      if (params.get("bare") === "1") next.set("bare", "1");
       location.href = "analysis.html?" + next.toString();
     });
 

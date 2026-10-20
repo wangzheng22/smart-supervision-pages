@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache" />
   <title>分析</title>
+  <script>if (new URLSearchParams(location.search).get("bare") === "1") document.documentElement.classList.add("is-bare");</script>
+  <link rel="stylesheet" href="shell.css?v=4" />
+  <script src="shell.js?v=5" defer></script>
   <style>
     :root {
       --ink: #16324f;
@@ -55,6 +58,7 @@
       align-items: center;
       line-height: 0;
     }
+    html.is-bare .top-left .brand { display: none; }
     .logo {
       width: 24px;
       height: 24px;
@@ -1455,9 +1459,10 @@
       align-items: center;
       gap: 6px;
       height: 24px;
-      max-width: 156px;
+      width: 248px;
+      max-width: 248px;
       margin: 0;
-      padding: 0 8px 0 3px;
+      padding: 0 4px 0 3px;
       border: 1px solid #f3c3c8;
       border-radius: 4px;
       background: #fff;
@@ -1478,12 +1483,52 @@
       font-weight: 650;
     }
     .warn-pin b {
+      flex: 1;
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       font-size: 12px;
       font-weight: 650;
+      text-align: left;
+    }
+    .warn-pin .deal {
+      flex: none;
+      height: 18px;
+      padding: 0 4px;
+      border-radius: 3px;
+      font-size: 11px;
+      line-height: 18px;
+      font-weight: 650;
+    }
+    .warn-pin .deal.is-pending { background: #fff6eb; color: #e5922a; }
+    .warn-pin .deal.is-ignore { background: #f4f5f7; color: #8b97a6; }
+    .warn-pin .deal.is-clue { background: #eef4ff; color: #2f78f6; }
+    .warn-pin .deal.is-done { background: #eef8f3; color: #2f9e6b; }
+    .warn-pin .pin-add {
+      flex: none;
+      margin-left: auto;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #1f6feb;
+      color: #fff;
+      font-size: 14px;
+      line-height: 14px;
+      text-align: center;
+      font-weight: 700;
+    }
+    .pin-add-tip {
+      position: fixed;
+      z-index: 80;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #24364c;
+      color: #fff;
+      font-size: 12px;
+      line-height: 20px;
+      white-space: nowrap;
+      pointer-events: none;
     }
     .warn-pin.mid { border-color: #f5d7b4; color: #e5922a; }
     .warn-pin.mid .sev { background: #fff4e8; color: #e5922a; }
@@ -2730,6 +2775,56 @@
     function alertsForLine(key) {
       return allAlerts().filter((item) => item.line === key || (item.lines || []).indexOf(key) >= 0);
     }
+    const dealStates = ["未处置", "已忽略", "已转线索", "已办结"];
+    const dealByAlert = {};
+    function dealOf(id) {
+      if (!dealByAlert[id]) {
+        const key = String(id || "");
+        let n = 0;
+        for (let i = 0; i < key.length; i += 1) n = (n * 33 + key.charCodeAt(i)) >>> 0;
+        dealByAlert[id] = dealStates[n % dealStates.length];
+      }
+      return dealByAlert[id];
+    }
+    function dealMark(id) {
+      const deal = dealOf(id);
+      const kind = deal === "已转线索" ? "is-clue" : deal === "已办结" ? "is-done" : deal === "已忽略" ? "is-ignore" : "is-pending";
+      return '<span class="deal ' + kind + '">' + esc(deal) + "</span>";
+    }
+    function pinAdd(id) {
+      if (dealOf(id) !== "未处置") return "";
+      return '<span class="pin-add" data-add-clue="' + esc(id) + '">+</span>';
+    }
+    function pinAddTip() {
+      let tip = document.getElementById("pinAddTip");
+      if (!tip) {
+        tip = document.createElement("div");
+        tip.id = "pinAddTip";
+        tip.className = "pin-add-tip";
+        tip.textContent = "添加线索";
+        tip.hidden = true;
+        document.body.appendChild(tip);
+      }
+      return tip;
+    }
+    function bindPinAdds(root) {
+      root.querySelectorAll(".pin-add").forEach((el) => {
+        el.addEventListener("mouseenter", () => {
+          const tip = pinAddTip();
+          const rect = el.getBoundingClientRect();
+          tip.hidden = false;
+          let top = rect.top - 6;
+          tip.style.transform = "translate(-50%, -100%)";
+          if (top < 28) {
+            top = rect.bottom + 6;
+            tip.style.transform = "translate(-50%, 0)";
+          }
+          tip.style.left = (rect.left + rect.width / 2) + "px";
+          tip.style.top = top + "px";
+        });
+        el.addEventListener("mouseleave", () => { pinAddTip().hidden = true; });
+      });
+    }
     function listedAlerts() {
       if (state.line) return alertsForLine(state.line);
       return alertsForNode(state.selected);
@@ -3472,7 +3567,7 @@
           return { alert: alert, day: day, x: leftOf(day), when: String(event.when || "") };
         }).filter(Boolean);
         chartWidth = Math.min(4800, Math.max(980, Math.ceil(span * (200 / 32))));
-        const collide = 164 / Math.max(chartWidth - 148, 320) * 100;
+        const collide = 248 / Math.max(chartWidth - 148, 320) * 100;
         raw.sort((a, b) => a.x - b.x || String(a.alert.title).localeCompare(String(b.alert.title), "zh"));
         const columns = [];
         raw.forEach((item) => {
@@ -3558,16 +3653,16 @@
           const grouped = pin.group || [];
           const selected = state.alert === pin.alert.id || grouped.some((row) => row.alert.id === state.alert);
           const on = selected ? " on" : "";
-          const tip = pin.more ? "" : pin.alert.level + "  " + pin.alert.title + (pin.when ? "  " + pin.when : "");
+          const tip = pin.more ? "" : dealOf(pin.alert.id) + "  " + pin.alert.level + "  " + pin.alert.title + (pin.when ? "  " + pin.when : "");
           const more = pin.more ? '<span class="more">+' + pin.more + "</span>" : "";
           const ids = grouped.map((row) => row.alert.id).join(",");
           const top = pin.lane * 26;
           const place = pin.more ? "" : "left:" + pin.x + "%;top:" + top + "px;";
-          const button = '<button type="button" class="warn-pin ' + pin.alert.tone + on + (pin.stem ? " has-stem" : "") + (pin.more ? " has-more" : "") + '" data-alert="' + esc(pin.alert.id) + '"' + (ids ? ' data-ids="' + esc(ids) + '"' : "") + ' style="' + place + "--stem:" + pin.stemPx + 'px" title="' + esc(tip) + '"><span class="sev">' + esc(pin.alert.level) + "</span><b>" + esc(pin.alert.title) + "</b>" + more + "</button>";
+          const button = '<button type="button" class="warn-pin ' + pin.alert.tone + on + (pin.stem ? " has-stem" : "") + (pin.more ? " has-more" : "") + '" data-alert="' + esc(pin.alert.id) + '"' + (ids ? ' data-ids="' + esc(ids) + '"' : "") + ' style="' + place + "--stem:" + pin.stemPx + 'px" title="' + esc(tip) + '"><span class="sev">' + esc(pin.alert.level) + "</span>" + dealMark(pin.alert.id) + "<b>" + esc(pin.alert.title) + "</b>" + more + pinAdd(pin.alert.id) + "</button>";
           if (!pin.more) return button;
           const rows = grouped.map((item) => {
             const rowOn = state.alert === item.alert.id ? " on" : "";
-            return '<button type="button" class="warn-pin ' + item.alert.tone + rowOn + '" data-alert="' + esc(item.alert.id) + '"><span class="sev">' + esc(item.alert.level) + "</span><b>" + esc(item.alert.title) + "</b></button>";
+            return '<button type="button" class="warn-pin ' + item.alert.tone + rowOn + '" data-alert="' + esc(item.alert.id) + '"><span class="sev">' + esc(item.alert.level) + "</span>" + dealMark(item.alert.id) + "<b>" + esc(item.alert.title) + "</b>" + pinAdd(item.alert.id) + "</button>";
           }).join("");
           return '<div class="pin-hold" style="left:' + pin.x + "%;top:" + top + 'px">' + button + '<div class="warn-pop">' + rows + "</div></div>";
         }).join("");
@@ -3633,6 +3728,7 @@
       const chart = sharedChart(view.items, warns);
       body.innerHTML = chart.html;
       bindPinPops(body);
+      bindPinAdds(body);
       rememberTimeHeight(Math.max(178, Math.min(64 + chart.height, 560)));
       const selected = body.querySelector(".pin-hold > .warn-pin.on, .gantt-track > .warn-pin.on");
       if (selected) selected.scrollIntoView({ block: "nearest", inline: "nearest" });
@@ -4718,6 +4814,7 @@
       next.set("node", node.id);
       if (state.alert) next.set("alert", state.alert);
       next.set("focus", node.type === "person" && !agencySide ? (org || node.name) : node.name);
+      if (params.get("bare") === "1") next.set("bare", "1");
       location.href = "insight.html?" + next.toString();
     });
     document.getElementById("sheetBody").addEventListener("click", (event) => {
@@ -4834,6 +4931,7 @@
       fit();
     }
     function addClues(ids) {
+      ids.forEach((id) => { dealByAlert[id] = "已转线索"; });
       const rows = ids.map((id) => allAlerts().find((row) => row.id === id)).filter(Boolean);
       if (!rows.length) return;
       rows.forEach((item) => {
@@ -4842,6 +4940,7 @@
       report.generated = "";
       syncConclusion();
       showReport();
+      renderTimeline();
     }
     function addNodeClue() {
       const rows = state.alert ? [state.alert] : listedAlerts().map((item) => item.id);
@@ -4870,6 +4969,7 @@
       showReport();
     }
     function addClue(alertId) {
+      dealByAlert[alertId] = "已转线索";
       state.alert = alertId;
       state.tab = "attr";
       state.focus = true;

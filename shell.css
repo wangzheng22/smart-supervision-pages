@@ -1,0 +1,120 @@
+html.sys, html.sys body { height: 100%; }
+html.sys body {
+  display: grid;
+  grid-template-rows: 52px minmax(0, 1fr);
+  overflow: hidden;
+}
+.sys-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  background: #fff;
+  border-bottom: 1px solid #e6eaf0;
+  color: #24364c;
+}
+.sys-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+.sys-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
+}
+.sys-brand strong {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.sys-user {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #24364c;
+  font-size: 14px;
+}
+.sys-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #eef3f8;
+  color: #5c6b7e;
+  display: grid;
+  place-items: center;
+}
+.sys-exit {
+  border: 0;
+  background: transparent;
+  color: #24364c;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+}
+.sys-body {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+}
+.sys-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  background: #fff;
+  border-right: 1px solid #e6eaf0;
+}
+.sys-nav a {
+  display: block;
+  padding: 10px 16px;
+  color: #24364c;
+  font-size: 15px;
+  line-height: 1.4;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.sys-nav a.is-on {
+  font-weight: 650;
+  color: #1f6feb;
+  background: #e8f1ff;
+}
+.sys-main {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+html.sys .sys-main > .page,
+html.sys .sys-main > .workspace {
+  flex: 1;
+  min-height: 0;
+}
+html.sys .sys-main > .topbar .brand,
+html.sys .sys-main > .topbar .split { display: none; }
+.sys-full {
+  width: 32px;
+  height: 32px;
+  margin-left: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #d6e8ff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.sys-full:hover { background: rgba(255, 255, 255, 0.08); }
+.sys-full .ico-exit { display: none; }
+.sys-full.is-on .ico-full { display: none; }
+.sys-full.is-on .ico-exit { display: block; }
+html.sys body:not(:has(.page)) .sys-main > .topbar { flex: none; }

@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>预警列表</title>
+  <link rel="stylesheet" href="shell.css?v=4" />
+  <script src="shell.js?v=4" defer></script>
   <style>
     :root {
       --ink: #16324f;
@@ -29,6 +31,7 @@
       outline: 2px solid rgba(47, 120, 246, 0.35);
       outline-offset: 1px;
     }
+    .topbar.is-idle { display: none; }
     .topbar {
       flex: none;
       height: 56px;
@@ -39,7 +42,54 @@
       background: #fff;
       border-bottom: 1px solid #e6eaf0;
     }
-    .top-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .top-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+    .view-tabs {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      min-width: 0;
+      flex: 1;
+      height: 100%;
+      overflow-x: auto;
+    }
+    .view-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 240px;
+      height: 32px;
+      flex: none;
+      padding: 0 10px;
+      border: 1px solid #e4ebf5;
+      border-radius: 6px;
+      background: #f4f7fb;
+      color: #3d4e64;
+      font-size: 13px;
+    }
+    .view-tab.is-on {
+      background: #e8f1ff;
+      border-color: #b9d0fb;
+      color: #1f6feb;
+      font-weight: 650;
+    }
+    .view-tab > span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .view-tab .x {
+      flex: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      color: #8b97a6;
+      font-style: normal;
+      line-height: 16px;
+      text-align: center;
+    }
+    .view-tab .x:hover { background: #dbe4f0; color: #24364c; }
+    .detail-frame { flex: 1; min-height: 0; width: 100%; border: 0; background: #e7eef6; }
+    .page[hidden], .detail-frame[hidden] { display: none !important; }
     .brand {
       display: flex;
       align-items: center;
@@ -158,8 +208,8 @@
       font-size: 13px;
     }
     .range i { flex: none; color: #8b97a6; font-style: normal; font-size: 13px; }
-    .actions { margin-top: 12px; }
-    .search-btn {
+    .actions { margin-top: 12px; display: flex; align-items: center; gap: 10px; }
+    .search-btn, .reset-btn {
       height: 32px;
       padding: 0 18px;
       border: 0;
@@ -167,6 +217,11 @@
       background: var(--blue);
       color: #fff;
       font-size: 13px;
+    }
+    .reset-btn {
+      border: 1px solid #d7dee8;
+      background: #fff;
+      color: #24364c;
     }
     .table-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
     .table-scroll { overflow: auto; }
@@ -191,7 +246,7 @@
     td.pin { background: #fff; }
     .pin.l1 { left: 0; width: var(--pin1, 148px); min-width: var(--pin1, 148px); max-width: var(--pin1, 148px); }
     .pin.l2 { left: var(--pin1, 148px); width: var(--pin2, 240px); min-width: var(--pin2, 240px); max-width: var(--pin2, 240px); box-shadow: 8px 0 8px -8px rgba(22, 62, 112, 0.28); }
-    .pin.r { right: 0; width: 148px; min-width: 148px; box-shadow: -8px 0 8px -8px rgba(22, 62, 112, 0.28); }
+    .pin.r { right: 0; width: 210px; min-width: 210px; box-shadow: -8px 0 8px -8px rgba(22, 62, 112, 0.28); }
     td.name { white-space: normal; }
     td.point { white-space: normal; min-width: 280px; color: #3d4e64; }
     tr.is-empty td {
@@ -353,20 +408,20 @@
   </style>
 </head>
 <body>
-  <header class="topbar">
+  <header class="topbar is-idle">
     <div class="top-left">
       <a class="brand" href="cockpit.html" title="返回首页">
         <img class="logo" src="logo.png" alt="工程交易" />
       </a>
       <span class="split" aria-hidden="true"></span>
-      <div class="subject">预警列表</div>
+      <div class="view-tabs" id="viewTabs"></div>
     </div>
   </header>
-  <main class="page">
+  <main class="page" id="listPage">
     <div class="tabs" id="tabs" role="tablist"></div>
     <form class="filters" id="filters">
       <div class="grid" id="filterGrid"></div>
-      <div class="actions"><button class="search-btn" type="submit">搜索</button></div>
+      <div class="actions"><button class="search-btn" type="submit">搜索</button><button class="reset-btn" id="resetFilters" type="button">重置</button></div>
     </form>
     <section class="table-card">
       <div class="table-scroll" id="tableScroll">
@@ -402,6 +457,7 @@
       </div>
     </div>
   </main>
+  <iframe class="detail-frame" id="detailFrame" hidden title="预警详情"></iframe>
   <script src="mock-data.js?v=133"></script>
   <script>
     const icon = (paths) => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + "</svg>";
@@ -443,12 +499,102 @@
         form: item[6], stage: item[7], region: item[8]
       };
     }
-    const rows = window.GUIZHOU.rows;
+    function entityAlerts(item) {
+      const graphs = (window.GUIZHOU && window.GUIZHOU.graphs) || {};
+      const out = [];
+      const take = (alert, project, subject) => {
+        if ((alert.subjects || []).indexOf(subject) >= 0) out.push({ alert: alert, project: project });
+      };
+      if (item.tab === "project") {
+        const graph = graphs[item.name];
+        ((graph && graph.alerts) || []).forEach((alert) => take(alert, item.name, "project"));
+        return out;
+      }
+      Object.keys(graphs).forEach((title) => {
+        const graph = graphs[title];
+        const alerts = graph.alerts || [];
+        if (item.tab === "owner" && graph.owner === item.name) {
+          alerts.forEach((alert) => take(alert, title, "owner"));
+        } else if (item.tab === "agency" && graph.agency === item.name) {
+          alerts.forEach((alert) => take(alert, title, "agency"));
+        } else if (item.tab === "bidder") {
+          const ids = (graph.bidders || []).filter((bidder) => bidder.full === item.name || bidder.name === item.name).map((bidder) => bidder.id);
+          alerts.forEach((alert) => {
+            const subjects = alert.subjects || [];
+            if (ids.some((id) => subjects.indexOf(id) >= 0)) out.push({ alert: alert, project: title });
+          });
+        } else if (item.tab === "expert") {
+          const ids = (graph.experts || []).filter((expert) => expert.name === item.name).map((expert) => expert.id);
+          alerts.forEach((alert) => {
+            const subjects = alert.subjects || [];
+            if (ids.some((id) => subjects.indexOf(id) >= 0)) out.push({ alert: alert, project: title });
+          });
+        }
+      });
+      return out;
+    }
+    function riskPieces(item) {
+      const text = String(item.point || "");
+      const bundle = text.match(/^(.+?)[:：](.+?)(?:五重命中|多重命中)$/);
+      if (bundle && bundle[2].indexOf("/") >= 0) {
+        return bundle[2].split("/").map((part) => part.trim()).filter(Boolean).map((part) => ({
+          point: part,
+          level: item.level,
+          warnType: item.warnType
+        }));
+      }
+      const alerts = entityAlerts(item);
+      if (alerts.length > 1) {
+        return alerts.map((hit) => ({
+          point: (item.tab === "project" ? "" : hit.project + "：") + (hit.alert.note ? hit.alert.title + "：" + hit.alert.note : hit.alert.title),
+          level: hit.alert.level || item.level,
+          warnType: item.warnType,
+          alertId: hit.alert.id
+        }));
+      }
+      const clauses = text.split(/[;；]/).map((part) => part.trim()).filter(Boolean);
+      if (clauses.length > 1) {
+        return clauses.map((part) => ({ point: part, level: item.level, warnType: item.warnType }));
+      }
+      return null;
+    }
+    function expandRows(source) {
+      const out = [];
+      source.forEach((item) => {
+        const pieces = riskPieces(item);
+        if (!pieces) {
+          out.push(item);
+          return;
+        }
+        pieces.forEach((piece, index) => {
+          out.push(Object.assign({}, item, piece, { id: (item.id || item.code || item.name) + "-p" + (index + 1) }));
+        });
+      });
+      return out;
+    }
+    let rows = expandRows(window.GUIZHOU.rows);
+    const dealStates = ["未处置", "已忽略", "已转线索", "已办结"];
+    rows.forEach((item, index) => {
+      const key = String(item.id || item.code || item.name || index);
+      let n = 0;
+      for (let i = 0; i < key.length; i += 1) n = (n * 33 + key.charCodeAt(i)) >>> 0;
+      item.deal = dealStates[n % dealStates.length];
+      if (item.deal === "已转线索") item.clue = true;
+    });
+    if (new URLSearchParams(location.search).get("scope") === "clue") {
+      rows = rows.filter((item) => item.deal === "已转线索");
+      document.title = "预警线索";
+      const subject = document.querySelector(".subject");
+      if (subject) subject.textContent = "预警线索";
+    }
 
     const params = new URLSearchParams(location.search);
     const regionOpts = ["全省", "贵阳市", "遵义市", "六盘水市", "安顺市", "毕节市", "铜仁市", "黔西南州", "黔东南州", "黔南州", "贵安新区"];
     const sourceOpts = ["全部", "交易系统", "监管报送"];
     const levelOpts = ["全部", "高风险", "中风险", "低风险"];
+    const dealOpts = ["全部", "未处置", "已忽略", "已转线索", "已办结"];
+    const dealField = { key: "deal", label: "预警状态", type: "select", all: "全部", options: dealOpts };
+    const dealCol = { key: "deal", label: "预警状态", filter: true };
     const statusOpts = ["全部", "未查看", "已查看"];
     const tradeOpts = ["全部", "建设工程", "政府采购", "国企采购", "能源行业"];
     const opsCol = { key: "ops", label: "操作", pin: "r" };
@@ -463,6 +609,7 @@
           { key: "warnType", label: "预警类型", type: "select", all: "全部", options: ["全部", "投标人特征识别", "围标串标", "中标率异常", "拆分项目", "应进未进", "资格条件定制"] },
           { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "level", label: "预警等级", type: "select", all: "全部", options: levelOpts },
+          dealField,
           { key: "stage", label: "项目进展时间", type: "select", all: "全部", options: ["全部", "进场前", "招标中", "已定标"] },
           { key: "range", label: "进场时间", type: "range" }
         ],
@@ -475,6 +622,7 @@
           { key: "trade", label: "项目所属行业", filter: true },
           { key: "bidder", label: "招标人", filter: true },
           { key: "level", label: "项目风险度", sort: true, rank: true },
+          dealCol,
           { key: "point", label: "项目风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
           { key: "trust", label: "可信度", sort: true, rank: true },
@@ -491,7 +639,8 @@
           { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
           { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "中标集中", "倾向性条款", "任职关联", "需求代编"] },
-          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts }
+          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts },
+          dealField
         ],
         columns: [
           { key: "name", label: "招标人名称", pin: "l1", wrap: true },
@@ -500,6 +649,7 @@
           { key: "trade", label: "所属行业", filter: true },
           { key: "handled", label: "经办项目数", sort: true, num: true },
           { key: "level", label: "项目风险度", sort: true, rank: true },
+          dealCol,
           { key: "point", label: "风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
           { key: "trust", label: "可信度", sort: true, rank: true },
@@ -516,7 +666,8 @@
           { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
           { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "文件同源", "新成立承接", "投诉集中", "资格条件定制"] },
-          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts }
+          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts },
+          dealField
         ],
         columns: [
           { key: "name", label: "代理机构名称", pin: "l1", wrap: true },
@@ -524,6 +675,7 @@
           { key: "region", label: "地区", filter: true },
           { key: "jobs", label: "承揽项目数", sort: true, num: true },
           { key: "level", label: "项目风险度", sort: true, rank: true },
+          dealCol,
           { key: "point", label: "风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
           { key: "trust", label: "可信度", sort: true, rank: true },
@@ -540,7 +692,8 @@
           { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
           { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "机器码一致", "围标串标", "中标率异常", "实名制异常"] },
-          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts }
+          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts },
+          dealField
         ],
         columns: [
           { key: "name", label: "投标人名称", pin: "l1", wrap: true },
@@ -550,6 +703,7 @@
           { key: "projects", label: "参与项目数", sort: true, num: true },
           { key: "wins", label: "中标次数", sort: true, num: true },
           { key: "level", label: "项目风险度", sort: true, rank: true },
+          dealCol,
           { key: "point", label: "风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
           { key: "trust", label: "可信度", sort: true, rank: true },
@@ -566,7 +720,8 @@
           { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
           { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "打分偏离", "单位关联"] },
-          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts }
+          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts },
+          dealField
         ],
         columns: [
           { key: "name", label: "专家姓名", pin: "l1" },
@@ -575,6 +730,7 @@
           { key: "region", label: "抽取地区", filter: true },
           { key: "reviews", label: "参评次数", sort: true, num: true },
           { key: "level", label: "项目风险度", sort: true, rank: true },
+          dealCol,
           { key: "point", label: "风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
           { key: "trust", label: "可信度", sort: true, rank: true },
@@ -591,7 +747,8 @@
           { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
           { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "异常登录", "异常访问", "任职关联"] },
-          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts }
+          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts },
+          dealField
         ],
         columns: [
           { key: "name", label: "姓名", pin: "l1" },
@@ -599,6 +756,7 @@
           { key: "post", label: "岗位", filter: true },
           { key: "region", label: "地区", filter: true },
           { key: "level", label: "风险度", sort: true, rank: true },
+          dealCol,
           { key: "point", label: "风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
           { key: "trust", label: "可信度", sort: true, rank: true },
@@ -688,7 +846,7 @@
         return true;
       });
     }
-    function openInsight(row) {
+    function detailSrc(row) {
       const next = new URLSearchParams();
       if (row.level) next.set("level", row.level);
       if (row.date) next.set("date", row.date);
@@ -720,8 +878,61 @@
         if (row.bidder) next.set("bidder", row.bidder);
         if (row.agency) next.set("agency", row.agency);
       }
-      location.href = "insight.html?" + next.toString();
+      next.set("bare", "1");
+      return "insight.html?" + next.toString();
     }
+    const detailViews = [];
+    let activeView = "list";
+    function viewId(row) {
+      return row.tab + ":" + row.name;
+    }
+    function showView(id) {
+      activeView = id;
+      const page = document.getElementById("listPage");
+      const frame = document.getElementById("detailFrame");
+      if (id === "list") {
+        page.hidden = false;
+        frame.hidden = true;
+      } else {
+        const item = detailViews.find((view) => view.id === id);
+        page.hidden = true;
+        frame.hidden = false;
+        if (item && frame.getAttribute("src") !== item.src) frame.src = item.src;
+      }
+      renderViewTabs();
+    }
+    function renderViewTabs() {
+      const box = document.getElementById("viewTabs");
+      const listOn = activeView === "list" ? " is-on" : "";
+      const extras = detailViews.map((item) => {
+        const on = activeView === item.id ? " is-on" : "";
+        return '<button type="button" class="view-tab' + on + '" data-view="' + encodeURIComponent(item.id) + '"><span>' + esc(item.title) + '</span><i class="x" data-close="' + encodeURIComponent(item.id) + '" aria-label="关闭">×</i></button>';
+      }).join("");
+      box.innerHTML = '<button type="button" class="view-tab' + listOn + '" data-view="list"><span>预警列表</span></button>' + extras;
+      document.querySelector(".topbar").classList.toggle("is-idle", detailViews.length === 0);
+    }
+    function openInsight(row) {
+      const id = viewId(row);
+      if (!detailViews.some((view) => view.id === id)) {
+        detailViews.push({ id: id, title: row.name, src: detailSrc(row) });
+      }
+      showView(id);
+    }
+    document.getElementById("viewTabs").addEventListener("click", (event) => {
+      const close = event.target.closest("[data-close]");
+      if (close) {
+        event.stopPropagation();
+        const id = decodeURIComponent(close.dataset.close);
+        const index = detailViews.findIndex((view) => view.id === id);
+        if (index >= 0) detailViews.splice(index, 1);
+        if (activeView === id) showView("list");
+        else renderViewTabs();
+        return;
+      }
+      const tab = event.target.closest("[data-view]");
+      if (tab) showView(decodeURIComponent(tab.dataset.view));
+    });
+    renderViewTabs();
     function renderTabs() {
       const box = document.getElementById("tabs");
       box.replaceChildren();
@@ -926,7 +1137,9 @@
         "<tr data-i=\"" + rows.indexOf(row) + "\">" +
         cols().map((col) => {
           if (col.key === "ops") {
-            return "<td class=\"pin r\"><div class=\"ops\"><button type=\"button\" data-act=\"view\">查看</button><button type=\"button\" data-act=\"clue\"" + (row.clue ? " disabled" : "") + ">" + (row.clue ? "已转线索" : "转为线索") + "</button></div></td>";
+            const pending = row.deal === "未处置";
+            const extra = pending ? "<button type=\"button\" data-act=\"clue\">转为线索</button><button type=\"button\" data-act=\"ignore\">忽略</button>" : "";
+            return "<td class=\"pin r\"><div class=\"ops\"><button type=\"button\" data-act=\"view\">查看</button>" + extra + "</div></td>";
           }
           const bits = [];
           if (col.pin) bits.push("pin", col.pin);
@@ -948,6 +1161,14 @@
     document.getElementById("filters").addEventListener("submit", (event) => {
       event.preventDefault();
       state.page = 1;
+      render();
+    });
+    document.getElementById("resetFilters").addEventListener("click", () => {
+      document.getElementById("filters").reset();
+      state.colFilters = emptyColFilters();
+      state.sort = { key: "", dir: "" };
+      state.page = 1;
+      closePop();
       render();
     });
     document.querySelector("thead").addEventListener("click", (event) => {
@@ -980,8 +1201,12 @@
       if (!button || button.disabled) return;
       const row = rows[Number(button.closest("tr").dataset.i)];
       if (button.dataset.act === "view") openInsight(row);
-      else {
+      else if (row.deal === "未处置" && button.dataset.act === "clue") {
         row.clue = true;
+        row.deal = "已转线索";
+        render();
+      } else if (row.deal === "未处置" && button.dataset.act === "ignore") {
+        row.deal = "已忽略";
         render();
       }
     });
@@ -1025,7 +1250,7 @@
     function syncFilterOptions() {
       ["project", "owner", "agency", "bidder", "expert", "staff"].forEach((tab) => {
         views[tab].filters.forEach((field) => {
-          if (field.type !== "select" || field.key === "viewState" || field.key === "years" || field.key === "level" || field.key === "source") return;
+          if (field.type !== "select" || field.key === "viewState" || field.key === "years" || field.key === "level" || field.key === "source" || field.key === "deal") return;
           const values = [];
           rows.forEach((row) => {
             if (row.tab !== tab) return;
