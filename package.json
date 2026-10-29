@@ -1,0 +1,8 @@
+{
+  "name": "smart-supervision-pages",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8777",
+    "deploy:vercel": "vercel --prod"
+  }
+}
