@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-page="clues.html">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>预警线索</title>
-  <link rel="stylesheet" href="shell.css?v=4" />
-  <script src="shell.js?v=4" defer></script>
+  <link rel="stylesheet" href="shell.css?v=16" />
+  <link rel="stylesheet" href="clue-report.css?v=4" />
+  <link rel="stylesheet" href="clue-detail.css?v=3" />
+  <script src="shell.js?v=19" defer></script>
+  <script src="clue-detail.js?v=2" defer></script>
   <style>
     :root {
       --ink: #16324f;
@@ -18,14 +21,19 @@
     body {
       color: var(--ink);
       font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
-      background: #eef3f8;
+      background: #edf1f6;
+    }
+    html.sys-app body {
+      background: transparent;
     }
     button, select { font-family: inherit; }
     button { cursor: pointer; }
     .page {
       flex: 1;
+      min-width: 0;
       min-height: 0;
-      overflow: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
       padding: 16px;
       display: flex;
       flex-direction: column;
@@ -34,6 +42,90 @@
     .filters, .table-card {
       background: #fff;
       border-radius: 8px;
+    }
+    .clue-stats {
+      flex: none;
+      padding: 0;
+      background: transparent;
+    }
+    .clue-stat-grid {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      gap: 12px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .clue-stat-card {
+      flex: 1 1 0;
+      min-width: 148px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 14px;
+      border: 1px solid #eef2f6;
+      border-radius: 8px;
+      background: #fff;
+      text-align: left;
+      font: inherit;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+    .clue-stat-card:hover {
+      border-color: #c5d8f5;
+      background: #f0f7ff;
+    }
+    .clue-stat-card.is-on {
+      border-color: #9ec0ff;
+      background: #e8f3ff;
+      box-shadow: 0 0 0 1px #9ec0ff;
+    }
+    .clue-stat-card.is-on .clue-stat-subject {
+      color: #2f78f6;
+    }
+    .clue-stat-card.is-on .clue-stat-num {
+      color: #2f78f6;
+    }
+    .clue-stat-subject {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 12px;
+      line-height: 1.35;
+      color: #6d7f95;
+    }
+    .clue-stat-num {
+      font-size: 22px;
+      font-weight: 650;
+      line-height: 1.15;
+      color: #24364c;
+    }
+    .clue-stat-extra {
+      font-size: 12px;
+      line-height: 1.45;
+      color: #6d7f95;
+    }
+    .clue-stat-extra b {
+      font-weight: 650;
+      color: #24364c;
+    }
+    .clue-stat-extra-sep {
+      margin: 0 4px;
+      color: #c5d0de;
+    }
+    .clue-stat-today {
+      flex: none;
+      padding: 0 6px;
+      border-radius: 10px;
+      border: 1px solid #f3d7b0;
+      background: #fffaf4;
+      color: #e5922a;
+      font-size: 11px;
+      line-height: 18px;
+      font-weight: 650;
     }
     .filters {
       display: flex;
@@ -69,22 +161,62 @@
       color: #24364c;
     }
     .enter { margin-left: auto; }
-    .table-card { flex: 1; min-height: 0; overflow: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .table-card { flex: 1; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; }
+    table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
     th, td {
       padding: 14px 16px;
       border-bottom: 1px solid var(--line);
       text-align: left;
       white-space: nowrap;
+      overflow: hidden;
+      min-width: 0;
     }
     th { color: #5e7088; font-weight: 650; background: #f7f9fc; }
-    td.name { white-space: normal; min-width: 280px; }
+    td.name { white-space: normal; word-break: break-word; }
+    td.dept { max-width: 0; }
+    .cell-ellipsis {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+      cursor: default;
+    }
+    .dept-has-tip { cursor: help; }
+    .dept-float-tip {
+      position: fixed;
+      z-index: 50;
+      display: none;
+      max-width: min(360px, calc(100vw - 24px));
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: rgba(24, 36, 52, 0.94);
+      color: #f4f7fb;
+      font-size: 12px;
+      line-height: 1.55;
+      box-shadow: 0 10px 28px rgba(18, 32, 51, 0.22);
+      pointer-events: none;
+    }
+    .dept-float-tip.is-open { display: block; }
+    .dept-tip-line + .dept-tip-line { margin-top: 6px; }
+    td.ops-cell { overflow: visible; white-space: nowrap; }
+    td.ops-cell .ops { flex-wrap: nowrap; }
     .mark {
       display: inline-block;
-      width: 14px;
+      width: 16px;
+      height: 16px;
       margin-right: 6px;
-      color: #8aa0b8;
-      font-weight: 700;
+      vertical-align: -3px;
+      flex-shrink: 0;
+    }
+    .mark.is-sensitive {
+      object-fit: contain;
+      filter: brightness(0) saturate(100%) invert(63%) sepia(11%) saturate(498%) hue-rotate(172deg) brightness(92%) contrast(88%);
     }
     .pill {
       display: inline-flex;
@@ -101,6 +233,7 @@
     .st-pass { background: #eef8f3; color: #2f9e6b; }
     .st-audit { background: #fff4e8; color: #d97706; }
     .st-sent { background: #eef2ff; color: #4f6bed; }
+    .st-offline { background: #f0f4f8; color: #5e7088; }
     .st-back { background: #e8f8f2; color: #14946a; }
     .ops { display: flex; gap: 14px; }
     .ops button {
@@ -139,107 +272,442 @@
     .dialog .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
     .dialog .actions button { height: 32px; padding: 0 14px; border-radius: 4px; border: 1px solid #d7dee8; background: #fff; }
     .dialog .actions .ok { border-color: var(--blue); background: var(--blue); color: #fff; }
-    .detail-dialog {
-      width: min(1080px, calc(100vw - 48px));
-      max-height: calc(100vh - 48px);
-      padding: 0;
-      overflow: auto;
-      background: #f4f7fb;
+    .enter-dialog {
+      width: min(800px, calc(100vw - 32px));
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
     }
-    .detail-head {
+    .enter-dialog-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 14px 18px;
-      background: #fff;
-      border-bottom: 1px solid #e6edf5;
-      position: sticky;
-      top: 0;
+      margin-bottom: 16px;
     }
-    .detail-head h2 { margin: 0; font-size: 16px; }
-    .detail-head .x {
+    .enter-dialog-head h2 {
+      margin: 0;
+      font-size: 16px;
+      color: #24364c;
+      flex: 1;
+      min-width: 0;
+    }
+    .enter-dialog-x {
+      flex: none;
       width: 28px;
       height: 28px;
       border: 0;
-      border-radius: 4px;
+      border-radius: 6px;
       background: transparent;
-      color: #5e7088;
+      color: #6d7f95;
       font-size: 20px;
       line-height: 1;
+      cursor: pointer;
     }
-    .detail-grid {
+    .enter-dialog-x:hover { background: #f4f7fb; color: #24364c; }
+    .enter-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-      gap: 12px;
-      padding: 14px;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 24px;
+      align-items: start;
     }
-    .pane {
+    @media (max-width: 640px) {
+      .enter-grid { grid-template-columns: 1fr; }
+    }
+    .enter-dialog .field {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      min-width: 0;
+    }
+    .enter-dialog .field .lab {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 1.35;
+      color: #24364c;
+      font-weight: 550;
+    }
+    .enter-dialog .clue-field-input {
+      width: 100%;
+      height: 36px;
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
       background: #fff;
-      border: 1px solid #e6edf5;
-      border-radius: 8px;
-      padding: 14px 16px 16px;
+      color: #24364c;
+      font-size: 14px;
+      box-sizing: border-box;
     }
-    .pane h3 {
+    .enter-dialog select.clue-field-input {
+      padding-right: 32px;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238aa0b8' d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center;
+      appearance: none;
+    }
+    .enter-dialog .clue-field-input:focus {
+      outline: none;
+      border-color: #9ec0ff;
+      box-shadow: 0 0 0 1px #9ec0ff;
+    }
+    .enter-dialog .clue-field-input:read-only {
+      background: #f6f8fb;
+      color: #6d7f95;
+      border-color: #e4eaf2;
+      cursor: default;
+    }
+    .enter-dialog .clue-field-input:read-only:focus {
+      border-color: #e4eaf2;
+      box-shadow: none;
+    }
+    .enter-block {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .enter-block > .lab {
+      font-size: 14px;
+      font-weight: 550;
+      color: #24364c;
+      line-height: 1.35;
+    }
+    .enter-block textarea.clue-field-input {
+      height: auto;
+      min-height: 140px;
+      padding: 12px 14px;
+      line-height: 1.6;
+      resize: vertical;
+    }
+    .enter-files-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .enter-file-add {
+      height: 36px;
+      padding: 0 14px;
+      border: 1px dashed #b8c5d6;
+      border-radius: 6px;
+      background: #f7f9fc;
+      color: #2f78f6;
+      font-size: 14px;
+    }
+    .enter-file-add:hover { background: #eef4ff; border-color: #9ec0ff; }
+    .enter-file-hint { font-size: 12px; color: #8b97a6; }
+    .enter-file-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .enter-file-list:empty { display: none; }
+    .enter-file-item {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin: 0 0 12px;
-      color: #1f6feb;
-      font-size: 14px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #f4f8fd;
+      border: 1px solid #e0ebf8;
+      font-size: 13px;
+      color: #24364c;
     }
-    .pane h3::before {
-      content: "";
-      width: 3px;
-      height: 14px;
-      border-radius: 2px;
-      background: #2f78f6;
+    .enter-file-item b {
+      flex: 1;
+      min-width: 0;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .flow { list-style: none; margin: 0; padding: 0; }
-    .flow li {
-      position: relative;
-      margin-left: 6px;
-      padding: 0 0 16px 16px;
-      border-left: 1px solid #d5e4f7;
+    .enter-file-item em {
+      flex: none;
+      font-style: normal;
+      font-size: 12px;
+      color: #8b97a6;
     }
-    .flow li:last-child { border-left-color: transparent; padding-bottom: 0; }
-    .flow li::before {
-      content: "";
-      position: absolute;
-      left: -5px;
-      top: 4px;
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: #2f78f6;
-    }
-    .flow li.is-wait::before { background: #c5d0de; }
-    .flow b { display: block; font-size: 14px; color: #24364c; }
-    .flow time, .flow p { display: block; margin: 4px 0 0; color: #6d7f95; font-size: 12px; line-height: 1.55; }
-    .detail-side { display: flex; flex-direction: column; gap: 12px; }
-    .summary { margin: 0; color: #3d4e64; font-size: 13px; line-height: 1.7; }
-    .link-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-    .link-row button {
-      height: 28px;
-      padding: 0 10px;
-      border: 1px solid #b9d0fb;
+    .enter-file-rm {
+      flex: none;
+      width: 22px;
+      height: 22px;
+      border: 0;
       border-radius: 4px;
-      background: #eef4ff;
+      background: transparent;
+      color: #8b97a6;
+      font-size: 16px;
+      line-height: 1;
+      padding: 0;
+    }
+    .enter-file-rm:hover { background: rgba(47, 120, 246, 0.1); color: #2f78f6; }
+    .move-dialog {
+      width: min(720px, calc(100vw - 32px));
+      padding: 18px 20px 16px;
+    }
+    .move-dialog-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .move-dialog-head h2 {
+      margin: 0;
+      font-size: 16px;
+      flex: 1;
+      min-width: 0;
+    }
+    .move-dialog-x {
+      flex: none;
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #6d7f95;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .move-dialog-x:hover { background: #f4f7fb; color: #24364c; }
+    .move-hint {
+      margin: 0 0 10px;
+      color: #6d7f95;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .move-selected {
+      margin: 0 0 10px;
+      padding: 8px 10px;
+      border-radius: 4px;
+      background: #f4f8fd;
+      border: 1px solid #e0ebf8;
+      font-size: 13px;
+      color: #3d4e64;
+    }
+    .move-selected b { color: #24364c; font-weight: 650; }
+    .move-selected-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .move-selected-label { font-size: 13px; color: #3d4e64; }
+    .move-clear {
+      border: 0;
+      padding: 0;
+      background: transparent;
       color: #2f78f6;
       font-size: 12px;
+      line-height: 1.2;
+      cursor: pointer;
     }
-    .proof { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .proof th, .proof td { padding: 8px 6px; border-bottom: 1px solid #eef2f6; text-align: left; }
-    .proof th { color: #6d7f95; font-weight: 650; }
-    .got { color: #2f9e6b; }
-    .wait { color: #e5922a; }
-    @media (max-width: 860px) {
-      .detail-grid { grid-template-columns: 1fr; }
+    .move-clear:hover { text-decoration: underline; }
+    .move-clear[hidden] { display: none; }
+    .move-picks { display: flex; flex-wrap: wrap; gap: 6px; min-height: 24px; }
+    .move-pick {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      max-width: 100%;
+      height: 24px;
+      padding: 0 2px 0 8px;
+      border-radius: 4px;
+      background: #e8f1ff;
+      color: #1f6feb;
+      font-size: 12px;
+    }
+    .move-pick b {
+      min-width: 0;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .move-pick-x {
+      width: 18px;
+      height: 18px;
+      border: 0;
+      border-radius: 2px;
+      background: transparent;
+      color: #6d8fd6;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .move-pick-x:hover { background: rgba(31, 111, 235, 0.12); color: #1f6feb; }
+    .move-empty { color: #8b97a6; font-size: 12px; line-height: 24px; }
+    .move-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 10px;
+    }
+    .move-search input {
+      flex: 1;
+      height: 32px;
+      padding: 0 10px 0 32px;
+      border: 1px solid #d7dee8;
+      border-radius: 4px;
+      font: inherit;
+      font-size: 14px;
+      color: var(--ink);
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Ccircle cx='6.2' cy='6.2' r='4.2' fill='none' stroke='%238b97a6' stroke-width='1.3'/%3E%3Cpath d='M9.4 9.4 12 12' fill='none' stroke='%238b97a6' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 10px center;
+    }
+    .move-search input::placeholder { color: #a3afc0; }
+    .move-search input:focus {
+      outline: none;
+      border-color: #9ec0ff;
+      box-shadow: 0 0 0 2px rgba(47, 120, 246, 0.12);
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+    .org-tree {
+      height: 360px;
+      min-height: 360px;
+      max-height: 360px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      border: 1px solid #e6edf5;
+      border-radius: 6px;
+      padding: 8px 6px;
+      background: #fafbfd;
+      box-sizing: border-box;
+    }
+    .org-tree:has(.org-empty) {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .org-tree ul {
+      list-style: none;
+      margin: 0;
+      padding: 0 0 0 18px;
+    }
+    .org-tree > ul { padding-left: 0; }
+    .org-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 28px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #24364c;
+      user-select: none;
+    }
+    .org-row.is-branch { cursor: default; }
+    .org-row.is-branch:hover { background: #f3f7fb; }
+    .org-row.is-person {
+      cursor: pointer;
+      padding-left: 4px;
+      gap: 8px;
+    }
+    .org-row.is-person:hover { background: #eef4ff; }
+    .org-row.is-selected { background: #e8f1ff; color: #1f6feb; }
+    .org-box {
+      box-sizing: border-box;
+      width: 14px;
+      height: 14px;
+      flex: 0 0 14px;
+      border: 1px solid #c5d0de;
+      border-radius: 2px;
+      background: #fff;
+      position: relative;
+    }
+    .org-row.is-person.is-selected .org-box {
+      border-color: #2f78f6;
+      background: #2f78f6;
+    }
+    .org-row.is-person.is-selected .org-box::after {
+      content: "";
+      position: absolute;
+      left: 3px;
+      top: 1px;
+      width: 7px;
+      height: 4px;
+      border: 1.5px solid #fff;
+      border-top: 0;
+      border-right: 0;
+      transform: rotate(-45deg);
+    }
+    .org-empty {
+      margin: 0;
+      padding: 0 12px;
+      text-align: center;
+      color: #8b97a6;
+      font-size: 13px;
+    }
+    .org-toggle {
+      width: 18px;
+      height: 18px;
+      border: 0;
+      padding: 0;
+      border-radius: 3px;
+      background: transparent;
+      color: #8b97a6;
+      font-size: 11px;
+      line-height: 18px;
+      flex-shrink: 0;
+    }
+    .org-toggle:hover { background: #e8eef5; color: #24364c; }
+    .org-toggle.is-empty { visibility: hidden; pointer-events: none; }
+    .org-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .org-tag {
+      flex-shrink: 0;
+      height: 18px;
+      padding: 0 6px;
+      border-radius: 3px;
+      background: #eef2f6;
+      color: #6d7f95;
+      font-size: 11px;
+      line-height: 18px;
+    }
+    .org-row.is-selected .org-tag { background: rgba(31, 111, 235, 0.12); color: #1f6feb; }
+    .move-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .move-actions-left,
+    .move-actions-right { display: flex; align-items: center; gap: 8px; }
+    .move-actions button {
+      height: 32px;
+      padding: 0 14px;
+      border-radius: 4px;
+      border: 1px solid #d7dee8;
+      background: #fff;
+      color: #24364c;
+      font-size: 14px;
+    }
+    .move-actions .ok {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+    .move-actions .pack {
+      border-color: #b9c6d6;
+      color: #3d4e64;
     }
   </style>
 </head>
 <body>
   <main class="page">
+    <section class="clue-stats" id="clueStats" aria-label="线索统计"></section>
     <form class="filters" id="filters">
       <label class="field">线索来源
         <select id="fSource" name="source">
@@ -249,9 +717,20 @@
           <option>上级交办</option>
         </select>
       </label>
-      <label class="field">状态
-        <select id="fStatus" name="status">
+      <label class="field">移交状态
+        <select id="fHandoff" name="handoff">
           <option value="">全部</option>
+          <option>待移交</option>
+          <option>线上移交</option>
+          <option>线下移交</option>
+        </select>
+      </label>
+      <label class="field">办理状态
+        <select id="fHandle" name="handle">
+          <option value="">全部</option>
+          <option>待办理</option>
+          <option>办理中</option>
+          <option>已办理</option>
         </select>
       </label>
       <label class="field">敏感标记
@@ -269,6 +748,17 @@
     </form>
     <section class="table-card">
       <table>
+        <colgroup>
+          <col style="width:10%" />
+          <col style="width:22%" />
+          <col style="width:8%" />
+          <col style="width:12%" />
+          <col style="width:18%" />
+          <col style="width:7%" />
+          <col style="width:8%" />
+          <col style="width:7%" />
+          <col style="width:8%" />
+        </colgroup>
         <thead>
           <tr>
             <th>线索编号</th>
@@ -277,33 +767,54 @@
             <th>类型</th>
             <th>责任部门</th>
             <th>时限</th>
-            <th>状态</th>
+            <th>移交状态</th>
+            <th>办理状态</th>
             <th>操作</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
       </table>
     </section>
+    <div id="deptFloatTip" class="dept-float-tip" role="tooltip" aria-hidden="true"></div>
   </main>
   <div class="mask" id="enterMask">
-    <form class="dialog" id="enterForm" role="dialog" aria-labelledby="enterTitle">
-      <h2 id="enterTitle">录入线索</h2>
-      <div class="row"><span>线索名称</span><input id="enterName" required placeholder="请输入线索名称" /></div>
-      <div class="row"><span>线索来源</span>
-        <select id="enterSource">
-          <option>模型预警</option>
-          <option>投诉举报</option>
-          <option>上级交办</option>
-        </select>
+    <form class="dialog enter-dialog" id="enterForm" role="dialog" aria-labelledby="enterTitle">
+      <div class="enter-dialog-head">
+        <h2 id="enterTitle">录入线索</h2>
+        <button type="button" class="enter-dialog-x" id="enterClose" aria-label="关闭">×</button>
       </div>
-      <div class="row"><span>类型</span><input id="enterType" required placeholder="请输入类型" /></div>
-      <div class="row"><span>责任部门</span><input id="enterDept" required placeholder="请输入责任部门" /></div>
-      <div class="row"><span>时限</span><input id="enterLimit" placeholder="如 剩7天，可留空" /></div>
-      <div class="row"><span>敏感标记</span>
-        <select id="enterSensitive">
-          <option value="0">非敏感</option>
-          <option value="1">敏感</option>
-        </select>
+      <div class="enter-grid">
+        <label class="field"><span class="lab">线索编号</span><input class="clue-field-input" id="enterId" readonly aria-readonly="true" /></label>
+        <label class="field"><span class="lab">线索名称</span><input class="clue-field-input" id="enterName" required placeholder="请输入线索名称" /></label>
+        <label class="field"><span class="lab">线索类型</span>
+          <select class="clue-field-input" id="enterType" required>
+            <option value="">请选择</option>
+            <option>高风险</option>
+            <option>中风险</option>
+            <option>低风险</option>
+          </select>
+        </label>
+        <label class="field"><span class="lab">责任部门</span><input class="clue-field-input" id="enterDept" required placeholder="请输入责任部门" /></label>
+        <label class="field"><span class="lab">时限</span><input class="clue-field-input" id="enterLimit" placeholder="如 剩7天，可留空" /></label>
+        <label class="field"><span class="lab">敏感标记</span>
+          <select class="clue-field-input" id="enterSensitive">
+            <option value="0">非敏感</option>
+            <option value="1">敏感</option>
+          </select>
+        </label>
+      </div>
+      <div class="enter-block">
+        <label class="lab" for="enterDesc">线索描述</label>
+        <textarea class="clue-field-input" id="enterDesc" placeholder="请填写线索背景、涉及主体、关键事实等"></textarea>
+      </div>
+      <div class="enter-block">
+        <span class="lab">附件</span>
+        <div class="enter-files-head">
+          <button class="enter-file-add" id="enterFileAdd" type="button">添加附件</button>
+          <span class="enter-file-hint">支持多文件，演示环境仅记录文件名</span>
+        </div>
+        <input id="enterFileInput" type="file" multiple hidden />
+        <ul class="enter-file-list" id="enterFileList"></ul>
       </div>
       <div class="actions">
         <button type="button" id="enterCancel">取消</button>
@@ -317,13 +828,9 @@
         <h2 id="detailTitle">线索详情</h2>
         <button class="x" id="detailClose" type="button" aria-label="关闭">×</button>
       </div>
-      <div class="detail-grid">
-        <section class="pane">
-          <h3>流转时间轴（状态驱动流程引擎）</h3>
-          <ol class="flow" id="detailFlow"></ol>
-        </section>
-        <div class="detail-side">
-          <section class="pane">
+      <div class="detail-grid" id="detailGrid">
+        <div class="detail-main">
+          <section class="pane detail-summary-pane">
             <h3>线索分析与总结</h3>
             <p class="summary" id="detailSummary"></p>
             <div class="link-row">
@@ -332,7 +839,7 @@
               <button type="button" data-note="核查重点：文件元数据、CA 锁办理流水、社保记录、企业间同标率。">核查指引</button>
             </div>
           </section>
-          <section class="pane">
+          <section class="pane detail-proof-pane">
             <h3>证据材料（加密全存证）</h3>
             <table class="proof">
               <thead><tr><th>材料名称</th><th>类型</th><th>上传人</th><th>状态</th></tr></thead>
@@ -340,117 +847,441 @@
             </table>
           </section>
         </div>
+        <div class="detail-timeline-side">
+          <section class="pane detail-timeline-pane">
+            <h3>办理时间轴</h3>
+            <ol class="flow" id="detailFlow"></ol>
+          </section>
+        </div>
       </div>
     </div>
   </div>
   <div class="mask" id="moveMask">
-    <div class="dialog" role="dialog" aria-labelledby="moveTitle">
-      <h2 id="moveTitle">移交线索</h2>
-      <div class="row"><span>责任部门</span>
-        <select id="moveDept">
-          <option>省住建厅</option>
-          <option>省财政厅</option>
-          <option>省纪委监委</option>
-          <option>××市公安局</option>
-          <option>××市交通局</option>
-          <option>专项工作站</option>
-        </select>
+    <div class="dialog move-dialog" role="dialog" aria-labelledby="moveTitle">
+      <div class="move-dialog-head">
+        <h2 id="moveTitle">移交线索</h2>
+        <button type="button" class="move-dialog-x" id="moveClose" aria-label="关闭">×</button>
       </div>
-      <div class="actions">
-        <button type="button" id="moveCancel">取消</button>
-        <button class="ok" type="button" id="moveOk">确定</button>
+      <p class="move-hint">请勾选具体接收人员（可多选）：省 / 市 / 区·县 → 厅局处 → 科室 → 人员</p>
+      <div class="move-selected">
+        <div class="move-selected-head">
+          <span class="move-selected-label">已选人员（<b id="moveCount">0</b>）：</span>
+          <button type="button" class="move-clear" id="moveClear" hidden>清空</button>
+        </div>
+        <div class="move-picks" id="movePicks"><span class="move-empty">暂未选择</span></div>
+      </div>
+      <label class="move-search">
+        <span class="sr-only">搜索人员</span>
+        <input id="moveSearch" type="search" placeholder="模糊搜索姓名、岗位、部门…" autocomplete="off" />
+      </label>
+      <div class="org-tree" id="moveTree" aria-label="机构树"></div>
+      <div class="move-actions">
+        <div class="move-actions-left">
+          <button class="pack" type="button" id="moveOffline">线下移交打包</button>
+        </div>
+        <div class="move-actions-right">
+          <button type="button" id="moveCancel">取消</button>
+          <button class="ok" type="button" id="moveOnline">线上移交</button>
+        </div>
       </div>
     </div>
   </div>
   <script>
     const clues = [
-      { id: "XS-20260930-021", name: "产业园项目用印线索（特征码/CA类）", source: "模型预警", type: "市本级行为类", dept: "省住建厅", limit: "剩7天", status: "办理中", sensitive: true, transfer: true },
-      { id: "XS-20260929-019", name: "某和项目信用生情线索", source: "投诉举报", type: "主体资质类", dept: "省财政厅", limit: "剩9天", status: "待接收", sensitive: true, transfer: true },
-      { id: "XS-20260920-017", name: "路桥工程违法分包线索", source: "部门移送", type: "履约类", dept: "××市交通局", limit: "剩15天", status: "办理中", sensitive: true, transfer: true },
-      { id: "XS-20260920-011", name: "模型评审违规举报线索", source: "模型预警", type: "市本级行为类", dept: "专项工作站", limit: "—", status: "待移送中", sensitive: false, transfer: true },
-      { id: "YK-2026-023", name: "项目串通投标举报线索（移送公安）", source: "双向移送", type: "行刑衔接·正向移送", dept: "××市公安局", limit: "—", status: "审核通过·已移送", sensitive: true, transfer: false },
-      { id: "YK-2026-021", name: "项目虚假资质挂靠证件（移送公安）", source: "双向移送", type: "行刑衔接·正向移送", dept: "××区公安分局", limit: "—", status: "移交工作站审核中", sensitive: true, transfer: false },
-      { id: "JF-2026-015", name: "××单位工作人员涉评标线索", source: "双向移送", type: "纪法衔接·正向移送", dept: "省纪委监委", limit: "—", status: "已移送纪检监察机关", sensitive: true, transfer: false },
-      { id: "FX-2026-008", name: "明招机关退回行政处理线索", source: "双向移送", type: "行刑衔接·反向移送", dept: "省住建厅（重新分办）", limit: "—", status: "已重新分办办理", sensitive: false, transfer: false }
+      { id: "XS-20260930-021", name: "产业园项目用印线索（特征码/CA类）", source: "模型预警", type: "市本级行为类", dept: "省住建厅", limit: "剩7天", handoff: "待移交", handle: "", sensitive: true },
+      { id: "XS-20260929-019", name: "某和项目信用生情线索", source: "投诉举报", type: "主体资质类", dept: "省财政厅", limit: "剩9天", handoff: "待移交", handle: "", sensitive: true },
+      { id: "XS-20260920-017", name: "路桥工程违法分包线索", source: "部门移送", type: "履约类", dept: "××市交通局", limit: "剩15天", handoff: "待移交", handle: "", sensitive: true },
+      { id: "XS-20260920-011", name: "模型评审违规举报线索", source: "模型预警", type: "市本级行为类", dept: "专项工作站", limit: "—", handoff: "待移交", handle: "", sensitive: false },
+      { id: "YK-2026-023", name: "项目串通投标举报线索（移送公安）", source: "双向移送", type: "行刑衔接·正向移送", dept: "××市公安局", limit: "—", handoff: "线上移交", handle: "待办理", sensitive: true },
+      { id: "YK-2026-021", name: "项目虚假资质挂靠证件（移送公安）", source: "双向移送", type: "行刑衔接·正向移送", dept: "××区公安分局", limit: "—", handoff: "线上移交", handle: "办理中", sensitive: true },
+      { id: "JF-2026-015", name: "××单位工作人员涉评标线索", source: "双向移送", type: "纪法衔接·正向移送", dept: "省纪委监委", limit: "—", handoff: "线上移交", handle: "已办理", sensitive: true },
+      { id: "FX-2026-008", name: "明招机关退回行政处理线索", source: "双向移送", type: "行刑衔接·反向移送", dept: "省住建厅（重新分办）", limit: "—", handoff: "线下移交", handle: "已办理", sensitive: false },
+      { id: "XS-20260901-003", name: "重复举报无效线索（演示）", source: "投诉举报", type: "程序类", dept: "—", limit: "—", handoff: "—", handle: "", ignored: true, sensitive: false }
     ];
-    const tone = {
-      "办理中": "st-doing",
-      "待接收": "st-wait",
-      "待移送中": "st-move",
-      "审核通过·已移送": "st-pass",
-      "移交工作站审核中": "st-audit",
-      "已移送纪检监察机关": "st-sent",
-      "已重新分办办理": "st-back"
+    const CLUE_STAT_DISPLAY = {
+      total: 2725,
+      pending: 672,
+      pendingToday: 2,
+      transferred: 1053,
+      deptMain: 1000,
+      deptDiscipline: 53,
+      ignored: 30
     };
-    function fillSelect(id, values) {
-      const box = document.getElementById(id);
-      values.forEach((value) => {
-        const option = document.createElement("option");
-        option.value = value;
-        option.textContent = value;
-        box.appendChild(option);
-      });
-    }
-    fillSelect("fStatus", [...new Set(clues.map((item) => item.status))]);
+    let clueStatFilter = "";
+    const tone = {
+      "待移交": "st-move",
+      "线上移交": "st-sent",
+      "线下移交": "st-offline",
+      "待办理": "st-wait",
+      "办理中": "st-doing",
+      "已办理": "st-pass"
+    };
     function esc(text) {
       return String(text).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
     }
+    function splitDeptPeople(dept) {
+      return String(dept || "")
+        .split(/[；;]/)
+        .map((part) => part.trim())
+        .filter(Boolean);
+    }
+    function renderDeptCell(dept) {
+      const text = String(dept || "");
+      const people = splitDeptPeople(text);
+      if (people.length <= 1) {
+        return '<td class="dept"><span class="cell-ellipsis" title="' + esc(text) + '">' + esc(text) + "</span></td>";
+      }
+      return (
+        '<td class="dept"><span class="cell-ellipsis dept-has-tip" data-dept-parts="' +
+        esc(JSON.stringify(people)) +
+        '">' +
+        esc(text) +
+        "</span></td>"
+      );
+    }
+    function isClueIgnored(item) {
+      return !!(item && item.ignored);
+    }
+    function isClueTransferred(item) {
+      return item && (item.handoff === "线上移交" || item.handoff === "线下移交");
+    }
+    function isCluePending(item) {
+      return item && item.handoff === "待移交" && !isClueIgnored(item);
+    }
     function matched(item) {
       const source = document.getElementById("fSource").value;
-      const status = document.getElementById("fStatus").value;
+      const handoff = document.getElementById("fHandoff").value;
+      const handle = document.getElementById("fHandle").value;
       const sensitive = document.getElementById("fSensitive").value;
       if (source && item.source !== source) return false;
-      if (status && item.status !== status) return false;
+      if (handoff && item.handoff !== handoff) return false;
+      if (handle && item.handle !== handle) return false;
       if (sensitive === "1" && !item.sensitive) return false;
       if (sensitive === "0" && item.sensitive) return false;
+      if (clueStatFilter === "pending" && !isCluePending(item)) return false;
+      if (clueStatFilter === "transferred" && !isClueTransferred(item)) return false;
+      if (clueStatFilter === "ignored" && !isClueIgnored(item)) return false;
       return true;
     }
+    function renderClueStats() {
+      const box = document.getElementById("clueStats");
+      const s = CLUE_STAT_DISPLAY;
+      const on = (key) => (clueStatFilter === key ? " is-on" : "");
+      box.innerHTML =
+        '<div class="clue-stat-grid" role="group" aria-label="线索统计筛选">' +
+        '<button type="button" class="clue-stat-card" data-stat="all">' +
+        '<span class="clue-stat-subject">线索总数</span><span class="clue-stat-num">' + s.total + "</span></button>" +
+        '<button type="button" class="clue-stat-card' + on("pending") + '" data-stat="pending">' +
+        '<span class="clue-stat-subject">待移交<span class="clue-stat-today">今 ' + s.pendingToday + "</span></span>" +
+        '<span class="clue-stat-num">' + s.pending + "</span></button>" +
+        '<button type="button" class="clue-stat-card' + on("transferred") + '" data-stat="transferred">' +
+        '<span class="clue-stat-subject">已移交</span><span class="clue-stat-num">' + s.transferred + "</span>" +
+        '<div class="clue-stat-extra">主管部门 <b>' + s.deptMain + '</b><span class="clue-stat-extra-sep">|</span>纪检部门 <b>' + s.deptDiscipline + "</b></div></button>" +
+        '<button type="button" class="clue-stat-card' + on("ignored") + '" data-stat="ignored">' +
+        '<span class="clue-stat-subject">已忽略</span><span class="clue-stat-num">' + s.ignored + "</span></button>" +
+        "</div>";
+    }
     function render() {
+      renderClueStats();
       const body = document.getElementById("rows");
       const list = clues.filter(matched);
       if (!list.length) {
-        body.innerHTML = '<tr><td class="empty" colspan="8">没有匹配的线索</td></tr>';
+        body.innerHTML = '<tr><td class="empty" colspan="9">没有匹配的线索</td></tr>';
         return;
       }
       body.innerHTML = list.map((item) => {
-        const mark = item.sensitive ? '<span class="mark">×</span>' : '<span class="mark"></span>';
-        const move = item.transfer ? '<button type="button" data-act="move" data-id="' + esc(item.id) + '">移交</button>' : "";
-        return "<tr><td>" + esc(item.id) + '</td><td class="name">' + mark + esc(item.name) + "</td><td>" + esc(item.source) + "</td><td>" + esc(item.type) + "</td><td>" + esc(item.dept) + "</td><td>" + esc(item.limit) + '</td><td><span class="pill ' + (tone[item.status] || "st-wait") + '">' + esc(item.status) + '</span></td><td><div class="ops"><button type="button" data-act="detail" data-id="' + esc(item.id) + '">详情</button>' + move + "</div></td></tr>";
+        const mark = item.sensitive ? '<img class="mark is-sensitive" src="assets/icon-sensitive.png" width="16" height="16" alt="" title="敏感信息" aria-label="敏感信息" />' : '<span class="mark"></span>';
+        const move = item.handoff === "待移交" ? '<button type="button" data-act="move" data-id="' + esc(item.id) + '">移交</button>' : "";
+        const handle = item.handle ? '<span class="pill ' + (tone[item.handle] || "st-wait") + '">' + esc(item.handle) + "</span>" : "--";
+        const deptCell = renderDeptCell(item.dept);
+        return "<tr><td>" + esc(item.id) + '</td><td class="name">' + mark + esc(item.name) + "</td><td>" + esc(item.source) + "</td><td>" + esc(item.type) + "</td>" + deptCell + "<td>" + esc(item.limit) + '</td><td><span class="pill ' + (tone[item.handoff] || "st-wait") + '">' + esc(item.handoff) + "</span></td><td>" + handle + '</td><td class="ops-cell"><div class="ops"><button type="button" data-act="detail" data-id="' + esc(item.id) + '">查看</button>' + move + "</div></td></tr>";
       }).join("");
     }
+    const orgTag = { region: "区划", bureau: "部门", office: "科室", person: "人员", center: "交易中心" };
+    function orgPerson(name, duty) {
+      return { label: name, kind: "person", duty: duty };
+    }
+    function orgOffice(name, people) {
+      return { label: name, kind: "office", open: false, children: people.map((row) => orgPerson(row[0], row[1])) };
+    }
+    function orgBureau(label, offices) {
+      return { label: label, kind: "bureau", open: false, children: offices.map((office) => orgOffice(office[0], office[1])) };
+    }
+    const orgStaff = {
+      sup: [["王建国", "科室负责人"], ["李敏", "承办人"], ["赵强", "审核员"]],
+      biz: [["陈涛", "主办人"], ["刘洋", "协办人"], ["周婷", "复核员"]]
+    };
+    function orgBureauSet(levelName, unit) {
+      const map = {
+        公安: unit === "厅" ? "省公安厅" : unit === "局" ? "市公安局" : "区公安分局",
+        纪委: unit === "厅" ? "省纪委监委" : unit === "局" ? "市纪委" : "区纪委监委",
+        交通: unit === "厅" ? "省交通运输厅" : unit === "局" ? "市交通运输局" : "区交通管理处",
+        水利: unit === "厅" ? "省水利厅" : unit === "局" ? "市水务局" : "区水务管理所",
+        住建: unit === "厅" ? "省住建厅" : unit === "局" ? "市住建局" : "区住建管理处",
+        农业农村: unit === "厅" ? "省农业农村厅" : unit === "局" ? "市农业农村局" : "区农业农村局"
+      };
+      return ["公安", "纪委", "交通", "水利", "住建", "农业农村"].map((key) => orgBureau(map[key], [
+        ["综合监督科", orgStaff.sup],
+        ["业务处置科", orgStaff.biz]
+      ]));
+    }
+    function orgCenter(label) {
+      return {
+        label: label,
+        kind: "center",
+        open: false,
+        children: [
+          orgOffice("交易监管科", [["张丽华", "监管员"], ["吴俊杰", "分办员"], ["郑晓燕", "归档员"]]),
+          orgOffice("见证服务科", [["何志明", "见证员"], ["马慧", "值班长"]])
+        ]
+      };
+    }
+    const moveOrgTree = [
+      {
+        label: "贵州省",
+        kind: "region",
+        open: true,
+        children: [
+          {
+            label: "省级",
+            kind: "region",
+            open: true,
+            children: orgBureauSet("省级", "厅").concat([orgCenter("省公共资源交易中心")])
+          },
+          {
+            label: "贵阳市",
+            kind: "region",
+            open: false,
+            children: orgBureauSet("市级", "局").concat([orgCenter("市公共资源交易中心")])
+          },
+          {
+            label: "观山湖区",
+            kind: "region",
+            open: false,
+            children: orgBureauSet("区县级", "处")
+          }
+        ]
+      }
+    ];
+    let moveSelectedKeys = new Set();
+    let moveSearchQuery = "";
+    function orgPath(node, trail) {
+      return trail.concat(node.label);
+    }
+    function orgEntryText(path, node) {
+      const base = path.join(" / ");
+      return node.kind === "person" && node.duty ? base + "（" + node.duty + "）" : base;
+    }
+    function fuzzyMatch(text, query) {
+      const hay = String(text).toLowerCase();
+      const q = query.trim().toLowerCase();
+      if (!q) return true;
+      if (hay.includes(q)) return true;
+      let at = 0;
+      for (let i = 0; i < q.length; i += 1) {
+        at = hay.indexOf(q[i], at);
+        if (at < 0) return false;
+        at += 1;
+      }
+      return true;
+    }
+    function personHaystack(path, node) {
+      return orgEntryText(path, node) + " " + path.join("");
+    }
+    function branchHasMatch(node, trail, query) {
+      if (!query) return true;
+      const path = orgPath(node, trail);
+      if (node.kind === "person") return fuzzyMatch(personHaystack(path, node), query);
+      return (node.children || []).some((child) => branchHasMatch(child, path, query));
+    }
+    function flattenOrg(nodes, trail, out) {
+      nodes.forEach((node) => {
+        const path = orgPath(node, trail);
+        const key = path.join("›");
+        out.push({ node: node, path: path, key: key, text: orgEntryText(path, node) });
+        if (node.children && node.children.length) flattenOrg(node.children, path, out);
+      });
+      return out;
+    }
+    function renderOrgNodes(nodes, trail) {
+      const query = moveSearchQuery.trim();
+      const rows = nodes.map((node) => {
+        if (query && !branchHasMatch(node, trail, query)) return "";
+        const path = orgPath(node, trail);
+        const key = path.join("›");
+        const hasKids = node.children && node.children.length;
+        const open = hasKids && (query ? true : node.open !== false);
+        const kids = hasKids && open ? renderOrgNodes(node.children, path) : "";
+        const isPerson = node.kind === "person";
+        const picked = isPerson && moveSelectedKeys.has(key);
+        const rowClass = (isPerson ? " is-person" : " is-branch") + (picked ? " is-selected" : "");
+        const dutyTag = isPerson && node.duty ? '<span class="org-tag">' + esc(node.duty) + "</span>" : (orgTag[node.kind] ? '<span class="org-tag">' + orgTag[node.kind] + "</span>" : "");
+        const personAttr = isPerson ? ' data-org-person="1"' : "";
+        if (isPerson) {
+          return '<li><div class="org-row' + rowClass + '" data-org-key="' + esc(key) + '"' + personAttr + '><span class="org-box" aria-hidden="true"></span><span class="org-label">' + esc(node.label) + "</span>" + dutyTag + "</div></li>";
+        }
+        const toggle = hasKids
+          ? '<button type="button" class="org-toggle' + (open ? " is-open" : "") + '" data-org-toggle aria-label="展开">' + (open ? "▾" : "▸") + "</button>"
+          : '<button type="button" class="org-toggle is-empty" tabindex="-1" aria-hidden="true">▸</button>';
+        return '<li><div class="org-row' + rowClass + '" data-org-key="' + esc(key) + '">' + toggle + '<span class="org-label">' + esc(node.label) + "</span>" + dutyTag + "</div>" + kids + "</li>";
+      }).filter(Boolean);
+      if (!rows.length) return "";
+      return "<ul>" + rows.join("") + "</ul>";
+    }
+    const orgIndex = new Map();
+    function rebuildOrgIndex() {
+      orgIndex.clear();
+      flattenOrg(moveOrgTree, [], []).forEach((entry) => {
+        orgIndex.set(entry.key, entry);
+      });
+    }
+    function paintMoveTree() {
+      rebuildOrgIndex();
+      const treeHtml = renderOrgNodes(moveOrgTree, []);
+      document.getElementById("moveTree").innerHTML = treeHtml || '<p class="org-empty">未找到匹配人员</p>';
+      const picks = [...moveSelectedKeys].map((key) => orgIndex.get(key)).filter(Boolean);
+      document.getElementById("moveCount").textContent = String(picks.length);
+      const box = document.getElementById("movePicks");
+      const clearBtn = document.getElementById("moveClear");
+      if (!picks.length) {
+        box.innerHTML = '<span class="move-empty">暂未选择</span>';
+        if (clearBtn) clearBtn.hidden = true;
+        return;
+      }
+      if (clearBtn) clearBtn.hidden = false;
+      box.innerHTML = picks.map((entry) => {
+        return '<span class="move-pick" title="' + esc(entry.text) + '"><b>' + esc(entry.node.label) + " · " + esc(entry.node.duty || "人员") + '</b><button type="button" class="move-pick-x" data-remove-pick="' + esc(entry.key) + '" aria-label="移除 ' + esc(entry.node.label) + '">×</button></span>';
+      }).join("");
+    }
+    function openMoveDialog(item) {
+      moving = item;
+      moveSelectedKeys = new Set();
+      moveSearchQuery = "";
+      const search = document.getElementById("moveSearch");
+      if (search) search.value = "";
+      paintMoveTree();
+      document.getElementById("moveMask").classList.add("is-open");
+      if (search) search.focus();
+    }
+    function finishMove(mode) {
+      if (!moving) return;
+      const picks = [...moveSelectedKeys].map((key) => orgIndex.get(key)).filter(Boolean);
+      if (!picks.length) {
+        window.alert("请至少勾选一名接收人员。");
+        return;
+      }
+      moving.dept = picks.map((entry) => entry.text).join("；");
+      moving.handoff = mode === "offline" ? "线下移交" : "线上移交";
+      moving.handle = mode === "offline" ? "已办理" : "待办理";
+      if (mode === "offline") moving.limit = "线下移交包已生成";
+      render();
+      moving = null;
+      moveSelectedKeys = new Set();
+      document.getElementById("moveMask").classList.remove("is-open");
+    }
     let moving = null;
+    document.getElementById("clueStats").addEventListener("click", (event) => {
+      const card = event.target.closest("[data-stat]");
+      if (!card) return;
+      const next = card.dataset.stat;
+      if (next === "all") {
+        clueStatFilter = "";
+        document.getElementById("fHandoff").value = "";
+      } else {
+        clueStatFilter = clueStatFilter === next ? "" : next;
+        if (clueStatFilter === "pending") document.getElementById("fHandoff").value = "待移交";
+        else document.getElementById("fHandoff").value = "";
+      }
+      render();
+    });
     document.getElementById("filters").addEventListener("submit", (event) => {
       event.preventDefault();
       render();
     });
     document.getElementById("resetFilters").addEventListener("click", () => {
       document.getElementById("filters").reset();
+      clueStatFilter = "";
       render();
     });
-    document.getElementById("enterClue").addEventListener("click", () => {
+    const enterFileInput = document.getElementById("enterFileInput");
+    const enterFileList = document.getElementById("enterFileList");
+    let enterAttachments = [];
+    function formatFileSize(bytes) {
+      if (!bytes) return "0 B";
+      if (bytes < 1024) return bytes + " B";
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+      return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    }
+    function paintEnterFiles() {
+      enterFileList.innerHTML = enterAttachments.map((file, index) => {
+        return '<li class="enter-file-item"><b title="' + esc(file.name) + '">' + esc(file.name) + '</b><em>' + esc(formatFileSize(file.size)) +
+          '</em><button type="button" class="enter-file-rm" data-enter-file-rm="' + index + '" aria-label="移除">×</button></li>';
+      }).join("");
+    }
+    function nextClueId() {
+      const now = new Date();
+      const day = now.getFullYear() + String(now.getMonth() + 1).padStart(2, "0") + String(now.getDate()).padStart(2, "0");
+      const prefix = "XS-" + day + "-";
+      const seq = String(clues.filter((item) => item.id.indexOf(prefix) === 0).length + 1).padStart(3, "0");
+      return prefix + seq;
+    }
+    function resetEnterForm() {
       document.getElementById("enterForm").reset();
+      document.getElementById("enterId").value = nextClueId();
+      enterAttachments = [];
+      enterFileInput.value = "";
+      paintEnterFiles();
+    }
+    document.getElementById("enterClue").addEventListener("click", () => {
+      resetEnterForm();
       document.getElementById("enterMask").classList.add("is-open");
     });
-    document.getElementById("enterCancel").addEventListener("click", () => {
+    function closeEnterDialog() {
       document.getElementById("enterMask").classList.remove("is-open");
+    }
+    document.getElementById("enterCancel").addEventListener("click", closeEnterDialog);
+    document.getElementById("enterClose").addEventListener("click", closeEnterDialog);
+    document.getElementById("enterFileAdd").addEventListener("click", () => {
+      enterFileInput.click();
+    });
+    enterFileInput.addEventListener("change", () => {
+      const picked = [...enterFileInput.files];
+      if (!picked.length) return;
+      enterAttachments = enterAttachments.concat(picked);
+      enterFileInput.value = "";
+      paintEnterFiles();
+    });
+    enterFileList.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-enter-file-rm]");
+      if (!button) return;
+      const index = Number(button.dataset.enterFileRm);
+      if (Number.isNaN(index)) return;
+      enterAttachments.splice(index, 1);
+      paintEnterFiles();
     });
     document.getElementById("enterForm").addEventListener("submit", (event) => {
       event.preventDefault();
-      const now = new Date();
-      const day = now.getFullYear() + String(now.getMonth() + 1).padStart(2, "0") + String(now.getDate()).padStart(2, "0");
-      const seq = String(clues.filter((item) => item.id.indexOf("XS-" + day) === 0).length + 1).padStart(3, "0");
+      const type = document.getElementById("enterType").value;
+      if (!type) {
+        document.getElementById("enterType").focus();
+        return;
+      }
+      const clueId = document.getElementById("enterId").value.trim() || nextClueId();
       clues.unshift({
-        id: "XS-" + day + "-" + seq,
+        id: clueId,
         name: document.getElementById("enterName").value.trim(),
-        source: document.getElementById("enterSource").value,
-        type: document.getElementById("enterType").value.trim(),
+        source: "手工录入",
+        type: type,
         dept: document.getElementById("enterDept").value.trim(),
         limit: document.getElementById("enterLimit").value.trim() || "—",
-        status: "待接收",
+        handoff: "待移交",
+        handle: "",
         sensitive: document.getElementById("enterSensitive").value === "1",
-        transfer: true
+        description: document.getElementById("enterDesc").value.trim(),
+        attachments: enterAttachments.map((file) => ({ name: file.name, size: file.size }))
       });
       document.getElementById("enterMask").classList.remove("is-open");
+      resetEnterForm();
       render();
     });
     document.getElementById("rows").addEventListener("click", (event) => {
@@ -459,79 +1290,108 @@
       const item = clues.find((row) => row.id === button.dataset.id);
       if (!item) return;
       if (button.dataset.act === "detail") {
-        openDetail(item);
-      } else if (button.dataset.act === "move" && item.transfer) {
-        moving = item;
-        document.getElementById("moveDept").value = item.dept;
-        document.getElementById("moveMask").classList.add("is-open");
+        window.ClueDetail.open(item);
+      } else if (button.dataset.act === "move" && item.handoff === "待移交") {
+        openMoveDialog(item);
       }
     });
-    function flowSteps(item) {
-      const mark = item.sensitive ? "有" : "无";
-      const limit = item.limit && item.limit !== "—" ? "时限" + item.limit + "（黄灯预警）" : "继续核查中";
-      const steps = [
-        { title: "线索归集（模型向量自动纳入）", time: "2026-03-26 09:40 · 张某", note: "来源：" + item.source + " " + item.id + "；敏感标记：" + mark },
-        { title: "初核分派 → " + item.dept + "（主办）", time: "2026-03-26 09:41 · 自动分派规则引擎（按行业 + 属地）", note: "协办：省公共资源交易中心；分派依据：" + item.type + " / " + item.source },
-        { title: "接收确认", time: "2026-03-26 14:22 · " + item.dept + " 王××" },
-        { title: "受理（符合受理条件）", time: "2026-03-27 10:05 · " + item.dept + " 王××" },
-        { title: "核查处置中（过程记录 4 条）", time: "2026-03-28 全天 · 办理人：李×", note: "已调取相关主体文件元数据并固定证据；排除完成企业端可笔录；" + limit },
-        { title: "结果反馈与佐证上传 → 办结核验与归档", time: "待办", wait: true }
-      ];
-      const reached = {
-        "待接收": 1,
-        "待移送中": 2,
-        "办理中": 6,
-        "移交工作站审核中": 6,
-        "审核通过·已移送": 6,
-        "已移送纪检监察机关": 6,
-        "已重新分办办理": 6
-      }[item.status] || 3;
-      return steps.slice(0, reached);
-    }
-    function openDetail(item) {
-      document.getElementById("detailTitle").textContent = item.name;
-      document.getElementById("detailFlow").innerHTML = flowSteps(item).map((step) => {
-        return '<li class="' + (step.wait ? "is-wait" : "") + '"><b>' + esc(step.title) + "</b><time>" + esc(step.time) + "</time>" + (step.note ? "<p>" + esc(step.note) + "</p>" : "") + "</li>";
-      }).join("");
-      document.getElementById("detailSummary").textContent = "系统已归集「" + item.name + "」（" + item.source + "）。关联主体 3 家、关联项目 5 个、关联预警 8 条，与「" + item.type + "」高度重合。根据规则引擎，建议取证重点：文件元数据、CA 锁办理流水、办理人社保记录、企业间同标率。";
-      const files = [
-        [item.type + "元数据固定快照.pdf", "表单快照", "系统", "已取证"],
-        ["CA锁办理流水.xlsx", "书证", "李××（" + item.dept + "）", "已取证"],
-        ["询问笔录（纸）", "笔录", "—", "待上传"]
-      ];
-      document.getElementById("detailProof").innerHTML = files.map((row) => {
-        const state = row[3] === "已取证" ? "got" : "wait";
-        return "<tr><td>" + esc(row[0]) + "</td><td>" + esc(row[1]) + "</td><td>" + esc(row[2]) + '</td><td class="' + state + '">' + esc(row[3]) + "</td></tr>";
-      }).join("");
-      document.getElementById("detailMask").classList.add("is-open");
-    }
-    document.getElementById("detailMask").addEventListener("click", (event) => {
-      const note = event.target.closest("[data-note]");
-      if (!note) return;
-      document.getElementById("detailSummary").textContent = note.dataset.note;
+    document.getElementById("moveSearch").addEventListener("input", (event) => {
+      moveSearchQuery = event.target.value || "";
+      paintMoveTree();
     });
-    document.getElementById("detailClose").addEventListener("click", () => {
-      document.getElementById("detailMask").classList.remove("is-open");
+    document.getElementById("moveClear").addEventListener("click", () => {
+      moveSelectedKeys.clear();
+      paintMoveTree();
     });
-    document.getElementById("moveCancel").addEventListener("click", () => {
-      moving = null;
-      document.getElementById("moveMask").classList.remove("is-open");
+    document.getElementById("movePicks").addEventListener("click", (event) => {
+      const remove = event.target.closest("[data-remove-pick]");
+      if (!remove) return;
+      event.stopPropagation();
+      moveSelectedKeys.delete(remove.dataset.removePick);
+      paintMoveTree();
     });
-    document.getElementById("moveOk").addEventListener("click", () => {
-      if (moving) {
-        moving.dept = document.getElementById("moveDept").value;
-        moving.status = "待移送中";
-        moving.transfer = false;
-        render();
+    document.getElementById("moveTree").addEventListener("click", (event) => {
+      const toggle = event.target.closest("[data-org-toggle]");
+      if (toggle && !toggle.classList.contains("is-empty")) {
+        const row = toggle.closest(".org-row");
+        const key = row && row.dataset.orgKey;
+        const entry = key && orgIndex.get(key);
+        if (entry && entry.node.children && entry.node.children.length) {
+          entry.node.open = !entry.node.open;
+          paintMoveTree();
+        }
+        return;
       }
-      moving = null;
-      document.getElementById("moveMask").classList.remove("is-open");
+      const row = event.target.closest("[data-org-person]");
+      if (!row) return;
+      const key = row.dataset.orgKey;
+      if (!key) return;
+      if (moveSelectedKeys.has(key)) moveSelectedKeys.delete(key);
+      else moveSelectedKeys.add(key);
+      paintMoveTree();
     });
+    function closeMoveDialog() {
+      moving = null;
+      moveSelectedKeys = new Set();
+      moveSearchQuery = "";
+      document.getElementById("moveSearch").value = "";
+      document.getElementById("moveMask").classList.remove("is-open");
+    }
+    document.getElementById("moveCancel").addEventListener("click", closeMoveDialog);
+    document.getElementById("moveClose").addEventListener("click", closeMoveDialog);
+    document.getElementById("moveOnline").addEventListener("click", () => finishMove("online"));
+    document.getElementById("moveOffline").addEventListener("click", () => finishMove("offline"));
     document.querySelectorAll(".mask").forEach((mask) => {
       mask.addEventListener("click", (event) => {
         if (event.target === mask) mask.classList.remove("is-open");
       });
     });
+    const deptFloatTip = document.getElementById("deptFloatTip");
+    const tableCard = document.querySelector(".table-card");
+    function hideDeptFloatTip() {
+      deptFloatTip.classList.remove("is-open");
+      deptFloatTip.setAttribute("aria-hidden", "true");
+      deptFloatTip.innerHTML = "";
+    }
+    function placeDeptFloatTip(anchor) {
+      const rect = anchor.getBoundingClientRect();
+      const tipRect = deptFloatTip.getBoundingClientRect();
+      let left = rect.left;
+      let top = rect.bottom + 8;
+      if (left + tipRect.width > window.innerWidth - 12) {
+        left = Math.max(12, window.innerWidth - tipRect.width - 12);
+      }
+      if (top + tipRect.height > window.innerHeight - 12) {
+        top = rect.top - tipRect.height - 8;
+      }
+      deptFloatTip.style.left = left + "px";
+      deptFloatTip.style.top = Math.max(12, top) + "px";
+    }
+    function showDeptFloatTip(anchor) {
+      let people;
+      try {
+        people = JSON.parse(anchor.dataset.deptParts || "[]");
+      } catch (error) {
+        return;
+      }
+      if (!people.length) return;
+      deptFloatTip.innerHTML = people.map((name) => '<div class="dept-tip-line">' + esc(name) + "</div>").join("");
+      deptFloatTip.classList.add("is-open");
+      deptFloatTip.setAttribute("aria-hidden", "false");
+      placeDeptFloatTip(anchor);
+    }
+    tableCard.addEventListener("mouseover", (event) => {
+      const anchor = event.target.closest(".dept-has-tip");
+      if (!anchor) return;
+      showDeptFloatTip(anchor);
+    });
+    tableCard.addEventListener("mouseout", (event) => {
+      const from = event.target.closest(".dept-has-tip");
+      const to = event.relatedTarget && event.relatedTarget.closest ? event.relatedTarget.closest(".dept-has-tip") : null;
+      if (from && from !== to) hideDeptFloatTip();
+    });
+    tableCard.addEventListener("scroll", hideDeptFloatTip, { passive: true });
+    window.addEventListener("scroll", hideDeptFloatTip, { passive: true });
     render();
   </script>
 </body>

@@ -1,11 +1,15 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-page="warnings.html">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>预警列表</title>
-  <link rel="stylesheet" href="shell.css?v=4" />
-  <script src="shell.js?v=4" defer></script>
+  <link rel="stylesheet" href="shell.css?v=16" />
+  <link rel="stylesheet" href="clue-report.css?v=7" />
+  <script src="shell.js?v=19" defer></script>
+  <script src="mock-data.js?v=135"></script>
+  <script src="clue-handoff.js?v=2"></script>
+  <script src="clue-report.js?v=4"></script>
   <style>
     :root {
       --ink: #16324f;
@@ -19,11 +23,13 @@
     html, body { margin: 0; height: 100%; }
     body {
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
       color: var(--ink);
       font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
-      background: #e7eef6;
+      background: #edf1f6;
+    }
+    html.sys-app body {
+      min-height: 0;
+      background: transparent;
     }
     button, input, select { font-family: inherit; }
     button { cursor: pointer; }
@@ -34,7 +40,7 @@
     .topbar.is-idle { display: none; }
     .topbar {
       flex: none;
-      height: 56px;
+      height: 48px;
       display: flex;
       align-items: center;
       gap: 12px;
@@ -88,7 +94,7 @@
       text-align: center;
     }
     .view-tab .x:hover { background: #dbe4f0; color: #24364c; }
-    .detail-frame { flex: 1; min-height: 0; width: 100%; border: 0; background: #e7eef6; }
+    .detail-frame { flex: 1; min-height: 0; width: 100%; border: 0; background: #edf1f6; }
     .page[hidden], .detail-frame[hidden] { display: none !important; }
     .brand {
       display: flex;
@@ -117,39 +123,68 @@
     }
     .tabs {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       width: 100%;
+      flex: none;
     }
     .tabs button {
       flex: 1;
       min-width: 0;
-      height: 36px;
-      padding: 0 10px;
+      height: 52px;
+      padding: 0 12px;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 6px;
-      border: 1px solid #d7dee8;
-      border-radius: 6px;
+      justify-content: flex-start;
+      gap: 10px;
+      border: 1px solid #e3eaf3;
+      border-radius: 8px;
       background: #fff;
-      color: #3d4e64;
-      font-size: 13px;
+      color: #24364c;
+      font-size: 14px;
+      box-shadow: 0 1px 2px rgba(22, 50, 90, 0.04);
     }
-    .tabs button svg {
-      width: 16px;
-      height: 16px;
+    .tabs button .tab-ico {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: #eef4ff;
+      color: #2f78f6;
+      display: grid;
+      place-items: center;
       flex: none;
     }
-    .tabs button em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tabs button .tab-ico svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+    .tabs button .tab-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .tabs button em {
+      font-style: normal;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 550;
+    }
     .tabs button b {
       color: var(--blue);
-      font-weight: 650;
+      font-weight: 700;
+      font-size: 15px;
     }
     .tabs button.is-on {
-      background: #eef4ff;
-      color: var(--blue);
-      border-color: #b9d0fb;
+      border-color: #7eb3ff;
+      box-shadow: 0 0 0 1px rgba(47, 120, 246, 0.18);
     }
+    .tabs button.is-on .tab-ico {
+      background: #2f78f6;
+      color: #fff;
+    }
+    .tabs button.is-on em { color: #1f6feb; }
     .filters, .table-card {
       background: #fff;
       border-radius: 8px;
@@ -327,6 +362,161 @@
     }
     td.point .cell-pick { white-space: normal; }
     .cell-pick:hover, .cell-pick.is-on { color: var(--blue); }
+    .deal-ignored {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: nowrap;
+    }
+    .deal-ignored .deal-status { flex: none; }
+    .ignore-info {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      flex: none;
+      cursor: help;
+      outline: none;
+    }
+    .ignore-info .ignore-ico {
+      position: relative;
+      width: 16px;
+      height: 16px;
+      flex: none;
+    }
+    .ignore-info .ignore-ico img {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+      transition: opacity 0.12s ease;
+    }
+    .ignore-info .ignore-ico .ignore-ico-on { opacity: 0; }
+    .ignore-info:hover .ignore-ico .ignore-ico-off,
+    .ignore-info:focus-visible .ignore-ico .ignore-ico-off { opacity: 0; }
+    .ignore-info:hover .ignore-ico .ignore-ico-on,
+    .ignore-info:focus-visible .ignore-ico .ignore-ico-on { opacity: 1; }
+    .ignore-info .ignore-tip {
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 8px);
+      z-index: 40;
+      transform: translateX(-50%);
+      min-width: 160px;
+      max-width: 280px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: rgba(24, 36, 52, 0.94);
+      color: #fff;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.12s ease;
+    }
+    .ignore-info .ignore-tip::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 100%;
+      margin-left: -5px;
+      border: 5px solid transparent;
+      border-top-color: rgba(24, 36, 52, 0.94);
+    }
+    .ignore-info:hover .ignore-tip,
+    .ignore-info:focus-visible .ignore-tip {
+      opacity: 1;
+      visibility: visible;
+    }
+    .ignore-dialog {
+      width: min(480px, calc(100vw - 32px));
+      padding: 0;
+      border: 0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .ignore-dialog::backdrop { background: rgba(16, 32, 54, 0.45); }
+    .ignore-dialog form { display: flex; flex-direction: column; }
+    .ignore-dialog .ignore-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid #e8eef6;
+    }
+    .ignore-dialog .ignore-head-title {
+      font-size: 16px;
+      font-weight: 650;
+      color: var(--ink);
+    }
+    .ignore-dialog .ignore-x {
+      flex: none;
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #6d7f95;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .ignore-dialog .ignore-x:hover { background: #f4f7fb; color: #24364c; }
+    .ignore-dialog .ignore-body {
+      padding: 14px 16px;
+    }
+    .ignore-dialog .ignore-body label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: #3d4e64;
+    }
+    .ignore-dialog textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 10px 12px;
+      border: 1px solid #d7dee8;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--ink);
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    .ignore-dialog textarea:focus {
+      outline: none;
+      border-color: #9ec0ff;
+      box-shadow: 0 0 0 1px #9ec0ff;
+    }
+    .ignore-dialog .ignore-foot {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 12px 16px 14px;
+      border-top: 1px solid #e8eef6;
+    }
+    .ignore-dialog .ignore-foot button {
+      height: 32px;
+      padding: 0 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .ignore-dialog .ignore-cancel {
+      border: 1px solid #d7dee8;
+      background: #fff;
+      color: #3d4e64;
+    }
+    .ignore-dialog .ignore-ok {
+      border: 0;
+      background: var(--blue);
+      color: #fff;
+    }
     .col-pop[hidden] { display: none; }
     .col-pop {
       position: fixed;
@@ -457,8 +647,23 @@
       </div>
     </div>
   </main>
+  <dialog class="ignore-dialog" id="ignoreDialog" aria-labelledby="ignoreDialogTitle">
+    <form id="ignoreForm">
+      <div class="ignore-head">
+        <span class="ignore-head-title" id="ignoreDialogTitle">忽略预警</span>
+        <button type="button" class="ignore-x" id="ignoreClose" aria-label="关闭">×</button>
+      </div>
+      <div class="ignore-body">
+        <label for="ignoreReasonInput">忽略原因</label>
+        <textarea id="ignoreReasonInput" name="reason" placeholder="请填写忽略原因" required maxlength="500"></textarea>
+      </div>
+      <div class="ignore-foot">
+        <button class="ignore-cancel" id="ignoreCancel" type="button">取消</button>
+        <button class="ignore-ok" type="submit">确定</button>
+      </div>
+    </form>
+  </dialog>
   <iframe class="detail-frame" id="detailFrame" hidden title="预警详情"></iframe>
-  <script src="mock-data.js?v=133"></script>
   <script>
     const icon = (paths) => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + "</svg>";
     const tabs = [
@@ -573,13 +778,16 @@
       return out;
     }
     let rows = expandRows(window.GUIZHOU.rows);
-    const dealStates = ["未处置", "已忽略", "已转线索", "已办结"];
+    const dealStates = ["未处置", "已忽略", "已转线索"];
     rows.forEach((item, index) => {
       const key = String(item.id || item.code || item.name || index);
       let n = 0;
       for (let i = 0; i < key.length; i += 1) n = (n * 33 + key.charCodeAt(i)) >>> 0;
       item.deal = dealStates[n % dealStates.length];
       if (item.deal === "已转线索") item.clue = true;
+      if (item.deal === "已忽略" && !item.ignoreReason) {
+        item.ignoreReason = "经复核暂无异常，按程序予以忽略。";
+      }
     });
     if (new URLSearchParams(location.search).get("scope") === "clue") {
       rows = rows.filter((item) => item.deal === "已转线索");
@@ -588,11 +796,17 @@
       if (subject) subject.textContent = "预警线索";
     }
 
+    const listClueReport = window.ClueReport.mount({
+      layout: "slide",
+      parent: document.body,
+      getDefaultClueName: () => "预警列表归集线索"
+    });
+
     const params = new URLSearchParams(location.search);
     const regionOpts = ["全省", "贵阳市", "遵义市", "六盘水市", "安顺市", "毕节市", "铜仁市", "黔西南州", "黔东南州", "黔南州", "贵安新区"];
     const sourceOpts = ["全部", "交易系统", "监管报送"];
     const levelOpts = ["全部", "高风险", "中风险", "低风险"];
-    const dealOpts = ["全部", "未处置", "已忽略", "已转线索", "已办结"];
+    const dealOpts = ["全部", "未处置", "已忽略", "已转线索"];
     const dealField = { key: "deal", label: "预警状态", type: "select", all: "全部", options: dealOpts };
     const dealCol = { key: "deal", label: "预警状态", filter: true };
     const statusOpts = ["全部", "未查看", "已查看"];
@@ -879,6 +1093,7 @@
         if (row.agency) next.set("agency", row.agency);
       }
       next.set("bare", "1");
+      next.set("catalog", "17");
       return "insight.html?" + next.toString();
     }
     const detailViews = [];
@@ -940,7 +1155,8 @@
         const button = document.createElement("button");
         button.type = "button";
         button.className = item.id === state.tab ? "is-on" : "";
-        button.innerHTML = item.icon + "<em>" + esc(item.label) + "</em><b>" + rows.filter((row) => row.tab === item.id).length + "</b>";
+        const count = rows.filter((row) => row.tab === item.id).length;
+        button.innerHTML = '<span class="tab-ico">' + item.icon + '</span><span class="tab-meta"><em>' + esc(item.label) + "</em><b>" + count + "</b></span>";
         button.addEventListener("click", () => {
           state.tab = item.id;
           state.page = 1;
@@ -950,7 +1166,7 @@
           state.colFilters = emptyColFilters();
           const next = new URLSearchParams(location.search);
           next.set("tab", item.id);
-          history.replaceState(null, "", "warnings.html?" + next.toString());
+          try { history.replaceState(null, "", "warnings.html?" + next.toString()); } catch (error) {}
           renderTabs();
           render();
         });
@@ -1027,9 +1243,12 @@
     }
     function pickCell(row, key, className) {
       const picked = state.colFilters[key] || [];
-      const on = picked.length && picked.indexOf(String(row[key])) >= 0 ? " is-on" : "";
+      const value = String(row[key]);
+      const active = picked.length === 1 && picked[0] === value;
+      const on = picked.length && picked.indexOf(value) >= 0 ? " is-on" : "";
+      const title = active ? "再次点击取消筛选" : "按此筛选";
       const cls = className ? ' class="' + className + '"' : "";
-      return "<td" + cls + "><button type=\"button\" class=\"cell-pick" + on + "\" data-col=\"" + key + "\" title=\"按此筛选\">" + esc(row[key]) + "</button></td>";
+      return "<td" + cls + "><button type=\"button\" class=\"cell-pick" + on + "\" data-col=\"" + key + "\" title=\"" + title + "\">" + esc(row[key]) + "</button></td>";
     }
     function closePop() {
       state.openFilter = "";
@@ -1138,7 +1357,10 @@
         cols().map((col) => {
           if (col.key === "ops") {
             const pending = row.deal === "未处置";
-            const extra = pending ? "<button type=\"button\" data-act=\"clue\">转为线索</button><button type=\"button\" data-act=\"ignore\">忽略</button>" : "";
+            const converted = row.deal === "已转线索";
+            let extra = "";
+            if (pending) extra = "<button type=\"button\" data-act=\"clue\">转为线索</button><button type=\"button\" data-act=\"ignore\">忽略</button>";
+            else if (converted) extra = "<button type=\"button\" data-act=\"view-clue\">查看线索</button>";
             return "<td class=\"pin r\"><div class=\"ops\"><button type=\"button\" data-act=\"view\">查看</button>" + extra + "</div></td>";
           }
           const bits = [];
@@ -1148,6 +1370,15 @@
           if (col.num) bits.push("num");
           if (col.key === "trust") bits.push(tone(row.trust));
           const cls = bits.join(" ");
+          if (col.key === "deal" && row.deal === "已忽略") {
+            const reason = row.ignoreReason || "暂无忽略说明";
+            return "<td class=\"" + cls + "\"><span class=\"deal-ignored\"><span class=\"deal-status\">" + esc(row.deal) +
+              "</span><span class=\"ignore-info\" tabindex=\"0\" aria-label=\"忽略详情\"><span class=\"ignore-ico\">" +
+              "<img class=\"ignore-ico-off\" src=\"assets/icon-ignore-detail.png\" width=\"16\" height=\"16\" alt=\"\" decoding=\"async\" />" +
+              "<img class=\"ignore-ico-on\" src=\"assets/icon-ignore-detail-hover.png\" width=\"16\" height=\"16\" alt=\"\" decoding=\"async\" />" +
+              "</span>" +
+              "<span class=\"ignore-tip\" role=\"tooltip\">" + esc(reason) + "</span></span></span></td>";
+          }
           if (col.filter) return pickCell(row, col.key, cls);
           if (col.key === "level") return "<td class=\"" + cls + "\"><span class=\"tag " + tone(row.level) + "\">" + esc(row.level) + "</span></td>";
           const raw = row[col.key];
@@ -1191,7 +1422,14 @@
       const pick = event.target.closest(".cell-pick");
       if (pick) {
         const row = rows[Number(pick.closest("tr").dataset.i)];
-        state.colFilters[pick.dataset.col] = [row[pick.dataset.col]];
+        const col = pick.dataset.col;
+        const value = String(row[col]);
+        const picked = state.colFilters[col] || [];
+        if (picked.length === 1 && picked[0] === value) {
+          state.colFilters[col] = [];
+        } else {
+          state.colFilters[col] = [value];
+        }
         state.page = 1;
         closePop();
         render();
@@ -1204,11 +1442,50 @@
       else if (row.deal === "未处置" && button.dataset.act === "clue") {
         row.clue = true;
         row.deal = "已转线索";
+        listClueReport.addFromWarningRow(row);
         render();
+      }       else if (row.deal === "已转线索" && button.dataset.act === "view-clue") {
+        listClueReport.openFromWarningRow(row);
       } else if (row.deal === "未处置" && button.dataset.act === "ignore") {
-        row.deal = "已忽略";
-        render();
+        openIgnoreDialog(row);
       }
+    });
+
+    const ignoreDialog = document.getElementById("ignoreDialog");
+    const ignoreForm = document.getElementById("ignoreForm");
+    const ignoreReasonInput = document.getElementById("ignoreReasonInput");
+    let ignorePendingRow = null;
+    function openIgnoreDialog(row) {
+      ignorePendingRow = row;
+      ignoreReasonInput.value = "";
+      ignoreDialog.showModal();
+      ignoreReasonInput.focus();
+    }
+    function closeIgnoreDialog() {
+      ignorePendingRow = null;
+      ignoreDialog.close();
+    }
+    document.getElementById("ignoreCancel").addEventListener("click", closeIgnoreDialog);
+    document.getElementById("ignoreClose").addEventListener("click", closeIgnoreDialog);
+    ignoreDialog.addEventListener("click", (event) => {
+      if (event.target === ignoreDialog) {
+        ignorePendingRow = null;
+        ignoreDialog.close();
+      }
+    });
+    ignoreForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!ignorePendingRow) return;
+      const reason = ignoreReasonInput.value.trim();
+      if (!reason) {
+        ignoreReasonInput.focus();
+        return;
+      }
+      ignorePendingRow.ignoreReason = reason;
+      ignorePendingRow.deal = "已忽略";
+      ignorePendingRow = null;
+      ignoreDialog.close();
+      render();
     });
     let skipClose = false;
     document.getElementById("colList").addEventListener("change", () => {

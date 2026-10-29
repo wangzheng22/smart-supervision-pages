@@ -6,8 +6,12 @@
   <meta http-equiv="Cache-Control" content="no-cache" />
   <title>分析</title>
   <script>if (new URLSearchParams(location.search).get("bare") === "1") document.documentElement.classList.add("is-bare");</script>
-  <link rel="stylesheet" href="shell.css?v=4" />
-  <script src="shell.js?v=5" defer></script>
+  <link rel="stylesheet" href="shell.css?v=16" />
+  <link rel="stylesheet" href="view-catalog.css?v=18" />
+  <link rel="stylesheet" href="clue-report.css?v=7" />
+  <script src="clue-handoff.js?v=2"></script>
+  <script src="clue-report.js?v=4"></script>
+  <script src="shell.js?v=19" defer></script>
   <style>
     :root {
       --ink: #16324f;
@@ -37,7 +41,7 @@
 
     .topbar {
       flex: none;
-      height: 56px;
+      height: 48px;
       display: flex;
       align-items: center;
       gap: 12px;
@@ -151,6 +155,145 @@
     }
     .field input[type="text"],
     .field select { height: 34px; padding: 0 10px; }
+    .clue-field-input {
+      width: 100%;
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .clue-field-input:focus {
+      outline: none;
+      border-color: #9ec0ff;
+      box-shadow: 0 0 0 1px #9ec0ff;
+    }
+    .clue-field-input:read-only {
+      background: #f6f8fb;
+      color: #6d7f95;
+      border-color: #e4eaf2;
+      cursor: default;
+      caret-color: transparent;
+      user-select: none;
+    }
+    .clue-field-input:read-only:focus {
+      border-color: #e4eaf2;
+      box-shadow: none;
+      outline: none;
+    }
+    .clue-name-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .clue-name-row .clue-field-input {
+      flex: 1;
+      min-width: 0;
+    }
+    .clue-pick-btn {
+      flex: none;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
+      background: #f7f9fc;
+      cursor: pointer;
+    }
+    .clue-pick-btn:hover { background: #eef4ff; border-color: #b9d0fb; }
+    .clue-pick-btn img { display: block; width: 18px; height: 18px; margin: 0 auto; opacity: 0.72; }
+    .clue-pick-btn:hover img { opacity: 1; }
+    .clue-pick-wrap {
+      position: relative;
+      flex: none;
+    }
+    .clue-pick-tip {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      z-index: 90;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: rgba(24, 36, 52, 0.92);
+      color: #fff;
+      font-size: 12px;
+      line-height: 1.4;
+      white-space: nowrap;
+      box-shadow: 0 6px 18px rgba(18, 32, 51, 0.18);
+      pointer-events: none;
+    }
+    .clue-pick-tip[hidden] { display: none; }
+    .clue-pick-dialog {
+      width: min(640px, calc(100vw - 32px));
+      max-height: min(520px, calc(100vh - 48px));
+      padding: 0;
+      border: 0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .clue-pick-dialog::backdrop { background: rgba(16, 32, 54, 0.45); }
+    .clue-pick-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid #e8eef6;
+      background: #fff;
+    }
+    .clue-pick-head h3 { margin: 0; font-size: 15px; font-weight: 650; color: #24364c; }
+    .clue-pick-x {
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #6d7f95;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .clue-pick-x:hover { background: #f3f6fa; }
+    .clue-pick-search {
+      display: block;
+      width: calc(100% - 32px);
+      height: 34px;
+      margin: 12px 16px 0;
+      padding: 0 10px;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .clue-pick-list {
+      max-height: 360px;
+      margin: 10px 0 0;
+      padding: 0 8px 12px;
+      overflow: auto;
+    }
+    .clue-pick-row {
+      display: block;
+      width: 100%;
+      padding: 12px 10px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+    .clue-pick-row:hover { background: #f0f6ff; }
+    .clue-pick-row b { display: block; font-size: 14px; line-height: 1.45; color: #24364c; font-weight: 650; }
+    .clue-pick-row span { display: block; margin-top: 4px; font-size: 12px; line-height: 1.5; color: #6d7f95; }
+    .clue-pick-empty { padding: 32px 16px; text-align: center; color: #8b97a6; font-size: 13px; }
+    .report-meta {
+      flex: none;
+      padding: 12px 16px 10px;
+      background: #fff;
+    }
+    .report-meta .pair { margin-top: 0; gap: 10px; }
+    .pack-body > .pair { gap: 10px; }
     .field textarea {
       min-height: 112px;
       padding: 8px 10px;
@@ -1236,7 +1379,7 @@
       border-radius: 8px;
     }
     .canvas.is-table .stage { display: none; }
-    .canvas.is-table .sheet { display: block; }
+    .canvas.is-table .sheet { display: none; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th, td { padding: 12px 16px; border-bottom: 1px solid #eef2f6; text-align: left; }
     th { color: #8b97a6; font-weight: 550; background: #fafbfc; }
@@ -1279,9 +1422,8 @@
       color: #5e7088;
       font-size: 12px;
     }
-    .time-scroll { flex: 1; min-height: 0; overflow-x: auto; overflow-y: hidden; }
-    .time-panel.is-multi .time-scroll { overflow-y: auto; }
-    .time-body { position: relative; height: 132px; min-width: 980px; margin: 0 12px; }
+    .time-scroll { flex: none; overflow-x: auto; overflow-y: hidden; }
+    .time-body { position: relative; height: 132px; min-width: 980px; margin: 0 12px; overflow: visible; }
     .time-panel.is-multi .time-body { height: auto; }
     .lanes { display: flex; flex-direction: column; gap: 10px; min-width: 980px; }
     .lane { display: flex; align-items: stretch; gap: 8px; }
@@ -1334,7 +1476,9 @@
     }
     .gantt-mark.lane-1 b { bottom: 28px; }
     .gantt-row.is-on .lane-label b { color: var(--blue); }
-    .gantt-track { position: relative; flex: 1; min-width: 0; }
+    .gantt-track { position: relative; flex: 1; min-width: 0; overflow: visible; }
+    .gantt-row { overflow: visible; }
+    .gantt { overflow: visible; }
     .gantt-guide {
       position: absolute;
       left: 0;
@@ -1454,33 +1598,42 @@
     .warn-pin {
       position: absolute;
       z-index: 3;
-      transform: translateX(-50%);
+      transform: none;
       display: flex;
       align-items: center;
-      gap: 6px;
-      height: 24px;
-      width: 248px;
-      max-width: 248px;
+      gap: 8px;
+      height: 36px;
+      width: 300px;
+      max-width: 300px;
       margin: 0;
-      padding: 0 4px 0 3px;
-      border: 1px solid #f3c3c8;
-      border-radius: 4px;
-      background: #fff;
-      color: #e23d55;
+      padding: 0 8px 0 0;
+      border: 1px solid #f3c4cb;
+      border-radius: 8px;
+      background: #fef5f5;
+      color: #d81e06;
       font: inherit;
       cursor: pointer;
-      box-shadow: 0 1px 2px rgba(28, 39, 58, 0.06);
+      box-shadow: 0 1px 2px rgba(28, 39, 58, 0.05);
+      box-sizing: border-box;
     }
     .warn-pin .sev {
       flex: none;
-      height: 18px;
-      padding: 0 4px;
-      border-radius: 3px;
-      background: #fdecee;
-      color: #e23d55;
-      font-size: 11px;
-      line-height: 18px;
+      align-self: stretch;
+      width: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      padding: 0;
+      border-radius: 7px 0 0 7px;
+      background: #fad4d4;
+      color: #d81e06;
+      font-size: 13px;
+      line-height: 1;
       font-weight: 650;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: clip;
     }
     .warn-pin b {
       flex: 1;
@@ -1488,35 +1641,48 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 650;
       text-align: left;
+      color: #d81e06;
     }
-    .warn-pin .deal {
+    .warn-pin .pin-deal {
       flex: none;
-      height: 18px;
-      padding: 0 4px;
-      border-radius: 3px;
-      font-size: 11px;
-      line-height: 18px;
-      font-weight: 650;
+      font-size: 13px;
+      font-weight: 400;
+      color: #333;
+      white-space: nowrap;
     }
-    .warn-pin .deal.is-pending { background: #fff6eb; color: #e5922a; }
-    .warn-pin .deal.is-ignore { background: #f4f5f7; color: #8b97a6; }
-    .warn-pin .deal.is-clue { background: #eef4ff; color: #2f78f6; }
-    .warn-pin .deal.is-done { background: #eef8f3; color: #2f9e6b; }
-    .warn-pin .pin-add {
+    .warn-pin .pin-actions {
       flex: none;
-      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 2px;
+    }
+    .warn-pin .pin-act {
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      cursor: pointer;
+      line-height: 0;
+    }
+    .warn-pin .pin-act img {
+      display: block;
       width: 16px;
       height: 16px;
-      border-radius: 50%;
-      background: #1f6feb;
-      color: #fff;
-      font-size: 14px;
-      line-height: 14px;
-      text-align: center;
-      font-weight: 700;
+      pointer-events: none;
+    }
+    .warn-pin .pin-act:hover {
+      background: rgba(18, 150, 219, 0.08);
     }
     .pin-add-tip {
       position: fixed;
@@ -1530,49 +1696,109 @@
       white-space: nowrap;
       pointer-events: none;
     }
-    .warn-pin.mid { border-color: #f5d7b4; color: #e5922a; }
-    .warn-pin.mid .sev { background: #fff4e8; color: #e5922a; }
-    .warn-pin.low { border-color: #c9e6d6; color: #2f9e6b; }
-    .warn-pin.low .sev { background: #eef8f3; color: #2f9e6b; }
-    .warn-pin.on { box-shadow: 0 0 0 2px currentColor; }
+    .warn-pin.mid {
+      border-color: #f3d7b0;
+      background: #fffaf4;
+      color: #e5922a;
+    }
+    .warn-pin.mid .sev { background: #ffd9a8; color: #e5922a; }
+    .warn-pin.mid b { color: #e5922a; }
+    .warn-pin.low {
+      border-color: #b7dfcc;
+      background: #f6fdf9;
+      color: #2f9e6b;
+    }
+    .warn-pin.low .sev { background: #b8e6cf; color: #2f9e6b; }
+    .warn-pin.low b { color: #2f9e6b; }
+    .warn-pin.on { box-shadow: 0 0 0 2px #d81e06; }
+    .warn-pin.mid.on { box-shadow: 0 0 0 2px #e5922a; }
+    .warn-pin.low.on { box-shadow: 0 0 0 2px #2f9e6b; }
     .warn-pin.has-stem::after {
       content: "";
       position: absolute;
-      left: 50%;
+      left: 14px;
       top: 100%;
       width: 1px;
       height: var(--stem, 8px);
       background: #c5d0de;
     }
-    .warn-pin .more {
+    .pin-hold {
+      position: absolute;
+      z-index: 4;
+      transform: none;
+    }
+    .pin-hold.is-pop-open { z-index: 24; }
+    .pin-stack-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 6px;
+      position: relative;
+    }
+    .pin-hold.is-group .pin-stack-row .warn-pin {
+      position: relative;
+      left: auto;
+      top: auto;
+      transform: none;
+    }
+    .pin-more-tag {
       flex: none;
-      height: 18px;
-      padding: 0 5px;
-      border-radius: 9px;
-      background: #24364c;
-      color: #fff;
-      font-size: 11px;
-      line-height: 18px;
-      font-weight: 700;
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 14px;
+      border: 1px solid #9ec0ff;
+      background: #f0f7ff;
+      color: #1296db;
+      font-size: 12px;
+      line-height: 26px;
+      font-weight: 650;
+      white-space: nowrap;
+      pointer-events: none;
     }
-    .pin-hold { position: absolute; z-index: 4; }
-    .pin-hold > .warn-pin { position: relative; left: auto; top: auto; transform: translateX(-50%); }
     .warn-pop {
-      display: none;
-      position: fixed;
-      z-index: 40;
-      width: max-content;
-      max-width: 280px;
-      max-height: 240px;
-      overflow: auto;
-      padding: 6px;
-      border: 1px solid #e4eaf2;
-      border-radius: 8px;
+      display: grid;
+      gap: 5px;
+      position: absolute;
+      left: 0;
+      bottom: calc(100% + 8px);
+      top: auto;
+      z-index: 2;
+      box-sizing: border-box;
+      width: 380px;
+      max-width: min(440px, 94vw);
+      padding: 8px;
+      border: 1px solid #d7dee8;
+      border-radius: 10px;
       background: #fff;
-      box-shadow: 0 10px 28px rgba(20, 34, 54, 0.16);
+      box-shadow: 0 12px 32px rgba(20, 34, 54, 0.18);
+      overflow-x: hidden;
+      overflow-y: auto;
+      visibility: hidden;
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
     }
-    .warn-pop.is-open { display: grid; gap: 4px; }
-    .warn-pop .warn-pin { position: relative; left: auto; top: auto; transform: none; max-width: 260px; width: 100%; }
+    .warn-pop.is-open {
+      visibility: visible;
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .warn-pop.is-floating {
+      position: fixed;
+      bottom: auto;
+      z-index: 50;
+    }
+    .warn-pop .warn-pin {
+      position: relative;
+      left: auto;
+      top: auto;
+      transform: none;
+      width: 100%;
+      max-width: none;
+    }
   </style>
 </head>
 <body>
@@ -1607,7 +1833,6 @@
       </div>
     </aside>
     <div class="graph-tools" id="graphTools">
-      <button class="clue-fab" id="clueFab" type="button">添加全部线索</button>
       <label class="batch-switch">
         <input id="batchToggle" type="checkbox" />
         <i aria-hidden="true"></i>
@@ -1670,11 +1895,56 @@
       </div>
     </section>
 
+    <section class="catalog-view" id="catalogView" aria-label="表视图">
+      <article class="catalog-detail-wrap">
+        <div class="catalog-detail is-warn-tab" id="catalogDetail">
+          <div class="catalog-detail-empty">暂无预警</div>
+        </div>
+      </article>
+    </section>
+
+  <dialog class="ignore-dialog" id="catalogIgnoreDialog" aria-labelledby="catalogIgnoreDialogTitle">
+    <form id="catalogIgnoreForm">
+      <div class="ignore-head">
+        <span class="ignore-head-title" id="catalogIgnoreDialogTitle">忽略预警</span>
+        <button type="button" class="ignore-x" id="catalogIgnoreClose" aria-label="关闭">×</button>
+      </div>
+      <div class="ignore-body">
+        <label for="catalogIgnoreReasonInput">忽略原因</label>
+        <textarea id="catalogIgnoreReasonInput" name="reason" placeholder="请填写忽略原因" required maxlength="500"></textarea>
+      </div>
+      <div class="ignore-foot">
+        <button class="ignore-cancel" id="catalogIgnoreCancel" type="button">取消</button>
+        <button class="ignore-ok" type="submit">确定</button>
+      </div>
+    </form>
+  </dialog>
+
   <aside class="report" id="reportDrawer" aria-labelledby="reportTitle" aria-hidden="true" inert>
     <div class="report-head">
       <h2 id="reportTitle">线索报告</h2>
       <button class="report-x" id="reportClose" type="button" aria-label="关闭">×</button>
     </div>
+    <section class="report-meta" aria-label="线索基本信息">
+      <div class="pair">
+        <div class="field">
+          <label class="lab" for="reportClueNo">线索编号</label>
+          <input id="reportClueNo" class="clue-field-input" type="text" autocomplete="off" readonly />
+        </div>
+        <div class="field">
+          <label class="lab" for="reportClueName">线索名称</label>
+          <div class="clue-name-row">
+            <input id="reportClueName" class="clue-field-input" type="text" maxlength="80" autocomplete="off" readonly />
+            <div class="clue-pick-wrap">
+              <button class="clue-pick-btn" type="button" data-clue-pick="report" aria-label="从待移交线索中选择">
+                <img src="assets/icon-clue-directory.png" width="18" height="18" alt="" />
+              </button>
+              <span class="clue-pick-tip" role="tooltip" hidden>点击可选已有线索</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
     <section class="report-sec report-conclusion" id="reportConclusionBox">
       <h3>描述及AI查办指引</h3>
       <textarea id="reportConclusion" aria-label="描述及AI查办指引" placeholder="暂未能自动总结原因，请输入描述及查办指引"></textarea>
@@ -1729,12 +1999,20 @@
         <div class="pair">
           <div class="field">
             <span class="lab">线索名称</span>
-            <input id="clueName" type="text" maxlength="80" placeholder="请输入线索名称" />
+            <div class="clue-name-row">
+              <input id="clueName" class="clue-field-input" type="text" maxlength="80" readonly />
+              <div class="clue-pick-wrap">
+                <button class="clue-pick-btn" type="button" data-clue-pick="pack" aria-label="从待移交线索中选择">
+                  <img src="assets/icon-clue-directory.png" width="18" height="18" alt="" />
+                </button>
+                <span class="clue-pick-tip" role="tooltip" hidden>点击可选已有线索</span>
+              </div>
+            </div>
             <p class="err" id="clueErr" hidden>请填写线索名称</p>
           </div>
           <div class="field">
             <span class="lab">线索编号</span>
-            <input id="clueNo" type="text" readonly />
+            <input id="clueNo" class="clue-field-input" type="text" autocomplete="off" readonly />
           </div>
         </div>
         <div class="field">
@@ -1787,8 +2065,17 @@
       </div>
     </form>
   </dialog>
+  <dialog class="clue-pick-dialog" id="cluePickDialog" aria-labelledby="cluePickTitle">
+    <div class="clue-pick-head">
+      <h3 id="cluePickTitle">选择待移交线索</h3>
+      <button class="clue-pick-x" id="cluePickClose" type="button" aria-label="关闭">×</button>
+    </div>
+    <input class="clue-pick-search" id="cluePickSearch" type="search" placeholder="搜索线索编号、名称、来源或责任部门" autocomplete="off" />
+    <div class="clue-pick-list" id="cluePickList" role="listbox"></div>
+  </dialog>
 
-  <script src="mock-data.js?v=133"></script>
+  <script src="mock-data.js?v=135"></script>
+  <script src="level-utils.js?v=2"></script>
   <script>
     const params = new URLSearchParams(location.search);
     const gz = window.GUIZHOU;
@@ -2205,7 +2492,15 @@
       picked: [],
       batchIds: null,
       attrOn: {},
-      pinned: []
+      pinned: [],
+      catalogOpen: null,
+      catalogRightPanel: "detail",
+      catalogClueAlertId: null,
+      catalogAlert: null,
+      catalogTab: "warn",
+      catalogQuery: "",
+      catalogWarnSearch: "",
+      catalogDealFilter: ""
     };
     if ((params.get("from") === "agency" || params.get("role") === "招标代理") && catalog.agency && (catalog.agency.rel.projects || []).length > 1) {
       state.open.push({ id: "agency", op: "projects", label: "代理项目" });
@@ -2737,24 +3032,22 @@
 
     let alertCache = null;
     function toneOf(level) {
-      if (level === "低风险") return "low";
-      if (level === "中风险") return "mid";
-      return "high";
+      return levelTone(level);
     }
     function allAlerts() {
       if (alertCache) return alertCache;
       const alerts = (graph && graph.alerts) || [];
       const links = (graph && graph.links) || [];
-      alertCache = alerts.map((item) => {
+      alertCache = dedupeAlertsByTopic(alerts.map((item) => {
         const lines = links.filter((link) => {
           const ids = link.alertIds || (link.alertId ? [link.alertId] : []);
           return ids.indexOf(item.id) >= 0;
         }).map((link) => linkKey(link.a, link.b));
-        const level = item.level || "高风险";
-        return {
+        const levelFull = item.level || "高风险";
+        return normalizeWarnAlert({
           id: item.id,
-          level: level,
-          tone: toneOf(level),
+          level: levelFull,
+          tone: toneOf(levelFull),
           title: item.title,
           who: item.who || "",
           note: item.note || "",
@@ -2765,8 +3058,8 @@
           subjects: (item.subjects || []).filter((sid) => !(quietPark && sid === "project")),
           line: lines[0] || "",
           lines: lines
-        };
-      });
+        });
+      }));
       return alertCache;
     }
     function alertsForNode(id) {
@@ -2775,7 +3068,7 @@
     function alertsForLine(key) {
       return allAlerts().filter((item) => item.line === key || (item.lines || []).indexOf(key) >= 0);
     }
-    const dealStates = ["未处置", "已忽略", "已转线索", "已办结"];
+    const dealStates = ["未处置", "已忽略", "已转线索"];
     const dealByAlert = {};
     function dealOf(id) {
       if (!dealByAlert[id]) {
@@ -2788,12 +3081,31 @@
     }
     function dealMark(id) {
       const deal = dealOf(id);
-      const kind = deal === "已转线索" ? "is-clue" : deal === "已办结" ? "is-done" : deal === "已忽略" ? "is-ignore" : "is-pending";
+      const kind = deal === "已转线索" ? "is-clue" : deal === "已忽略" ? "is-ignore" : "is-pending";
       return '<span class="deal ' + kind + '">' + esc(deal) + "</span>";
     }
-    function pinAdd(id) {
+    const PIN_H = 36;
+    const PIN_GAP = 5;
+    const PIN_LANE_STEP = PIN_H + PIN_GAP;
+    function pinAreaHeight(laneCount) {
+      return laneCount ? (laneCount - 1) * PIN_LANE_STEP + PIN_H : 0;
+    }
+    function pinActs(id) {
       if (dealOf(id) !== "未处置") return "";
-      return '<span class="pin-add" data-add-clue="' + esc(id) + '">+</span>';
+      return (
+        '<span class="pin-actions">' +
+        '<button type="button" class="pin-act" data-pin-ignore="' + esc(id) + '" aria-label="忽略">' +
+        '<img src="assets/icon-pin-ignore.png" width="16" height="16" alt="" decoding="async" /></button>' +
+        '<button type="button" class="pin-act" data-add-clue="' + esc(id) + '" aria-label="添加线索">' +
+        '<img src="assets/icon-pin-add-clue.png" width="16" height="16" alt="" decoding="async" /></button>' +
+        "</span>"
+      );
+    }
+    function pinDealText(id) {
+      return '<span class="pin-deal">' + esc(dealOf(id)) + "</span>";
+    }
+    function warnPinBody(alert) {
+      return '<span class="sev">' + esc(alert.level) + "</span><b>" + esc(alert.title) + "</b>" + pinDealText(alert.id) + pinActs(alert.id);
     }
     function pinAddTip() {
       let tip = document.getElementById("pinAddTip");
@@ -2808,7 +3120,7 @@
       return tip;
     }
     function bindPinAdds(root) {
-      root.querySelectorAll(".pin-add").forEach((el) => {
+      root.querySelectorAll("[data-add-clue].pin-act").forEach((el) => {
         el.addEventListener("mouseenter", () => {
           const tip = pinAddTip();
           const rect = el.getBoundingClientRect();
@@ -3019,7 +3331,7 @@
         rows.push(["关联项目", titles.length ? titles.join("、") : project.name]);
       }
       const inner = '<dl class="attr">' + rows.map(([label, value]) => "<dt>" + esc(label) + "</dt><dd>" + esc(value) + "</dd>").join("") + "</dl>";
-      body.innerHTML = '<div class="warn-title"><h1 class="entity-name" id="entityName">' + glyphs[node.icon] + "<span>" + esc(node.name) + '</span></h1><button type="button" class="clue-mini" data-add-node>添加线索</button></div>' + inner;
+      body.innerHTML = '<div class="warn-title"><h1 class="entity-name" id="entityName">' + glyphs[node.icon] + "<span>" + esc(node.name) + "</span></h1></div>" + inner;
       const name = document.getElementById("entityName");
       if (node.type !== "project" && node.tone) name.classList.add("lv-" + node.tone);
       else if (node.risk || node.id === "project") name.classList.add("is-risk");
@@ -3251,10 +3563,438 @@
     }
 
     function renderTable() {
-      const picked = current();
-      document.getElementById("sheetBody").innerHTML = shown().filter(matched).map((node) =>
-        "<tr data-id=\"" + esc(node.id) + "\" class=\"" + (node.id === picked.id ? "is-on" : "") + "\"><td>" + esc(node.name) + "</td><td>" + esc(node.role) + "</td><td>" + (node.id === "project" ? "当前主体" : (node.risk ? "异常关联" : "关联")) + "</td><td>" + esc(project.name) + "</td><td class=\"" + (node.risk ? "risk" : "") + "\">" + (node.alerts.length ? "有预警" : "正常") + "</td></tr>"
-      ).join("");
+      /* 表视图由左侧目录 + 右侧详情展示 */
+    }
+
+    function catalogPinTone(level) {
+      return levelTone(level);
+    }
+
+    function catalogFuzzy(text, query) {
+      const hay = String(text || "").toLowerCase();
+      const q = String(query || "").trim().toLowerCase();
+      if (!q) return true;
+      if (hay.indexOf(q) >= 0) return true;
+      let at = 0;
+      for (let i = 0; i < q.length; i += 1) {
+        at = hay.indexOf(q[i], at);
+        if (at < 0) return false;
+        at += 1;
+      }
+      return true;
+    }
+
+    function buildAnalysisCatalogGroups() {
+      const q = state.query.trim();
+      const nodeQ = state.catalogQuery.trim();
+      return shown().map((node) => {
+        const rows = alertsForNode(node.id);
+        const cardRows = q
+          ? rows.filter((item) => (item.title + (item.levelFull || item.level) + (item.note || "") + node.name + node.role).indexOf(q) >= 0)
+          : rows;
+        return {
+          id: node.id,
+          role: node.role,
+          name: node.name,
+          alerts: cardRows,
+          total: rows.length
+        };
+      }).filter((group) => {
+        if (q && !group.alerts.length && group.name.indexOf(q) < 0 && group.role.indexOf(q) < 0) return false;
+        if (nodeQ && !catalogFuzzy(group.role + " " + group.name, nodeQ)) return false;
+        return true;
+      });
+    }
+
+    function flattenCatalogAlerts(groups) {
+      const rows = [];
+      groups.forEach((group) => {
+        group.alerts.forEach((alert) => rows.push({ alert: alert, group: group }));
+      });
+      const seen = new Map();
+      const out = [];
+      rows.forEach((row) => {
+        const key = warnTopicKey(row.alert) || row.alert.id;
+        if (seen.has(key)) return;
+        seen.set(key, true);
+        out.push(row);
+      });
+      return out;
+    }
+
+    function alertMatchesId(alert, alertId) {
+      if (!alert || !alertId) return false;
+      if (alert.id === alertId) return true;
+      return Array.isArray(alert._mergedAlertIds) && alert._mergedAlertIds.indexOf(alertId) >= 0;
+    }
+
+    function ensureCatalogSelection(groups) {
+      const flat = flattenCatalogAlerts(groups);
+      if (!flat.length) {
+        state.catalogOpen = null;
+        state.catalogAlert = null;
+        return;
+      }
+      let hit = flat.find((row) => alertMatchesId(row.alert, state.catalogAlert));
+      if (!hit) hit = flat[0];
+      state.catalogAlert = hit.alert.id;
+      state.catalogOpen = hit.group.id;
+    }
+
+    function alertDetailPanelHtml(alert, subjectLabel) {
+      const tone = catalogPinTone(alert.levelFull || alert.level);
+      const who = (alert.whoNames || []).join("、") || subjectLabel || "—";
+      const steps = (alert.steps || []).map((step) => "<li>" + esc(step) + "</li>").join("");
+      const model = alert.model ? "<div class=\"catalog-block\"><h3>模型分析</h3><p>" + esc(alert.model) + "</p></div>" : "";
+      const stepsBlock = steps ? "<div class=\"catalog-block\"><h3>分析过程</h3><ol>" + steps + "</ol></div>" : "";
+      return (
+        "<div class=\"catalog-detail-head\"><h2>" + esc(alert.title) + "</h2><div class=\"catalog-detail-meta\">" +
+        "<span class=\"sev " + tone + "\">" + esc(alert.level) + "</span>" +
+        dealMark(alert.id) +
+        "<span>编号 " + esc(alert.id) + "</span></div></div>" +
+        "<dl class=\"catalog-facts\">" +
+        "<dt>涉及主体</dt><dd>" + esc(who) + "</dd>" +
+        "<dt>所属节点</dt><dd>" + esc(subjectLabel || "—") + "</dd>" +
+        "<dt>处置状态</dt><dd>" + esc(dealOf(alert.id)) + "</dd>" +
+        "<dt>事项说明</dt><dd>" + esc(alert.note || "暂无补充说明") + "</dd>" +
+        "</dl>" + model + stepsBlock +
+        "<div class=\"catalog-actions\">" +
+        (dealOf(alert.id) === "未处置" ? '<button type="button" class="clue-mini" data-catalog-add="' + esc(alert.id) + '">添加线索</button>' : "") +
+        "</div>"
+      );
+    }
+
+    const catalogAlertMeta = {};
+    let catalogClueReport = null;
+    let catalogIgnorePendingId = null;
+    const catalogIgnoreDialog = document.getElementById("catalogIgnoreDialog");
+    const catalogIgnoreForm = document.getElementById("catalogIgnoreForm");
+    const catalogIgnoreReasonInput = document.getElementById("catalogIgnoreReasonInput");
+
+    function getCatalogAlertMeta(id) {
+      if (!catalogAlertMeta[id]) catalogAlertMeta[id] = {};
+      return catalogAlertMeta[id];
+    }
+
+    function findCatalogAlert(alertId) {
+      const groups = buildAnalysisCatalogGroups();
+      for (let i = 0; i < groups.length; i += 1) {
+        const alert = groups[i].alerts.find((item) => alertMatchesId(item, alertId));
+        if (alert) return { alert, group: groups[i] };
+      }
+      return null;
+    }
+
+    function catalogWarningRow(alert, group) {
+      const meta = getCatalogAlertMeta(alert.id);
+      return {
+        id: alert.id,
+        level: alert.level,
+        point: alert.title,
+        warnType: alert.title,
+        name: group.name,
+        deal: dealOf(alert.id),
+        ignoreReason: meta.ignoreReason || "",
+        clueNo: meta.clueNo || "",
+        clueName: meta.clueName || "",
+        handoff: meta.handoff || "待移交",
+        dept: meta.dept || "",
+        handle: meta.handle || ""
+      };
+    }
+
+    function pullCatalogWarningRowMeta(alertId, row) {
+      const meta = getCatalogAlertMeta(alertId);
+      if (row.ignoreReason) meta.ignoreReason = row.ignoreReason;
+      if (row.clueNo) meta.clueNo = row.clueNo;
+      if (row.clueName) meta.clueName = row.clueName;
+      if (row.handoff) meta.handoff = row.handoff;
+      if (row.dept) meta.dept = row.dept;
+      if (row.handle) meta.handle = row.handle;
+    }
+
+    function ensureCatalogClueReport() {
+      if (catalogClueReport) return catalogClueReport;
+      if (!window.ClueReport) return null;
+      catalogClueReport = window.ClueReport.create({
+        layout: "embed",
+        getDefaultClueName: () => "分析视图归集线索",
+        onHandoffChange: (result, row) => {
+          const alertId = row && row.id;
+          if (alertId) {
+            const meta = getCatalogAlertMeta(alertId);
+            meta.handoff = result.handoff;
+            meta.dept = result.dept;
+            meta.handle = result.handle;
+            if (result.limit) meta.limit = result.limit;
+          }
+          renderCatalogView();
+        },
+        onOpenChange: (open) => {
+          if (!open && state.catalogRightPanel === "clue") {
+            state.catalogRightPanel = "detail";
+            const main = document.querySelector("#catalogDetail .catalog-warn-main");
+            if (main) applyCatalogWarnMainLayout(main);
+          }
+        }
+      });
+      catalogClueReport.host.classList.add("catalog-clue-report-mount");
+      return catalogClueReport;
+    }
+
+    function applyCatalogWarnMainLayout(mainEl) {
+      const showClue = state.catalogRightPanel === "clue";
+      mainEl.classList.toggle("is-clue-report", showClue);
+      const detailPane = mainEl.querySelector(".catalog-warn-detail");
+      if (detailPane) detailPane.hidden = showClue;
+      if (catalogClueReport) catalogClueReport.setOpen(showClue);
+    }
+
+    function mountCatalogClueReportHost(mainEl) {
+      const cr = ensureCatalogClueReport();
+      if (!cr) return;
+      if (cr.host.parentElement !== mainEl) mainEl.appendChild(cr.host);
+      applyCatalogWarnMainLayout(mainEl);
+      if (state.catalogRightPanel === "clue" && state.catalogClueAlertId) {
+        const found = findCatalogAlert(state.catalogClueAlertId);
+        if (found) {
+          const row = catalogWarningRow(found.alert, found.group);
+          cr.openFromWarningRow(row);
+          pullCatalogWarningRowMeta(state.catalogClueAlertId, row);
+        }
+      }
+    }
+
+    function catalogOpenClueReport(alertId, mode) {
+      const found = findCatalogAlert(alertId);
+      if (!found) return;
+      const row = catalogWarningRow(found.alert, found.group);
+      const cr = ensureCatalogClueReport();
+      if (!cr) return;
+      if (mode === "add") {
+        dealByAlert[alertId] = "已转线索";
+        getCatalogAlertMeta(alertId).handoff = "待移交";
+        cr.addFromWarningRow(row);
+      } else {
+        cr.openFromWarningRow(row);
+      }
+      pullCatalogWarningRowMeta(alertId, row);
+      state.catalogOpen = found.group.id;
+      state.catalogAlert = alertId;
+      state.catalogClueAlertId = alertId;
+      state.catalogRightPanel = "clue";
+      state.alert = alertId;
+      state.selected = found.group.id;
+      state.focus = true;
+      renderCatalogView();
+    }
+
+    function openCatalogIgnoreDialog(alertId) {
+      catalogIgnorePendingId = alertId;
+      catalogIgnoreReasonInput.value = "";
+      catalogIgnoreDialog.showModal();
+      catalogIgnoreReasonInput.focus();
+    }
+
+    function catalogCardActionsHtml(alertId) {
+      const deal = dealOf(alertId);
+      if (deal === "未处置") {
+        return (
+          '<div class="catalog-card-actions">' +
+          '<button type="button" class="catalog-card-link" data-catalog-ignore="' + esc(alertId) + '">忽略</button>' +
+          '<button type="button" class="catalog-card-link" data-catalog-add="' + esc(alertId) + '">添加为线索</button></div>'
+        );
+      }
+      if (deal === "已转线索") {
+        return '<div class="catalog-card-actions"><button type="button" class="catalog-card-link" data-catalog-view-clue="' + esc(alertId) + '">查看线索</button></div>';
+      }
+      return "";
+    }
+
+    function catalogWhenSort(when) {
+      if (!when || when === "今天") return 9000000000000;
+      const m = String(when).match(/(\d{4})[.\-/年](\d{1,2})[.\-/月](\d{1,2})/);
+      if (!m) return 9000000000001;
+      return Date.UTC(+m[1], +m[2] - 1, +m[3]);
+    }
+
+    function catalogTimelineHost(groupId) {
+      const prev = state.selected;
+      state.selected = groupId;
+      const view = timelineView();
+      state.selected = prev;
+      return (view.items || []).find((item) => item.marks && item.events && item.events.length) || null;
+    }
+
+    function catalogAlertAnchor(alert, groupId) {
+      const host = catalogTimelineHost(groupId);
+      if (!host) return { key: "__other__", phase: "其他", when: "", sort: 9000000000002 };
+      const event = phaseAnchor(alert.title, host.events, alert.anchor);
+      if (!event) return { key: "__other__", phase: "其他", when: "", sort: 9000000000002 };
+      const phase = event.label || "节点";
+      const when = String(event.when || "");
+      return { key: phase + "|" + when, phase: phase, when: when, sort: catalogWhenSort(when) };
+    }
+
+    function buildCatalogWarnSections(flat) {
+      const buckets = new Map();
+      flat.forEach((row) => {
+        const anchor = catalogAlertAnchor(row.alert, row.group.id);
+        if (!buckets.has(anchor.key)) buckets.set(anchor.key, { anchor: anchor, rows: [] });
+        buckets.get(anchor.key).rows.push(row);
+      });
+      return Array.from(buckets.values()).sort((a, b) => a.anchor.sort - b.anchor.sort || a.anchor.phase.localeCompare(b.anchor.phase, "zh"));
+    }
+
+    function catalogWarnTimelineHtml(flat) {
+      const sections = buildCatalogWarnSections(flat);
+      if (!sections.length) return "";
+      return (
+        '<div class="catalog-warn-timeline">' +
+        sections.map((section) => {
+          const cards = section.rows.map((row) => catalogCardHtml(row.alert, row.group, alertMatchesId(row.alert, state.catalogAlert))).join("");
+          return (
+            '<section class="catalog-warn-phase"><header class="catalog-warn-phase-head"><i class="catalog-warn-phase-dot" aria-hidden="true"></i>' +
+            '<div class="catalog-warn-phase-meta"><b>' + esc(section.anchor.phase) + "</b>" +
+            (section.anchor.when ? "<span>" + esc(section.anchor.when) + "</span>" : "") +
+            "</div></header><ul class=\"catalog-warn-list\">" + cards + "</ul></section>"
+          );
+        }).join("") +
+        "</div>"
+      );
+    }
+
+    function catalogCardHtml(alert, group, selected) {
+      const tone = catalogPinTone(alert.levelFull || alert.level);
+      const on = selected ? " is-on" : "";
+      const deal = dealOf(alert.id);
+      return (
+        '<li><div class="catalog-card ' + tone + on + '" data-catalog-alert="' + esc(alert.id) + '" data-catalog-subject="' + esc(group.id) + '" tabindex="0" role="button">' +
+        '<div class="catalog-card-row"><div class="catalog-card-sev" aria-hidden="true"><span>' + esc(alert.level) + "</span></div>" +
+        '<div class="catalog-card-main"><span class="catalog-card-node">' + esc(group.role) + " · " + esc(group.name) + '</span><b class="catalog-card-title">' + esc(alert.title) + '</b><div class="catalog-card-foot">' +
+        '<span class="catalog-card-status">状态：' + esc(deal) + "</span>" + catalogCardActionsHtml(alert.id) +
+        "</div></div></div></div></li>"
+      );
+    }
+
+    function catalogAttrFacts(group) {
+      const node = catalog[group.id];
+      if (!node) return [["名称", group.name], ["角色", group.role], ["预警数量", String(group.total)]];
+      const rows = [["主体角色", node.role]].concat(attrsOf(node));
+      if (node.type !== "project" && node.type !== "person" && !rows.some((row) => row[0] === "关联项目")) {
+        const titles = ((node.rel && node.rel.projects) || []).map((id) => catalog[id] && catalog[id].name).filter(Boolean);
+        rows.push(["关联项目", titles.length ? titles.join("、") : project.name]);
+      }
+      rows.push(["预警数量", String(group.total)]);
+      return rows;
+    }
+
+    function catalogTimeListHtmlAnalysis(group) {
+      const prevSelected = state.selected;
+      state.selected = group.id;
+      const view = timelineView();
+      state.selected = prevSelected;
+      const lines = [];
+      (view.items || []).forEach((item) => {
+        (item.events || []).forEach((event) => {
+          lines.push({
+            section: item.kind + " · " + item.name,
+            label: event.label || "节点",
+            when: event.when || event.text || ""
+          });
+        });
+      });
+      if (!lines.length) return '<li class="catalog-empty">暂无时序数据</li>';
+      return lines.reverse().map((row) => {
+        return "<li class=\"catalog-time-item\"><b>" + esc(row.label) + "</b><span>" + esc(row.when) + "</span><em>" + esc(row.section) + "</em></li>";
+      }).join("");
+    }
+
+    function catalogDealCounts(flat) {
+      const counts = { "未处置": 0, "已转线索": 0, "已忽略": 0 };
+      flat.forEach((row) => {
+        const deal = dealOf(row.alert.id);
+        if (Object.prototype.hasOwnProperty.call(counts, deal)) counts[deal] += 1;
+      });
+      return counts;
+    }
+
+    function filterCatalogWarnRows(flat) {
+      const q = (state.catalogWarnSearch || "").trim();
+      const dealFilter = state.catalogDealFilter || "";
+      return flat.filter((row) => {
+        if (dealFilter && dealOf(row.alert.id) !== dealFilter) return false;
+        if (!q) return true;
+        const hay = row.alert.title + (row.alert.levelFull || row.alert.level) + (row.alert.note || "") + row.group.name + row.group.role + row.alert.id;
+        return catalogFuzzy(hay, q);
+      });
+    }
+
+    function ensureCatalogAlertInFiltered(flat) {
+      if (!flat.length) {
+        state.catalogAlert = null;
+        return null;
+      }
+      let hit = flat.find((row) => alertMatchesId(row.alert, state.catalogAlert));
+      if (!hit) hit = flat[0];
+      state.catalogAlert = hit.alert.id;
+      state.catalogOpen = hit.group.id;
+      return hit;
+    }
+
+    function catalogWarnToolbarHtml(flatAll) {
+      const counts = catalogDealCounts(flatAll);
+      const f = state.catalogDealFilter || "";
+      function stat(deal) {
+        const on = f === deal ? " is-on" : "";
+        return '<button type="button" class="catalog-warn-stat' + on + '" data-catalog-deal-filter="' + esc(deal) + '">' + esc(deal) + " " + counts[deal] + "</button>";
+      }
+      return (
+        '<div class="catalog-warn-toolbar">' +
+        '<label class="catalog-warn-search"><input id="catalogWarnSearchInput" type="search" value="' + esc(state.catalogWarnSearch || "") + '" placeholder="模糊搜索预警、节点" autocomplete="off" aria-label="模糊搜索预警、节点" /></label>' +
+        '<div class="catalog-warn-stats" role="group" aria-label="处置状态筛选">' +
+        stat("未处置") + '<span class="catalog-warn-stat-sep">/</span>' + stat("已转线索") + '<span class="catalog-warn-stat-sep">/</span>' + stat("已忽略") +
+        "</div></div>"
+      );
+    }
+
+    function catalogWarnAsideHtml(flatAll, flat) {
+      const toolbar = catalogWarnToolbarHtml(flatAll);
+      const body = flat.length ? catalogWarnTimelineHtml(flat) : '<div class="catalog-detail-empty">无匹配预警</div>';
+      return toolbar + '<div class="catalog-warn-scroll">' + body + "</div>";
+    }
+
+    function renderCatalogDetailContent(groups) {
+      const detail = document.getElementById("catalogDetail");
+      detail.classList.add("is-warn-tab");
+      const searchFocus = document.activeElement && document.activeElement.id === "catalogWarnSearchInput";
+      const caret = searchFocus ? document.activeElement.selectionStart : null;
+      const flatAll = flattenCatalogAlerts(groups || []);
+      if (!flatAll.length) {
+        detail.innerHTML = '<div class="catalog-detail-empty">暂无预警</div>';
+        return;
+      }
+      const flat = filterCatalogWarnRows(flatAll);
+      const picked = ensureCatalogAlertInFiltered(flat);
+      const aside = catalogWarnAsideHtml(flatAll, flat);
+      const body = picked
+        ? alertDetailPanelHtml(picked.alert, picked.group.role + " · " + picked.group.name)
+        : '<div class="catalog-detail-empty">无匹配预警</div>';
+      detail.innerHTML = '<div class="catalog-warn-split"><aside class="catalog-warn-aside">' + aside + '</aside><div class="catalog-warn-main"><div class="catalog-warn-detail">' + body + "</div></div></div>";
+      mountCatalogClueReportHost(detail.querySelector(".catalog-warn-main"));
+      if (searchFocus) {
+        const input = document.getElementById("catalogWarnSearchInput");
+        if (input) {
+          input.focus();
+          try { input.setSelectionRange(caret, caret); } catch (err) { /* ignore */ }
+        }
+      }
+    }
+
+    function renderCatalogView() {
+      const groups = buildAnalysisCatalogGroups();
+      ensureCatalogSelection(groups);
+      renderCatalogDetailContent(groups);
     }
 
     const PROJECT_SHORT = {
@@ -3577,6 +4317,13 @@
         });
         const visible = [];
         columns.forEach((col) => {
+          const topicSeen = new Set();
+          col.items = col.items.filter((item) => {
+            const key = warnTopicKey(item.alert) || item.alert.id;
+            if (topicSeen.has(key)) return false;
+            topicSeen.add(key);
+            return true;
+          });
           const xs = col.items.map((item) => item.x).sort((a, b) => a - b);
           const x = xs[Math.floor((xs.length - 1) / 2)];
           const count = Math.min(3, col.items.length);
@@ -3595,9 +4342,10 @@
           }
         });
         const pinLanes = visible.length ? 3 : 0;
-        const axisTop = 42 + pinLanes * 26;
+        const pinBlock = pinAreaHeight(pinLanes);
+        const axisTop = 42 + pinBlock;
         visible.forEach((item) => {
-          item.stemPx = Math.max(axisTop - item.lane * 26 - 24, 8);
+          item.stemPx = Math.max(axisTop - item.lane * PIN_LANE_STEP - PIN_H, 8);
         });
         rows[pinHost].pins = visible;
         rows[pinHost].pinLanes = pinLanes;
@@ -3648,23 +4396,25 @@
           const tip = mark.label + "  " + dayText(mark.day);
           return '<span class="gantt-mark' + (lane ? " lane-1" : "") + '" style="left:' + start + '%" title="' + esc(tip) + '"><i></i>' + (show ? "<b>" + esc(mark.label) + "</b>" : "") + "</span>";
         }).join("");
-        const pinBlock = (row.pinLanes || 0) * 26;
+        const pinBlock = pinAreaHeight(row.pinLanes || 0);
         const pins = (row.pins || []).map((pin) => {
           const grouped = pin.group || [];
-          const selected = state.alert === pin.alert.id || grouped.some((row) => row.alert.id === state.alert);
+          const selected = alertMatchesId(pin.alert, state.alert) || grouped.some((row) => alertMatchesId(row.alert, state.alert));
           const on = selected ? " on" : "";
           const tip = pin.more ? "" : dealOf(pin.alert.id) + "  " + pin.alert.level + "  " + pin.alert.title + (pin.when ? "  " + pin.when : "");
-          const more = pin.more ? '<span class="more">+' + pin.more + "</span>" : "";
           const ids = grouped.map((row) => row.alert.id).join(",");
-          const top = pin.lane * 26;
-          const place = pin.more ? "" : "left:" + pin.x + "%;top:" + top + "px;";
-          const button = '<button type="button" class="warn-pin ' + pin.alert.tone + on + (pin.stem ? " has-stem" : "") + (pin.more ? " has-more" : "") + '" data-alert="' + esc(pin.alert.id) + '"' + (ids ? ' data-ids="' + esc(ids) + '"' : "") + ' style="' + place + "--stem:" + pin.stemPx + 'px" title="' + esc(tip) + '"><span class="sev">' + esc(pin.alert.level) + "</span>" + dealMark(pin.alert.id) + "<b>" + esc(pin.alert.title) + "</b>" + more + pinAdd(pin.alert.id) + "</button>";
-          if (!pin.more) return button;
+          const top = pin.lane * PIN_LANE_STEP;
+          const place = "left:" + pin.x + "%;top:" + top + "px;";
+          const stemStyle = "--stem:" + pin.stemPx + "px";
+          if (!pin.more) {
+            return '<div class="warn-pin ' + pin.alert.tone + on + (pin.stem ? " has-stem" : "") + '" data-alert="' + esc(pin.alert.id) + '"' + (ids ? ' data-ids="' + esc(ids) + '"' : "") + ' style="' + place + stemStyle + '" title="' + esc(tip) + '" tabindex="0" role="button">' + warnPinBody(pin.alert) + "</div>";
+          }
           const rows = grouped.map((item) => {
-            const rowOn = state.alert === item.alert.id ? " on" : "";
-            return '<button type="button" class="warn-pin ' + item.alert.tone + rowOn + '" data-alert="' + esc(item.alert.id) + '"><span class="sev">' + esc(item.alert.level) + "</span>" + dealMark(item.alert.id) + "<b>" + esc(item.alert.title) + "</b>" + pinAdd(item.alert.id) + "</button>";
+            const rowOn = alertMatchesId(item.alert, state.alert) ? " on" : "";
+            return '<div class="warn-pin ' + item.alert.tone + rowOn + '" data-alert="' + esc(item.alert.id) + '" tabindex="0" role="button">' + warnPinBody(item.alert) + "</div>";
           }).join("");
-          return '<div class="pin-hold" style="left:' + pin.x + "%;top:" + top + 'px">' + button + '<div class="warn-pop">' + rows + "</div></div>";
+          const card = '<div class="warn-pin ' + pin.alert.tone + on + (pin.stem ? " has-stem" : "") + '" data-alert="' + esc(pin.alert.id) + '"' + (ids ? ' data-ids="' + esc(ids) + '"' : "") + ' style="' + stemStyle + '" tabindex="0" role="button">' + warnPinBody(pin.alert) + "</div>";
+          return '<div class="pin-hold is-group" style="' + place + '"><div class="pin-stack-row">' + card + '<span class="pin-more-tag">更多' + pin.more + '条</span></div><div class="warn-pop">' + rows + '</div></div>';
         }).join("");
         const base = row.hasMarks ? (row.warn ? 86 : 58) : (row.warn ? 72 : 48);
         const heightClass = (row.hasMarks ? " has-marks" : "") + (row.warn ? " has-warn" : "");
@@ -3673,12 +4423,13 @@
       const tickHtml = ticks.map((tick) => '<div class="gantt-tick" style="left:' + tick.left + '%"><i></i>' + esc(tick.label) + "</div>").join("");
       const height = rows.reduce((sum, row) => {
         const base = row.hasMarks ? (row.warn ? 86 : 58) : (row.warn ? 72 : 48);
-        return sum + base + (row.pinLanes || 0) * 26;
+        return sum + base + pinAreaHeight(row.pinLanes || 0);
       }, 0) + Math.max(rows.length - 1, 0) * 6 + 32;
       return { html: '<div class="gantt" style="min-width:' + chartWidth + 'px">' + rowHtml + '<div class="gantt-scale"><div class="lane-label"></div><div class="gantt-track"><div class="axis"></div>' + tickHtml + "</div></div></div>", height: height };
     }
     let openTimeHeight = 178;
     let timeHeight = 178;
+    let lastChartHeight = 178;
     const workspace = document.querySelector(".workspace");
     function applyTimeBox(px) {
       timeHeight = px;
@@ -3693,27 +4444,53 @@
       applyTimeBox(timePanel.classList.contains("is-collapsed") ? 40 : px);
     }
     function bindPinPops(root) {
-      root.querySelectorAll(".pin-hold").forEach((hold) => {
+      root.querySelectorAll(".pin-hold.is-group").forEach((hold) => {
         const pop = hold.querySelector(".warn-pop");
+        if (!pop) return;
+        const count = pop.querySelectorAll(".warn-pin").length;
+        const popMax = Math.min(520, count * (PIN_H + PIN_GAP) + 24);
+        pop.style.maxHeight = popMax + "px";
         let timer = 0;
-        function place() {
-          clearTimeout(timer);
-          root.querySelectorAll(".warn-pop.is-open").forEach((el) => { if (el !== pop) el.classList.remove("is-open"); });
-          pop.classList.add("is-open");
-          const rect = hold.querySelector(".warn-pin").getBoundingClientRect();
-          pop.style.left = (rect.left + rect.width / 2) + "px";
-          pop.style.top = (rect.top - 8) + "px";
-          pop.style.transform = "translate(-50%, -100%)";
-          const box = pop.getBoundingClientRect();
-          if (box.top < 8) {
-            pop.style.top = (rect.bottom + 8) + "px";
-            pop.style.transform = "translate(-50%, 0)";
+        function placePop() {
+          const row = hold.querySelector(".pin-stack-row") || hold;
+          const anchor = row.getBoundingClientRect();
+          pop.style.left = anchor.left + "px";
+          pop.style.width = "380px";
+          let top = anchor.top - 8 - pop.offsetHeight;
+          if (top < 12) {
+            pop.style.maxHeight = Math.max(120, anchor.top - 20) + "px";
+            top = anchor.top - 8 - pop.offsetHeight;
           }
+          pop.style.top = Math.max(12, top) + "px";
         }
-        hold.addEventListener("mouseenter", place);
+        function openPop() {
+          clearTimeout(timer);
+          root.querySelectorAll(".pin-hold.is-group").forEach((other) => {
+            if (other === hold) return;
+            other.classList.remove("is-pop-open");
+            const p = other.querySelector(".warn-pop");
+            if (p) {
+              p.classList.remove("is-open", "is-floating");
+              p.style.left = p.style.top = p.style.width = "";
+            }
+          });
+          pop.style.maxHeight = popMax + "px";
+          pop.classList.add("is-open", "is-floating");
+          hold.classList.add("is-pop-open");
+          requestAnimationFrame(placePop);
+        }
+        function closePop() {
+          timer = setTimeout(() => {
+            pop.classList.remove("is-open", "is-floating");
+            hold.classList.remove("is-pop-open");
+            pop.style.maxHeight = popMax + "px";
+            pop.style.left = pop.style.top = pop.style.width = "";
+          }, 240);
+        }
+        hold.addEventListener("mouseenter", openPop);
         pop.addEventListener("mouseenter", () => clearTimeout(timer));
-        hold.addEventListener("mouseleave", () => { timer = setTimeout(() => pop.classList.remove("is-open"), 220); });
-        pop.addEventListener("mouseleave", () => { timer = setTimeout(() => pop.classList.remove("is-open"), 220); });
+        hold.addEventListener("mouseleave", closePop);
+        pop.addEventListener("mouseleave", closePop);
       });
     }
     function renderTimeline() {
@@ -3727,10 +4504,11 @@
       timePanel.classList.add("is-multi");
       const chart = sharedChart(view.items, warns);
       body.innerHTML = chart.html;
+      lastChartHeight = chart.height;
       bindPinPops(body);
       bindPinAdds(body);
-      rememberTimeHeight(Math.max(178, Math.min(64 + chart.height, 560)));
-      const selected = body.querySelector(".pin-hold > .warn-pin.on, .gantt-track > .warn-pin.on");
+      rememberTimeHeight(Math.max(178, 64 + chart.height));
+      const selected = body.querySelector(".pin-hold .warn-pin.on, .gantt-track > .warn-pin.on");
       if (selected) selected.scrollIntoView({ block: "nearest", inline: "nearest" });
     }
 
@@ -4507,16 +5285,18 @@
       renderDetail();
       renderGraph();
       renderTable();
-      renderTimeline();
-      renderCrumb();
-      canvas.classList.toggle("is-table", state.mode === "table");
+      const workspace = document.querySelector(".workspace");
+      workspace.classList.toggle("is-table-mode", state.mode === "table");
+      if (state.mode === "table") {
+        renderCatalogView();
+      } else {
+        renderTimeline();
+        renderCrumb();
+      }
       document.getElementById("modeGraph").classList.toggle("is-on", state.mode === "graph");
       document.getElementById("modeTable").classList.toggle("is-on", state.mode === "table");
       document.getElementById("modeGraph").setAttribute("aria-pressed", state.mode === "graph");
       document.getElementById("modeTable").setAttribute("aria-pressed", state.mode === "table");
-      const clueFab = document.getElementById("clueFab");
-      clueFab.hidden = state.mode !== "graph";
-      clueFab.textContent = "添加线索";
       updateBatchBar();
       fit();
     }
@@ -4553,6 +5333,7 @@
     document.getElementById("reportTab").addEventListener("click", () => {
       report.open = !report.open;
       if (report.open) {
+        ensureReportClueMeta();
         relate.classList.remove("open");
         syncGraphState();
       }
@@ -4752,6 +5533,12 @@
         addNodeClue();
         return;
       }
+      const ignore = event.target.closest ? event.target.closest("[data-pin-ignore]") : null;
+      if (ignore) {
+        event.stopPropagation();
+        openCatalogIgnoreDialog(ignore.dataset.pinIgnore);
+        return;
+      }
       const add = event.target.closest ? event.target.closest("[data-add-clue]") : null;
       if (add) {
         event.stopPropagation();
@@ -4791,7 +5578,85 @@
       fit();
     });
     document.getElementById("modeGraph").addEventListener("click", () => { state.mode = "graph"; render(); });
-    document.getElementById("modeTable").addEventListener("click", () => { state.mode = "table"; render(); });
+    document.getElementById("modeTable").addEventListener("click", () => {
+      state.mode = "table";
+      state.catalogOpen = state.selected || state.catalogOpen;
+      state.catalogAlert = state.alert || state.catalogAlert;
+      render();
+    });
+    document.getElementById("catalogView").addEventListener("input", (event) => {
+      if (event.target.id !== "catalogWarnSearchInput") return;
+      state.catalogWarnSearch = event.target.value || "";
+      renderCatalogView();
+    });
+    document.getElementById("catalogView").addEventListener("click", (event) => {
+      const dealBtn = event.target.closest("[data-catalog-deal-filter]");
+      if (dealBtn) {
+        const deal = dealBtn.dataset.catalogDealFilter;
+        state.catalogDealFilter = state.catalogDealFilter === deal ? "" : deal;
+        renderCatalogView();
+        return;
+      }
+      const ignoreBtn = event.target.closest("[data-catalog-ignore]");
+      if (ignoreBtn) {
+        openCatalogIgnoreDialog(ignoreBtn.dataset.catalogIgnore);
+        return;
+      }
+      const add = event.target.closest("[data-catalog-add]");
+      if (add) {
+        catalogOpenClueReport(add.dataset.catalogAdd, "add");
+        return;
+      }
+      const viewClue = event.target.closest("[data-catalog-view-clue]");
+      if (viewClue) {
+        catalogOpenClueReport(viewClue.dataset.catalogViewClue, "view");
+        return;
+      }
+      const card = event.target.closest("[data-catalog-alert]");
+      if (card && !event.target.closest(".catalog-card-link")) {
+        state.catalogOpen = card.dataset.catalogSubject || state.catalogOpen;
+        state.catalogAlert = card.dataset.catalogAlert;
+        state.catalogRightPanel = "detail";
+        state.catalogClueAlertId = null;
+        state.alert = state.catalogAlert;
+        state.selected = state.catalogOpen;
+        state.focus = true;
+        renderCatalogView();
+        return;
+      }
+    });
+
+    function closeCatalogIgnoreDialog() {
+      catalogIgnorePendingId = null;
+      catalogIgnoreDialog.close();
+    }
+    document.getElementById("catalogIgnoreCancel").addEventListener("click", closeCatalogIgnoreDialog);
+    document.getElementById("catalogIgnoreClose").addEventListener("click", closeCatalogIgnoreDialog);
+    catalogIgnoreDialog.addEventListener("click", (event) => {
+      if (event.target === catalogIgnoreDialog) {
+        catalogIgnorePendingId = null;
+        catalogIgnoreDialog.close();
+      }
+    });
+    catalogIgnoreForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!catalogIgnorePendingId) return;
+      const reason = catalogIgnoreReasonInput.value.trim();
+      if (!reason) {
+        catalogIgnoreReasonInput.focus();
+        return;
+      }
+      dealByAlert[catalogIgnorePendingId] = "已忽略";
+      getCatalogAlertMeta(catalogIgnorePendingId).ignoreReason = reason;
+      if (state.catalogClueAlertId === catalogIgnorePendingId) {
+        state.catalogRightPanel = "detail";
+        state.catalogClueAlertId = null;
+      }
+      catalogIgnorePendingId = null;
+      catalogIgnoreDialog.close();
+      renderCatalogView();
+      renderTimeline();
+    });
     document.getElementById("godView").addEventListener("click", () => {
       const node = current();
       const org = ((node.attrs || []).find((row) => row[0] === "关联企业") || [])[1] || "";
@@ -4846,6 +5711,128 @@
     const reportFiles = document.getElementById("reportFiles");
     let clueSeq = 1;
     let typeGen = 0;
+    const reportClueNo = document.getElementById("reportClueNo");
+    const reportClueName = document.getElementById("reportClueName");
+    function pendingClueCatalog() {
+      if (Array.isArray(window.PENDING_CLUES)) return window.PENDING_CLUES;
+      return (Array.isArray(window.KNOWN_CLUES) ? window.KNOWN_CLUES : []).map((item) => ({ ...item, handoff: "待移交" }));
+    }
+    function makeReportClueNo() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      const day = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate());
+      return "XS-" + day + "-" + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
+    }
+    function defaultReportClueName() {
+      return project.name + "监管线索";
+    }
+    const cluePickDialog = document.getElementById("cluePickDialog");
+    const cluePickSearch = document.getElementById("cluePickSearch");
+    const cluePickList = document.getElementById("cluePickList");
+    let cluePickTarget = null;
+    function renderCluePickList(query) {
+      const q = (query || "").trim().toLowerCase();
+      const rows = pendingClueCatalog().filter((item) => {
+        if (!q) return true;
+        const hay = [item.id, item.name, item.source, item.type, item.dept].join(" ").toLowerCase();
+        return hay.includes(q);
+      });
+      if (!rows.length) {
+        cluePickList.innerHTML = '<div class="clue-pick-empty">暂无匹配的待移交线索</div>';
+        return;
+      }
+      cluePickList.innerHTML = rows.map((item) =>
+        '<button type="button" class="clue-pick-row" data-clue-id="' + esc(item.id) + '"><b>' + esc(item.name) +
+        '</b><span>' + esc(item.id) + " · " + esc(item.source || "") + " · " + esc(item.dept || "") + " · 待移交</span></button>"
+      ).join("");
+    }
+    function openCluePickDialog(noInput, nameInput) {
+      cluePickTarget = { noInput, nameInput };
+      cluePickSearch.value = "";
+      renderCluePickList("");
+      cluePickDialog.showModal();
+      cluePickSearch.focus();
+    }
+    function bindClueFieldSync(noInput, nameInput) {
+      function syncFromNo() {
+        const item = pendingClueCatalog().find((row) => row.id === noInput.value.trim());
+        if (item) nameInput.value = item.name;
+      }
+      function syncFromName() {
+        const item = pendingClueCatalog().find((row) => row.name === nameInput.value.trim());
+        if (item) noInput.value = item.id;
+      }
+      noInput.addEventListener("change", syncFromNo);
+      noInput.addEventListener("blur", syncFromNo);
+      nameInput.addEventListener("change", syncFromName);
+      nameInput.addEventListener("blur", syncFromName);
+    }
+    function bindCluePickTip(noInput, nameInput, pickBtn) {
+      const tip = pickBtn.closest(".clue-pick-wrap").querySelector(".clue-pick-tip");
+      let hideTimer = null;
+      function showTip() {
+        window.clearTimeout(hideTimer);
+        tip.hidden = false;
+      }
+      function hideTip() {
+        tip.hidden = true;
+      }
+      function scheduleHide() {
+        window.clearTimeout(hideTimer);
+        hideTimer = window.setTimeout(hideTip, 180);
+      }
+      [noInput, nameInput].forEach((input) => {
+        input.addEventListener("click", showTip);
+        input.addEventListener("focus", showTip);
+        input.addEventListener("blur", scheduleHide);
+      });
+      pickBtn.addEventListener("mouseenter", showTip);
+      pickBtn.addEventListener("mouseleave", scheduleHide);
+      pickBtn.addEventListener("click", hideTip);
+    }
+    bindClueFieldSync(reportClueNo, reportClueName);
+    bindCluePickTip(reportClueNo, reportClueName, document.querySelector('[data-clue-pick="report"]'));
+    document.querySelectorAll("[data-clue-pick]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (button.dataset.cluePick === "pack") {
+          openCluePickDialog(document.getElementById("clueNo"), document.getElementById("clueName"));
+        } else {
+          openCluePickDialog(reportClueNo, reportClueName);
+        }
+      });
+    });
+    cluePickSearch.addEventListener("input", () => renderCluePickList(cluePickSearch.value));
+    cluePickList.addEventListener("click", (event) => {
+      const row = event.target.closest(".clue-pick-row");
+      if (!row || !cluePickTarget) return;
+      const item = pendingClueCatalog().find((entry) => entry.id === row.dataset.clueId);
+      if (!item) return;
+      cluePickTarget.noInput.value = item.id;
+      cluePickTarget.nameInput.value = item.name;
+      cluePickDialog.close();
+      cluePickTarget = null;
+    });
+    document.getElementById("cluePickClose").addEventListener("click", () => cluePickDialog.close());
+    cluePickDialog.addEventListener("click", (event) => {
+      if (event.target === cluePickDialog) cluePickDialog.close();
+    });
+    function seedReportClueMeta() {
+      reportClueNo.value = makeReportClueNo();
+      reportClueName.value = defaultReportClueName();
+    }
+    function ensureReportClueMeta() {
+      if (!reportClueNo.value.trim()) reportClueNo.value = makeReportClueNo();
+      if (!reportClueName.value.trim()) reportClueName.value = defaultReportClueName();
+    }
+    function reportClueHeaderLines() {
+      const lines = [];
+      const no = reportClueNo.value.trim();
+      const name = reportClueName.value.trim();
+      if (no) lines.push("线索编号：" + no);
+      if (name) lines.push("线索名称：" + name);
+      return lines;
+    }
+    seedReportClueMeta();
     function canSummarize(item) {
       return !!(item && (item.note || item.model || (item.steps && item.steps.length)));
     }
@@ -4925,6 +5912,7 @@
     }
     function showReport() {
       report.open = true;
+      ensureReportClueMeta();
       relate.classList.remove("open");
       syncGraphState();
       renderReport();
@@ -4976,7 +5964,6 @@
       render();
       addClues([alertId]);
     }
-    document.getElementById("clueFab").addEventListener("click", () => addNodeClue());
     document.getElementById("reportClose").addEventListener("click", () => {
       report.open = false;
       renderReport();
@@ -5056,6 +6043,7 @@
     }
     function reportLines() {
       const lines = ["线索报告"];
+      lines.push.apply(lines, reportClueHeaderLines());
       lines.push("");
       lines.push(reportConclusion.value || autoConclusion());
       lines.push("", "分析过程");
@@ -5184,12 +6172,10 @@
       renderFiles();
     }
     function makeClueNo() {
-      const now = new Date();
-      const pad = (n) => String(n).padStart(2, "0");
-      const day = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate());
-      const seq = pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
-      return "XS" + day + seq;
+      return makeReportClueNo();
     }
+    bindClueFieldSync(clueNo, clueName);
+    bindCluePickTip(clueNo, clueName, document.querySelector('[data-clue-pick="pack"]'));
     function makeClueDesc() {
       const nameEl = document.getElementById("entityName");
       const focus = (nameEl && nameEl.textContent.trim()) || (current() && current().name) || project.name;

@@ -1,33 +1,98 @@
 (function () {
   if (new URLSearchParams(location.search).get("bare") === "1") return;
-  const file = (location.pathname.split("/").pop() || "cockpit.html").toLowerCase();
+  const file = (document.documentElement.getAttribute("data-page") || location.pathname.split("/").pop() || "cockpit.html").toLowerCase();
+  document.documentElement.setAttribute("data-page", file);
+  document.documentElement.classList.add("sys-app");
   const scope = new URLSearchParams(location.search).get("scope");
-  const key = file === "clues.html" || (file === "warnings.html" && scope === "clue")
-    ? "clue"
-    : (file === "warnings.html" || file === "insight.html" || file === "analysis.html" ? "warnings" : "cockpit");
+  const desk = new URLSearchParams(location.search).get("desk");
+  function cockpitNavKey() {
+    if (file !== "cockpit.html") return "";
+    if (desk === "engineering") return "cockpit-eng";
+    return "cockpit-fg";
+  }
+  const key = file === "clue-return.html"
+    ? "clue-return"
+    : (file === "clues.html" || (file === "warnings.html" && scope === "clue")
+      ? "clue"
+      : (file === "warnings.html" || file === "insight.html" || file === "analysis.html"
+        ? "warnings"
+        : (file === "cockpit.html" ? cockpitNavKey() : "cockpit-fg")));
   document.documentElement.classList.add("sys");
-  const top = document.createElement("header");
-  top.className = "sys-top";
-  top.innerHTML = '<a class="sys-brand" href="cockpit.html"><img class="sys-logo" src="logo.png" alt="" /><strong>贵州省公共资源交易智能监督监管平台</strong></a><div class="sys-user"><span class="sys-avatar" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="5.2" r="2.4" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M3.2 13.2c.7-2.2 2.4-3.3 4.8-3.3s4.1 1.1 4.8 3.3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span><span>张小丽</span><button class="sys-exit" type="button">退出</button></div>';
+  try {
+    if (localStorage.getItem("sys-nav-collapsed") === "1") {
+      document.documentElement.classList.add("sys-narrow");
+    }
+  } catch (error) {}
+  const iconSet = {
+    cockpit: ["assets/icon-nav-cockpit-on.png", "assets/icon-nav-cockpit.png"],
+    warnings: ["assets/icon-nav-warnings.png", "assets/icon-nav-warnings-on.png"],
+    clue: ["assets/icon-nav-clue.png", "assets/icon-nav-clue-on.png"],
+    "clue-return": ["assets/icon-nav-clue-return.png", "assets/icon-nav-clue-return-on.png"]
+  };
+  function navIcon(id) {
+    const pair = iconSet[id.startsWith("cockpit") ? "cockpit" : id] || iconSet.cockpit;
+    return '<span class="sys-ico-box" aria-hidden="true">' +
+      '<img class="sys-ico sys-ico-off" src="' + pair[0] + '" width="18" height="18" alt="" decoding="sync" />' +
+      '<img class="sys-ico sys-ico-on" src="' + pair[1] + '" width="18" height="18" alt="" decoding="sync" />' +
+      "</span>";
+  }
+  Object.keys(iconSet).forEach(function (id) {
+    iconSet[id].forEach(function (src) {
+      const img = new Image();
+      img.src = src;
+    });
+  });
+  const items = [
+    ["cockpit-fg", "监管驾驶舱(发改)", "cockpit.html?desk=fg"],
+    ["cockpit-eng", "监管驾驶舱(建设工程)", "cockpit.html?desk=engineering"],
+    ["warnings", "预警列表", "warnings.html"],
+    ["clue", "线索列表", "clues.html"],
+    ["clue-return", "线索回传", "clue-return.html"]
+  ];
   const nav = document.createElement("nav");
   nav.className = "sys-nav";
   nav.setAttribute("aria-label", "系统菜单");
-  const items = [
-    ["cockpit", "监督驾驶舱", "cockpit.html"],
-    ["warnings", "预警列表", "warnings.html"],
-    ["clue", "预警线索", "clues.html"]
-  ];
-  nav.innerHTML = items.map(function (item) {
-    return '<a href="' + item[2] + '"' + (item[0] === key ? ' class="is-on" aria-current="page"' : "") + ">" + item[1] + "</a>";
+  nav.innerHTML = items.map(function (item, index) {
+    const on = item[0] === key;
+    const sep = index === 2 ? '<div class="sys-nav-sep" role="presentation"></div>' : "";
+    return sep + '<a href="' + item[2] + '"' + (on ? ' class="is-on" aria-current="page"' : "") + ">" + navIcon(item[0]) + '<span class="sys-nav-label">' + item[1] + "</span></a>";
   }).join("");
+  const side = document.createElement("aside");
+  side.className = "sys-side";
+  side.innerHTML = '<a class="sys-brand" href="cockpit.html?desk=fg"><img class="sys-logo" src="logo.png" alt="" /><strong>智能监管系统</strong></a>';
+  side.appendChild(nav);
+  const foot = document.createElement("div");
+  foot.className = "sys-foot";
+  foot.innerHTML = '<span class="sys-avatar"><img src="assets/avatar-user.png" width="36" height="36" alt="" /></span><div class="sys-foot-meta"><b>刘新宇</b><span>超级管理员</span></div>';
+  side.appendChild(foot);
+  const collapse = document.createElement("button");
+  collapse.className = "sys-collapse";
+  collapse.type = "button";
+  collapse.setAttribute("aria-label", "收起导航");
+  collapse.innerHTML =
+    '<img class="sys-collapse-fold" src="assets/icon-sidebar-collapse.png" width="32" height="32" alt="" aria-hidden="true" />' +
+    '<img class="sys-collapse-expand" src="assets/icon-sidebar-expand.png" width="32" height="32" alt="" aria-hidden="true" />';
+  function syncCollapseLabel() {
+    const narrow = document.documentElement.classList.contains("sys-narrow");
+    collapse.setAttribute("aria-label", narrow ? "展开导航" : "收起导航");
+  }
+  collapse.addEventListener("click", function () {
+    const narrow = document.documentElement.classList.toggle("sys-narrow");
+    try {
+      localStorage.setItem("sys-nav-collapsed", narrow ? "1" : "0");
+    } catch (error) {}
+    syncCollapseLabel();
+    window.dispatchEvent(new Event("resize"));
+  });
+  syncCollapseLabel();
   const main = document.createElement("div");
   main.className = "sys-main";
   while (document.body.firstChild) main.appendChild(document.body.firstChild);
   const body = document.createElement("div");
   body.className = "sys-body";
-  body.appendChild(nav);
+  body.appendChild(side);
   body.appendChild(main);
-  document.body.appendChild(top);
+  body.appendChild(collapse);
   document.body.appendChild(body);
   const bar = document.querySelector(".page > .topbar");
   if (bar && document.getElementById("industry")) {
@@ -35,13 +100,24 @@
     full.className = "sys-full";
     full.type = "button";
     full.setAttribute("aria-label", "全屏");
-    full.innerHTML = '<svg class="ico-full" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 7V3h4M11 3h4v4M15 11v4h-4M7 15H3v-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="ico-exit" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M7 3v4H3M11 7h4V3M15 11h-4v4M7 15v-4H3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    bar.appendChild(full);
+    full.innerHTML =
+      '<span class="sys-full-ico sys-full-enter" aria-hidden="true">' +
+      '<img class="sys-full-off" src="assets/icon-fullscreen.png" width="16" height="16" alt="" decoding="async" />' +
+      '<img class="sys-full-on" src="assets/icon-fullscreen-hover.png" width="16" height="16" alt="" decoding="async" />' +
+      "</span>" +
+      '<span class="sys-full-ico sys-full-exit" aria-hidden="true">' +
+      '<img class="sys-full-off" src="assets/icon-exit-fullscreen.png" width="16" height="16" alt="" decoding="async" />' +
+      '<img class="sys-full-on" src="assets/icon-exit-fullscreen-hover.png" width="16" height="16" alt="" decoding="async" />' +
+      "</span>";
+    const topbarEnd = bar.querySelector(".topbar-end");
+    (topbarEnd || bar).appendChild(full);
     const stage = document.querySelector(".page");
     function syncFull() {
       const on = document.fullscreenElement === stage;
       full.classList.toggle("is-on", on);
+      stage.classList.toggle("is-fullscreen", on);
       full.setAttribute("aria-label", on ? "退出全屏" : "全屏");
+      full.setAttribute("title", on ? "退出全屏" : "全屏");
     }
     full.addEventListener("click", function () {
       if (document.fullscreenElement !== stage) stage.requestFullscreen();

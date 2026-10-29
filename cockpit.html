@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-page="cockpit.html">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>公共资源交易监管驾驶舱</title>
-  <link rel="stylesheet" href="shell.css?v=4" />
-  <script src="shell.js?v=4" defer></script>
+  <link rel="stylesheet" href="shell.css?v=20" />
+  <script src="shell.js?v=19" defer></script>
   <script type="importmap">
   {
     "imports": {
@@ -43,7 +43,7 @@
     .page {
       height: 100%;
       display: grid;
-      grid-template-rows: 56px minmax(0, 1fr);
+      grid-template-rows: 48px minmax(0, 1fr);
       padding: 10px 12px 12px;
       gap: 10px;
     }
@@ -54,12 +54,26 @@
       padding: 0 8px 0 4px;
       background: linear-gradient(90deg, rgba(8, 28, 64, 0.95), rgba(7, 18, 40, 0.72) 42%, rgba(7, 18, 40, 0.5));
     }
-    .brand { display: flex; align-items: center; gap: 10px; min-width: 280px; text-decoration: none; color: inherit; }
-    .brand img { width: 28px; height: 28px; }
+    .brand { display: flex; align-items: center; min-width: 0; text-decoration: none; color: inherit; flex: none; }
     .brand strong { display: block; font-size: 18px; letter-spacing: 1px; font-weight: 650; }
     .brand em { display: block; margin-top: 1px; font-style: normal; font-size: 11px; color: #7eb6ff; letter-spacing: 0.2px; }
+    .topbar-spacer { flex: 1; min-width: 8px; }
+    .top-filters {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: none;
+    }
+    .topbar-end {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex: none;
+    }
+    .topbar-end .top-filters {
+      gap: 8px;
+    }
     .industry {
-      margin-left: auto;
       height: 32px;
       min-width: 148px;
       padding: 0 28px 0 12px;
@@ -69,11 +83,51 @@
       border-radius: 4px;
       appearance: none;
     }
-    .period { color: #9eb6d8; font-size: 13px; white-space: nowrap; }
-    .period b { color: #d5e6ff; font-weight: 550; }
-    .clock { text-align: right; min-width: 132px; }
-    .clock b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; letter-spacing: 1px; color: #f3f8ff; }
-    .clock span { color: #8eabd2; font-size: 12px; }
+    .period-range {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: none;
+      color: #9eb6d8;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .period-range .period-label { color: #9eb6d8; }
+    .period-input {
+      height: 32px;
+      padding: 0 8px;
+      color: #d6e8ff;
+      background: rgba(8, 24, 52, 0.9);
+      border: 1px solid rgba(90, 160, 255, 0.45);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 12px;
+      color-scheme: dark;
+    }
+    .period-input::-webkit-calendar-picker-indicator {
+      filter: invert(0.78) sepia(0.2) saturate(4) hue-rotate(175deg);
+      cursor: pointer;
+    }
+    .period-sep { color: #8eabd2; }
+    .clock {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      height: 32px;
+      flex: none;
+      min-width: 0;
+      text-align: right;
+    }
+    .clock b {
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.5px;
+      color: #f3f8ff;
+    }
+    .clock span { color: #8eabd2; font-size: 11px; line-height: 1; white-space: nowrap; }
 
     .main {
       min-height: 0;
@@ -85,8 +139,10 @@
       min-height: 0;
       min-width: 0;
     }
-    .left { display: flex; flex-direction: column; gap: 10px; }
-    .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .left { display: flex; flex-direction: column; gap: 10px; color: var(--text); }
+    .left .card { color: var(--text); }
+    .left .kpi .k, .left .mini .k { color: #9eb6d8; }
+    .kpis { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .card {
       background: var(--card);
       border: 1px solid var(--line);
@@ -99,24 +155,46 @@
     .kpi .d { margin-top: 4px; font-size: 12px; }
     .up { color: var(--up); }
     .down { color: var(--down); }
-    .bars { flex: none; padding: 8px 8px 2px; }
-    .bars h2 { margin: 0 0 2px; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 6px; }
+    .bars {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 8px 8px 10px;
+    }
+    .bars h2 { flex: none; margin: 0 0 2px; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 6px; }
     .bars h2::before { content: ""; width: 3px; height: 14px; background: #3aa0ff; border-radius: 2px; }
     .bars .keys { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 500; color: #8eabd2; }
     .bars .keys i { display: inline-block; width: 8px; height: 8px; margin-right: 4px; border-radius: 2px; }
-    .bars svg { width: 100%; height: 106px; display: block; font-size: 11px; }
+    .bars svg {
+      flex: 1 1 auto;
+      width: 100%;
+      min-height: 106px;
+      height: 100%;
+      display: block;
+      font-size: 11px;
+    }
     .bars rect { cursor: default; }
     .bars rect:hover { filter: brightness(1.18); }
-    .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .kpi-row { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .kpi-row .donut-card { grid-column: 1 / -1; }
     .donut-card {
       display: grid;
-      grid-template-columns: 1fr auto 1fr;
+      grid-template-columns: 1fr 1fr;
       align-items: center;
-      gap: 8px;
+      gap: 8px 12px;
       padding: 10px 12px;
     }
-    .donut-card .legend { justify-self: end; }
+    .donut-card .donut-metrics .k { color: #9eb6d8; font-size: 12px; }
+    .donut-card .donut-metrics .v { font-size: 26px; font-weight: 720; line-height: 1.1; margin-top: 4px; }
+    .donut-card .donut-metrics .d { margin-top: 4px; font-size: 12px; }
+    .donut-card .donut-chart-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 16px;
+      min-width: 0;
+    }
     .donut {
       width: 76px; height: 76px; flex: none; border-radius: 50%;
       background: conic-gradient(#ff4d4f 0 38.5%, #fa8c16 0 82.7%, #f5d76e 0 100%);
@@ -128,18 +206,36 @@
       background: #0b1730; border-radius: 50%;
     }
     .donut span { position: relative; font-size: 13px; font-weight: 700; }
-    .legend { font-size: 11px; color: #b7c9e4; line-height: 1.55; }
+    .legend { font-size: 11px; color: #c8daf4; line-height: 1.55; }
     .legend i { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 4px; }
     .mini { padding: 12px 12px 12px; }
     .mini .v { font-size: 22px; }
 
-    .todo, .work { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .todo, .work { flex: none; min-height: 0; display: flex; flex-direction: column; }
     .todo { padding: 8px 10px 6px; }
     .todo h2 { margin: 0 0 2px; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 6px; }
     .todo h2::before { content: ""; width: 3px; height: 14px; background: #3aa0ff; border-radius: 2px; }
-    .todo table, .work table { width: 100%; height: 100%; border-collapse: collapse; font-size: 13px; }
-    .todo th { color: #8eabd2; font-weight: 500; text-align: left; padding: 2px 4px; line-height: 16px; border-bottom: 1px solid rgba(120, 160, 210, 0.18); }
-    .todo td { padding: 0 4px; line-height: 18px; border-bottom: 1px solid rgba(120, 160, 210, 0.1); }
+    .todo table, .work table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .todo th, .work th {
+      color: #8eabd2;
+      font-weight: 500;
+      text-align: left;
+      padding: 0 4px;
+      height: 36px;
+      line-height: 36px;
+      box-sizing: border-box;
+      background: rgba(80, 140, 220, 0.1);
+      border-bottom: 1px solid rgba(120, 160, 210, 0.18);
+    }
+    .todo tbody td, .work tbody td {
+      padding: 0 4px;
+      height: 32px;
+      line-height: 32px;
+      box-sizing: border-box;
+      vertical-align: middle;
+      color: var(--text);
+    }
+    .todo tbody td { border-bottom: 1px solid rgba(120, 160, 210, 0.1); }
     .todo a { color: #49c2ff; text-decoration: none; }
     .todo a:hover { color: #9be4ff; }
     .badge { display: inline-block; min-width: 22px; padding: 0 6px; line-height: 18px; text-align: center; border-radius: 9px; background: rgba(255, 93, 108, 0.18); color: #ff8b96; }
@@ -148,8 +244,7 @@
     .work h2::before { content: ""; width: 3px; height: 14px; background: #3aa0ff; border-radius: 2px; }
     .work h2 a { font-size: 12px; font-weight: 500; color: #49c2ff; text-decoration: none; }
     .work h2 a:hover { color: #9be4ff; }
-    .work th { color: #8eabd2; font-weight: 500; text-align: left; padding: 4px; background: rgba(80, 140, 220, 0.1); }
-    .work td { padding: 0 4px; border-bottom: 1px solid rgba(120, 160, 210, 0.12); }
+    .work tbody td { border-bottom: 1px solid rgba(120, 160, 210, 0.12); }
     .work td.num { font-weight: 700; }
     .pill { display: inline-block; min-width: 26px; padding: 0 6px; line-height: 20px; text-align: center; border-radius: 4px; font-weight: 650; }
     .pill.hot { background: rgba(255, 120, 140, 0.18); color: #ff8ea0; }
@@ -342,23 +437,44 @@
 <body>
   <div class="page">
     <header class="topbar">
-      <a class="brand" href="cockpit.html">
-        <img src="logo.png" alt="工程交易" />
+      <a class="brand" href="cockpit.html?desk=fg">
         <div>
           <strong>公共资源交易监管驾驶舱</strong>
           <em>Public Resource Trading Supervision Cockpit</em>
         </div>
       </a>
-      <select class="industry" id="industry" aria-label="行业">
-        <option>全部行业</option>
-        <option>工程建设</option>
-        <option>政府采购</option>
-        <option>交通</option>
-        <option>水利</option>
-        <option>土地矿产</option>
-      </select>
-      <div class="period">数据周期：<b>2023-01-01 至 2026-10-13</b></div>
-      <div class="clock"><b id="clock">10:01:36</b><span id="day">2026/10/11 星期日</span></div>
+      <div class="topbar-spacer" aria-hidden="true"></div>
+      <div class="topbar-end">
+        <div class="top-filters">
+          <select class="industry" id="industry" aria-label="行业">
+            <option>全部行业</option>
+            <option>建设工程</option>
+            <option>政府采购</option>
+            <option>交通</option>
+            <option>水利</option>
+            <option>土地矿产</option>
+          </select>
+          <select class="industry" id="region" aria-label="地市">
+            <option>全部地市</option>
+            <option>贵州省（全省）</option>
+            <option>贵阳市</option>
+            <option>遵义市</option>
+            <option>六盘水市</option>
+            <option>安顺市</option>
+            <option>毕节市</option>
+            <option>铜仁市</option>
+            <option>黔西南州</option>
+            <option>黔东南州</option>
+            <option>黔南州</option>
+          </select>
+          <div class="period-range" aria-label="数据周期">
+            <input type="date" class="period-input" id="periodStart" value="2023-01-01" aria-label="开始日期" />
+            <span class="period-sep">至</span>
+            <input type="date" class="period-input" id="periodEnd" value="2026-10-13" aria-label="结束日期" />
+          </div>
+        </div>
+        <div class="clock"><b id="clock">10:01:36</b><span id="day">2026/10/11 星期日</span></div>
+      </div>
     </header>
 
     <div class="main">
@@ -373,23 +489,25 @@
         </article>
         <div class="kpi-row">
           <article class="card donut-card">
-            <div>
-              <div class="k" style="color:#8ea4c8;font-size:12px;">预警总量（条）</div>
-              <div class="v" style="font-size:26px;font-weight:720;">2,317</div>
+            <div class="donut-metrics">
+              <div class="k">预警总量（条）</div>
+              <div class="v">2,317</div>
               <div class="d down">▼ 12.4%</div>
             </div>
-            <div class="donut" aria-hidden="true"><span>2317</span></div>
-            <div class="legend">
-              <div><i style="background:#ff4d4f"></i>高 892</div>
-              <div><i style="background:#fa8c16"></i>中 1024</div>
-              <div><i style="background:#f5d76e"></i>低 401</div>
+            <div class="donut-chart-row">
+              <div class="donut" aria-hidden="true"><span>2317</span></div>
+              <div class="legend">
+                <div><i style="background:#ff4d4f"></i>高 892</div>
+                <div><i style="background:#fa8c16"></i>中 1024</div>
+                <div><i style="background:#f5d76e"></i>低 401</div>
+              </div>
             </div>
           </article>
           <article class="card kpi mini"><div class="k">风险主体（家）</div><div class="v">486</div><div class="d up">▲ 1.8%</div></article>
           <article class="card kpi mini"><div class="k">风险项目（个）</div><div class="v">355</div><div class="d down">▼ 3.1%</div></article>
         </div>
         <article class="card todo">
-          <h2>每日待办</h2>
+          <h2>预警待办</h2>
           <table>
             <thead><tr><th>待办类型</th><th>今日新增</th><th>待办</th><th>已办</th><th>操作</th></tr></thead>
             <tbody>
@@ -402,14 +520,12 @@
             </tbody>
           </table>
         </article>
-        <article class="card work">
-          <h2>每日待办 <a href="warnings.html">详情</a></h2>
+        <article class="card work" id="workPanel">
+          <h2>综合待办 <a href="warnings.html">详情</a></h2>
           <table>
             <thead><tr><th>待办类型</th><th>今日新增</th><th>待办</th><th>已办</th><th>操作</th></tr></thead>
             <tbody>
               <tr><td>预警线索待核查</td><td><span class="pill hot">36</span></td><td class="num">128</td><td>402</td><td><a class="go" href="warnings.html">前往处理</a></td></tr>
-              <tr><td>投诉待受理</td><td><span class="pill mid">8</span></td><td class="num">21</td><td>96</td><td><a class="go" href="warnings.html">前往处理</a></td></tr>
-              <tr><td>时限预警督办</td><td><span class="pill warm">12</span></td><td class="num">33</td><td>187</td><td><a class="go" href="warnings.html">前往处理</a></td></tr>
               <tr><td>智能报告待阅</td><td><span class="pill cool">5</span></td><td class="num">17</td><td>230</td><td><a class="go" href="warnings.html">前往阅读</a></td></tr>
             </tbody>
           </table>
@@ -1067,6 +1183,32 @@
     select("project");
     frame();
 
+    const COCKPIT_DESK = (() => {
+      const d = new URLSearchParams(location.search).get("desk");
+      if (d === "engineering" || d === "leader") return d;
+      return "fg";
+    })();
+    document.documentElement.dataset.desk = COCKPIT_DESK;
+    if (COCKPIT_DESK === "leader") {
+      document.querySelectorAll(".todo tbody a[href*='warnings.html']").forEach((link) => {
+        if (link.textContent.trim() === "去处理") link.textContent = "去查看";
+      });
+    }
+    const workPanel = document.getElementById("workPanel");
+    if (workPanel && (COCKPIT_DESK === "fg" || COCKPIT_DESK === "engineering")) {
+      workPanel.remove();
+    }
+    const periodStart = document.getElementById("periodStart");
+    const periodEnd = document.getElementById("periodEnd");
+    function syncPeriodRange() {
+      if (!periodStart || !periodEnd) return;
+      if (periodStart.value && periodEnd.value && periodStart.value > periodEnd.value) {
+        periodEnd.value = periodStart.value;
+      }
+    }
+    periodStart?.addEventListener("change", syncPeriodRange);
+    periodEnd?.addEventListener("change", syncPeriodRange);
+
     const industryPack = {
       全部行业: [
         { name: "工程建设", count: 8420, amount: 612.4 },
@@ -1080,6 +1222,12 @@
         { name: "市政公用", count: 2140, amount: 186.2 },
         { name: "轨道交通", count: 1520, amount: 112.8 },
         { name: "园林绿化", count: 1080, amount: 64.8 }
+      ],
+      建设工程: [
+        { name: "交通", count: 2680, amount: 248.6 },
+        { name: "住建", count: 3680, amount: 312.4 },
+        { name: "水利", count: 1540, amount: 156.8 },
+        { name: "农业", count: 980, amount: 68.2 }
       ],
       政府采购: [
         { name: "货物类", count: 2180, amount: 72.4 },
@@ -1122,40 +1270,55 @@
       }
       return Number.isInteger(value) ? String(value) : value.toFixed(1);
     }
+    const INDUSTRY_CHART_REF = { w: 316, h: 106 };
+    let currentIndustryName = "全部行业";
+
     function renderIndustry(name) {
+      currentIndustryName = name;
       const items = industryPack[name] || industryPack["全部行业"];
       const count = items.reduce((sum, item) => sum + item.count, 0);
       const amount = Math.round(items.reduce((sum, item) => sum + item.amount, 0) * 10) / 10;
       document.getElementById("kpiCount").textContent = count.toLocaleString("zh-CN");
       document.getElementById("kpiAmount").textContent = amount.toLocaleString("zh-CN", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-      document.getElementById("barTitle").textContent = name === "全部行业" ? "分行业交易" : name + "细分";
+      document.getElementById("barTitle").textContent = name === "全部行业"
+        ? "分行业交易"
+        : (COCKPIT_DESK === "engineering" && name === "建设工程" ? "交易统计" : name + "细分");
       const qtyTicks = axisTicks(Math.max(...items.map((item) => item.count)));
       const amtTicks = axisTicks(Math.max(...items.map((item) => item.amount)));
       const qtyMax = qtyTicks[3];
       const amtMax = amtTicks[3];
-      const plotL = 36;
-      const plotR = 284;
-      const base = 88;
-      const plotH = 76;
+      const chart = document.getElementById("industryChart");
+      const viewW = Math.max(chart.clientWidth || INDUSTRY_CHART_REF.w, INDUSTRY_CHART_REF.w);
+      const viewH = Math.max(chart.clientHeight || INDUSTRY_CHART_REF.h, INDUSTRY_CHART_REF.h);
+      const sx = viewW / INDUSTRY_CHART_REF.w;
+      const sy = viewH / INDUSTRY_CHART_REF.h;
+      const plotL = 36 * sx;
+      const plotR = 284 * sx;
+      const base = 88 * sy;
+      const plotH = 76 * sy;
+      const barW = 12 * sx;
       const slot = (plotR - plotL) / items.length;
+      const fontSize = Math.round(11 * Math.min(sx, sy) * 10) / 10;
       const labels = qtyTicks.map((tick, index) => {
-        const y = (base - (tick / qtyMax) * plotH + 3).toFixed(1);
-        return `<text x="30" y="${y}" text-anchor="end">${tickLabel(tick)}</text><text x="290" y="${y}">${tickLabel(amtTicks[index])}</text>`;
+        const y = (base - (tick / qtyMax) * plotH + 3 * sy).toFixed(1);
+        return `<text x="${(30 * sx).toFixed(1)}" y="${y}" text-anchor="end" font-size="${fontSize}">${tickLabel(tick)}</text><text x="${(290 * sx).toFixed(1)}" y="${y}" font-size="${fontSize}">${tickLabel(amtTicks[index])}</text>`;
       }).join("");
       const bars = items.map((item, index) => {
         const center = plotL + slot * (index + 0.5);
-        const qtyH = Math.max(item.count / qtyMax * plotH, 2);
-        const amtH = Math.max(item.amount / amtMax * plotH, 2);
-        const x1 = (center - 14).toFixed(1);
-        const x2 = (center + 2).toFixed(1);
+        const qtyH = Math.max(item.count / qtyMax * plotH, 2 * sy);
+        const amtH = Math.max(item.amount / amtMax * plotH, 2 * sy);
+        const x1 = (center - 14 * sx).toFixed(1);
+        const x2 = (center + 2 * sx).toFixed(1);
         const label = item.name.length > 4 ? item.name.slice(0, 4) : item.name;
-        return `<rect x="${x1}" y="${(base - qtyH).toFixed(1)}" width="12" height="${qtyH.toFixed(1)}" rx="2" fill="#4aa3ff"><title>${item.name} 数量 ${item.count.toLocaleString("zh-CN")} 宗</title></rect><rect x="${x2}" y="${(base - amtH).toFixed(1)}" width="12" height="${amtH.toFixed(1)}" rx="2" fill="#f0b429"><title>${item.name} 金额 ${item.amount.toFixed(1)} 亿元</title></rect><text x="${center.toFixed(1)}" y="103" text-anchor="middle" fill="#c5d4e8">${label}</text>`;
+        const labelY = (103 * sy).toFixed(1);
+        return `<rect x="${x1}" y="${(base - qtyH).toFixed(1)}" width="${barW.toFixed(1)}" height="${qtyH.toFixed(1)}" rx="${(2 * Math.min(sx, sy)).toFixed(1)}" fill="#4aa3ff"><title>${item.name} 数量 ${item.count.toLocaleString("zh-CN")} 宗</title></rect><rect x="${x2}" y="${(base - amtH).toFixed(1)}" width="${barW.toFixed(1)}" height="${amtH.toFixed(1)}" rx="${(2 * Math.min(sx, sy)).toFixed(1)}" fill="#f0b429"><title>${item.name} 金额 ${item.amount.toFixed(1)} 亿元</title></rect><text x="${center.toFixed(1)}" y="${labelY}" text-anchor="middle" fill="#c5d4e8" font-size="${fontSize}">${label}</text>`;
       }).join("");
-      const chart = document.getElementById("industryChart");
+      chart.setAttribute("viewBox", `0 0 ${viewW} ${viewH}`);
+      chart.setAttribute("preserveAspectRatio", "none");
       chart.setAttribute("aria-label", (name === "全部行业" ? "分行业" : name + "细分") + "交易数量与金额");
-      chart.innerHTML = `<g fill="#8eabd2" font-size="11" font-family="PingFang SC, Microsoft YaHei, sans-serif">${labels}</g><g stroke="rgba(120,160,210,0.18)" stroke-width="1">${qtyTicks.map((tick) => {
+      chart.innerHTML = `<g fill="#8eabd2" font-family="PingFang SC, Microsoft YaHei, sans-serif">${labels}</g><g stroke="rgba(120,160,210,0.18)" stroke-width="1">${qtyTicks.map((tick) => {
         const y = (base - (tick / qtyMax) * plotH).toFixed(1);
-        return `<line x1="${plotL}" y1="${y}" x2="${plotR}" y2="${y}" />`;
+        return `<line x1="${plotL.toFixed(1)}" y1="${y}" x2="${plotR.toFixed(1)}" y2="${y}" />`;
       }).join("")}</g>${bars}`;
     }
     if (window.GUIZHOU) {
@@ -1170,9 +1333,22 @@
         });
       }
       industryPack["全部行业"] = top;
-      allInd.forEach((item) => { industryPack[item.name] = [item]; });
+      allInd.forEach((item) => {
+        const pack = industryPack[item.name];
+        if (pack && pack.length > 1) return;
+        industryPack[item.name] = [{ name: item.name, count: item.count, amount: item.amount }];
+      });
       const industry = document.getElementById("industry");
       industry.innerHTML = "<option>全部行业</option>" + allInd.map((item) => "<option>" + item.name + "</option>").join("");
+      if (COCKPIT_DESK === "engineering") {
+        industryPack["建设工程"] = [
+          { name: "交通", count: 2680, amount: 248.6 },
+          { name: "住建", count: 3680, amount: 312.4 },
+          { name: "水利", count: 1540, amount: 156.8 },
+          { name: "农业", count: 980, amount: 68.2 }
+        ];
+        industry.value = "建设工程";
+      }
       const rows = GUIZHOU.rows;
       const high = rows.filter((row) => row.level === "高风险").length;
       const mid = rows.filter((row) => row.level === "中风险").length;
@@ -1209,7 +1385,19 @@
     }
     const industrySelect = document.getElementById("industry");
     industrySelect.addEventListener("change", () => renderIndustry(industrySelect.value));
-    renderIndustry(industrySelect.value);
+    const industryChartEl = document.getElementById("industryChart");
+    if (typeof ResizeObserver !== "undefined") {
+      let industryChartFrame = 0;
+      const industryChartObserver = new ResizeObserver(() => {
+        cancelAnimationFrame(industryChartFrame);
+        industryChartFrame = requestAnimationFrame(() => renderIndustry(currentIndustryName));
+      });
+      industryChartObserver.observe(industryChartEl);
+    }
+    const initialIndustry = COCKPIT_DESK === "engineering" ? "建设工程" : industrySelect.value;
+    if (COCKPIT_DESK === "engineering") industrySelect.value = "建设工程";
+    renderIndustry(initialIndustry);
+    requestAnimationFrame(() => renderIndustry(currentIndustryName));
 
     function tick() {
       const now = new Date();
