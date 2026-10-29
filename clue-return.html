@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page="clue-return.html">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>线索回传</title>
+  <link rel="stylesheet" href="shell.css?v=16" />
+  <link rel="stylesheet" href="clue-detail.css?v=3" />
+  <script src="shell.js?v=19" defer></script>
+  <script src="clue-detail.js?v=2" defer></script>
+  <style>
+    :root {
+      --ink: #16324f;
+      --muted: #6d7f95;
+      --line: #e6edf5;
+      --blue: #2f78f6;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      color: var(--ink);
+      font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      background: #edf1f6;
+    }
+    html.sys-app body { background: transparent; }
+    button, input { font-family: inherit; }
+    button { cursor: pointer; }
+    .page {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .return-stat-grid {
+      flex: none;
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      gap: 12px;
+      overflow-x: auto;
+    }
+    .return-stat-card {
+      flex: 1 1 0;
+      min-width: 148px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 14px;
+      border: 1px solid #eef2f6;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .return-stat-subject {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 12px;
+      line-height: 1.35;
+      color: #6d7f95;
+    }
+    .return-stat-num {
+      font-size: 22px;
+      font-weight: 650;
+      line-height: 1.15;
+      color: #24364c;
+    }
+    .return-stat-today {
+      padding: 0 6px;
+      border-radius: 10px;
+      border: 1px solid #f3d7b0;
+      background: #fffaf4;
+      color: #e5922a;
+      font-size: 11px;
+      line-height: 18px;
+      font-weight: 650;
+    }
+    .filters, .table-card {
+      background: #fff;
+      border-radius: 8px;
+    }
+    .filters {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 18px;
+      flex-wrap: wrap;
+    }
+    .search-field {
+      flex: 1 1 280px;
+      min-width: 200px;
+      max-width: 420px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #5e7088;
+      font-size: 14px;
+    }
+    .search-field input {
+      flex: 1;
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #d7dee8;
+      border-radius: 4px;
+      font-size: 14px;
+      color: var(--ink);
+    }
+    .search-field input:focus {
+      outline: none;
+      border-color: #9ec0ff;
+      box-shadow: 0 0 0 1px #9ec0ff;
+    }
+    .btn-search, .btn-enter {
+      height: 32px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .btn-search {
+      background: var(--blue);
+      color: #fff;
+    }
+    .btn-enter {
+      margin-left: auto;
+      background: var(--blue);
+      color: #fff;
+    }
+    .table-card {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      overflow: auto;
+    }
+    table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 14px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+    th { color: #5e7088; font-weight: 650; background: #f7f9fc; }
+    td.name { white-space: normal; word-break: break-word; }
+    .cell-sub {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: #8b97a6;
+      line-height: 1.35;
+    }
+    tr.is-clue-group td { vertical-align: top; }
+    tr.is-clue-group + tr.is-clue-group td[rowspan],
+    tr.is-clue-group:first-child td[rowspan] { border-top: 0; }
+    tr.is-clue-continued td { background: #fcfdfe; }
+    .clue-return-count {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 0 6px;
+      border-radius: 4px;
+      background: #eef2f6;
+      color: #5e7088;
+      font-size: 11px;
+      line-height: 20px;
+      font-weight: 650;
+    }
+    .return-index {
+      display: inline-block;
+      margin-right: 6px;
+      padding: 0 6px;
+      border-radius: 4px;
+      background: #f0f4f8;
+      color: #6d7f95;
+      font-size: 11px;
+      line-height: 20px;
+      font-weight: 650;
+    }
+    td.ops-cell {
+      overflow: visible;
+      white-space: nowrap;
+    }
+    td.ops-cell .ops {
+      flex-wrap: nowrap;
+      gap: 12px;
+    }
+    td.case-status { white-space: nowrap; }
+    .detail-return-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .detail-return-list li + li { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e6edf5; }
+    .detail-return-list b { color: #24364c; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      height: 24px;
+      padding: 0 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .st-done { background: #eef8f3; color: #2f9e6b; }
+    .st-doing { background: #e8f3ff; color: #2f78f6; }
+    .st-wait { background: #f2f4f7; color: #8b97a6; }
+    .st-filed { background: #fff4e8; color: #d97706; }
+    .st-classic { background: #fff8e8; color: #c77d0a; border: 1px solid #f3dfa8; }
+    .link-file {
+      border: 0;
+      padding: 0;
+      background: none;
+      color: var(--blue);
+      font-size: 14px;
+      cursor: pointer;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
+      vertical-align: bottom;
+    }
+    .ops { display: flex; flex-wrap: nowrap; align-items: center; gap: 12px; }
+    .ops button {
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--blue);
+      font-size: 14px;
+    }
+    .ops button.is-muted { color: #8b97a6; cursor: default; }
+    .empty { padding: 48px 16px; text-align: center; color: var(--muted); }
+    .mask {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(18, 32, 51, 0.35);
+    }
+    .mask.is-open { display: flex; }
+    .dialog {
+      width: min(520px, calc(100vw - 32px));
+      padding: 20px 22px 18px;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 16px 40px rgba(18, 32, 51, 0.18);
+    }
+    .dialog h2 { margin: 0 0 14px; font-size: 16px; }
+    .dialog dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 10px 12px;
+      font-size: 14px;
+    }
+    .dialog dt { color: #6d7f95; }
+    .dialog dd { margin: 0; word-break: break-word; }
+    .dialog .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      color: #5e7088;
+    }
+    .dialog .field input, .dialog .field textarea {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #d7dee8;
+      border-radius: 4px;
+      font: inherit;
+      color: var(--ink);
+    }
+    .dialog .field textarea {
+      height: 72px;
+      padding: 8px 10px;
+      resize: vertical;
+    }
+    .dialog .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .dialog .actions button {
+      height: 32px;
+      padding: 0 14px;
+      border-radius: 4px;
+      border: 1px solid #d7dee8;
+      background: #fff;
+    }
+    .dialog .actions .ok {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+    .enter-dialog {
+      width: min(880px, calc(100vw - 32px));
+      max-height: calc(100vh - 40px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .enter-dialog h2 {
+      flex: none;
+      margin-bottom: 16px;
+    }
+    .enter-layout {
+      flex: 1;
+      min-height: min(400px, calc(100vh - 200px));
+      display: grid;
+      grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+      gap: 0 20px;
+      align-items: stretch;
+    }
+    .enter-aside {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding-right: 20px;
+      border-right: 1px solid #eef2f6;
+    }
+    .enter-aside-head {
+      flex: none;
+      margin-bottom: 8px;
+    }
+    .enter-aside-head .lab {
+      font-size: 14px;
+      font-weight: 650;
+      color: #24364c;
+    }
+    .enter-clue-clear {
+      height: 28px;
+      padding: 0 10px;
+      border: 1px solid #d7dee8;
+      border-radius: 4px;
+      background: #fff;
+      color: #5e7088;
+      font-size: 12px;
+    }
+    .enter-clue-clear:hover:not(:disabled) {
+      border-color: #9ec0ff;
+      color: var(--blue);
+      background: #f0f7ff;
+    }
+    .enter-clue-clear:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+    .enter-main {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+      overflow-y: auto;
+    }
+    .enter-foot-actions {
+      flex: none;
+      justify-content: flex-end;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid #eef2f6;
+    }
+    .enter-picks-block {
+      flex: none;
+      display: flex;
+      flex-direction: column;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #eef2f6;
+    }
+    .enter-picks-head {
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: #6d7f95;
+    }
+    .enter-picks-head b { color: #24364c; font-weight: 650; }
+    .enter-clue-picks {
+      --enter-pick-row-h: 44px;
+      flex: none;
+      min-height: 28px;
+      max-height: calc(var(--enter-pick-row-h) * 2 + 6px);
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 6px;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+    .enter-clue-picks.is-empty::after {
+      content: "暂未选择线索";
+      font-size: 12px;
+      color: #8b97a6;
+      line-height: 24px;
+    }
+    .enter-dialog .field > .lab {
+      font-size: 14px;
+      color: #5e7088;
+    }
+    .enter-clue-search {
+      flex: none;
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #d7dee8;
+      border-radius: 4px;
+      font: inherit;
+      font-size: 14px;
+      color: var(--ink);
+    }
+    .enter-clue-search::placeholder {
+      font-size: 14px;
+      color: #8b97a6;
+    }
+    .enter-clue-search:focus {
+      outline: none;
+      border-color: #9ec0ff;
+      box-shadow: 0 0 0 1px #9ec0ff;
+    }
+    .enter-clue-list {
+      flex: 1 1 0;
+      min-height: 96px;
+      margin-top: 8px;
+      overflow: auto;
+      border: 1px solid #eef2f6;
+      border-radius: 6px;
+      background: #fafbfc;
+    }
+    .enter-clue-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #eef2f6;
+      cursor: pointer;
+      font-size: 13px;
+      color: #24364c;
+    }
+    .enter-clue-option:last-child { border-bottom: 0; }
+    .enter-clue-option:hover { background: #f0f7ff; }
+    .enter-clue-option.is-checked { background: #e8f3ff; }
+    .enter-clue-option input { flex: none; margin-top: 3px; accent-color: var(--blue); }
+    .enter-clue-option b { display: block; font-weight: 650; line-height: 1.35; }
+    .enter-clue-option span { display: block; color: #6d7f95; font-size: 12px; line-height: 1.35; margin-top: 2px; }
+    .enter-clue-empty {
+      padding: 16px 10px;
+      text-align: center;
+      color: #8b97a6;
+      font-size: 13px;
+    }
+    .enter-clue-pick {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      max-width: 100%;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: #eef4ff;
+      color: #2f78f6;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .enter-clue-pick b {
+      font-weight: 650;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .enter-clue-pick em {
+      font-style: normal;
+      font-size: 11px;
+      color: #6d7f95;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .enter-clue-more {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      border: 0;
+      border-top: 1px solid #eef2f6;
+      background: #fafbfc;
+      color: var(--blue);
+      font-size: 13px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .enter-clue-more:hover { background: #f0f7ff; }
+    .enter-clue-end {
+      padding: 8px 10px;
+      text-align: center;
+      font-size: 12px;
+      color: #8b97a6;
+      border-top: 1px solid #eef2f6;
+    }
+    .enter-files-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .enter-file-add {
+      height: 32px;
+      padding: 0 12px;
+      border: 1px dashed #c5d8f5;
+      border-radius: 4px;
+      background: #f8fbff;
+      color: var(--blue);
+      font-size: 13px;
+    }
+    .enter-file-add:hover { background: #eef4ff; border-color: #9ec0ff; }
+    .enter-file-hint { font-size: 12px; color: #8b97a6; }
+    .enter-file-list {
+      margin: 8px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .enter-file-list:empty { display: none; }
+    .enter-file-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid #eef2f6;
+      font-size: 13px;
+    }
+    .enter-file-item b {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 500;
+      color: #24364c;
+    }
+    .enter-file-item em {
+      flex: none;
+      font-style: normal;
+      color: #8b97a6;
+      font-size: 12px;
+    }
+    .enter-file-rm {
+      flex: none;
+      width: 24px;
+      height: 24px;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: #8b97a6;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .enter-file-rm:hover { background: rgba(47, 120, 246, 0.1); color: #2f78f6; }
+    @media (max-width: 720px) {
+      .enter-layout {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+      }
+      .enter-aside {
+        padding-right: 0;
+        padding-bottom: 16px;
+        border-right: 0;
+        border-bottom: 1px solid #eef2f6;
+        max-height: none;
+      }
+      .enter-clue-list { max-height: 200px; }
+    }
+    .th-box { display: flex; align-items: center; gap: 4px; min-width: 0; }
+    .th-box > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .th-filter {
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      padding: 0;
+      border-radius: 4px;
+      background: none;
+      color: #8b97a6;
+      flex: none;
+      cursor: pointer;
+    }
+    .th-filter svg { width: 14px; height: 14px; fill: currentColor; }
+    .th-filter:hover, .th-filter.is-on { color: var(--blue); background: #eef4ff; }
+    .cell-pick {
+      display: inline;
+      max-width: 100%;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    td.name .cell-pick { white-space: normal; }
+    .cell-pick:hover, .cell-pick.is-on { color: var(--blue); }
+    .cell-pick .pill { pointer-events: none; }
+    .col-pop[hidden] { display: none; }
+    .col-pop {
+      position: fixed;
+      z-index: 40;
+      width: 260px;
+      max-height: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid #e4ebf5;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 12px 32px rgba(22, 62, 112, 0.14);
+    }
+    .col-pop strong { font-size: 13px; font-weight: 650; color: #24364c; }
+    .col-pop input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .col-list { min-height: 0; overflow: auto; display: flex; flex-direction: column; }
+    .col-list label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 32px;
+      padding: 4px 2px;
+      color: #24364c;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .col-list label:hover { color: var(--blue); }
+    .col-list span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .col-list input { accent-color: var(--blue); flex: none; }
+    .col-empty { padding: 12px 2px; color: var(--muted); font-size: 13px; }
+    .col-foot { display: flex; justify-content: flex-end; gap: 8px; }
+    .col-foot button { height: 32px; padding: 0 12px; border-radius: 6px; font-size: 13px; }
+    .col-foot .ghost { border: 0; background: none; color: #5e7088; }
+    .col-foot .ok { border: 0; background: var(--blue); color: #fff; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="return-stat-grid" id="returnStats" aria-label="回传统计"></div>
+    <form class="filters" id="filters">
+      <label class="search-field">
+        <span>线索编号/名称</span>
+        <input id="fQuery" type="search" name="q" placeholder="请输入线索编号或名称" autocomplete="off" />
+      </label>
+      <button class="btn-search" type="submit">搜索</button>
+      <button class="btn-enter" id="btnManualEnter" type="button">手动录入</button>
+    </form>
+    <section class="table-card">
+      <table>
+        <colgroup>
+          <col style="width:11%" />
+          <col style="width:16%" />
+          <col style="width:9%" />
+          <col style="width:12%" />
+          <col style="width:9%" />
+          <col style="width:11%" />
+          <col style="width:10%" />
+          <col style="width:9%" />
+          <col style="width:9%" />
+          <col style="width:14%" />
+        </colgroup>
+        <thead>
+          <tr id="tableHeadRow"></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="col-pop" id="colPop" hidden>
+        <strong id="colTitle"></strong>
+        <input id="colQuery" type="search" placeholder="搜索筛选项" autocomplete="off" />
+        <div class="col-list" id="colList"></div>
+        <div class="col-foot">
+          <button class="ghost" id="colClear" type="button">清除</button>
+          <button class="ok" id="colOk" type="button">确定</button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div class="mask" id="detailMask">
+    <div class="dialog detail-dialog" role="dialog" aria-labelledby="detailTitle">
+      <div class="detail-head">
+        <h2 id="detailTitle">线索详情</h2>
+        <button class="x" id="detailClose" type="button" aria-label="关闭">×</button>
+      </div>
+      <div class="detail-grid" id="detailGrid">
+        <div class="detail-main">
+          <section class="pane detail-summary-pane">
+            <h3>线索分析与总结</h3>
+            <p class="summary" id="detailSummary"></p>
+            <div class="link-row">
+              <button type="button" data-note="已调取该线索的主体、项目和预警关联分析。">查看线索情况分析</button>
+              <button type="button" data-note="办结报告将在结果反馈与佐证上传完成后生成。">线索办结报告</button>
+              <button type="button" data-note="核查重点：文件元数据、CA 锁办理流水、社保记录、企业间同标率。">核查指引</button>
+            </div>
+          </section>
+          <section class="pane detail-proof-pane">
+            <h3>证据材料（加密全存证）</h3>
+            <table class="proof">
+              <thead><tr><th>材料名称</th><th>类型</th><th>上传人</th><th>状态</th></tr></thead>
+              <tbody id="detailProof"></tbody>
+            </table>
+          </section>
+        </div>
+        <div class="detail-timeline-side">
+          <section class="pane detail-timeline-pane">
+            <h3>办理时间轴</h3>
+            <ol class="flow" id="detailFlow"></ol>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mask" id="enterMask">
+    <form class="dialog enter-dialog" id="enterForm" role="dialog" aria-labelledby="enterTitle">
+      <h2 id="enterTitle">手动录入回传</h2>
+      <div class="enter-layout">
+        <aside class="enter-aside" aria-label="线索选择">
+          <div class="enter-aside-head">
+            <span class="lab">线索选择</span>
+          </div>
+          <input class="enter-clue-search" id="enterClueSearch" type="search" placeholder="模糊搜索线索编号、名称" autocomplete="off" />
+          <div class="enter-clue-list" id="enterClueList" role="listbox" aria-multiselectable="true"></div>
+          <div class="enter-picks-block">
+            <div class="enter-picks-head">
+              <span>已选 <b id="enterClueCount">0</b> 条</span>
+              <button class="enter-clue-clear" id="enterClueClear" type="button" disabled>清空</button>
+            </div>
+            <div class="enter-clue-picks is-empty" id="enterCluePicks" aria-live="polite"></div>
+          </div>
+        </aside>
+        <div class="enter-main">
+          <label class="field"><span class="lab">处理单位</span><input id="enterUnit" placeholder="处理单位" /></label>
+          <label class="field"><span class="lab">处理结论</span><textarea id="enterConclusion" placeholder="请输入处理结论" required></textarea></label>
+          <div class="field">
+            <span class="lab">附件</span>
+            <div class="enter-files-head">
+              <button class="enter-file-add" id="enterFileAdd" type="button">添加附件</button>
+              <span class="enter-file-hint">支持多份文件，演示环境仅记录文件名</span>
+            </div>
+            <input id="enterFileInput" type="file" multiple hidden />
+            <ul class="enter-file-list" id="enterFileList"></ul>
+          </div>
+        </div>
+      </div>
+      <div class="actions enter-foot-actions">
+        <button type="button" id="enterCancel">取消</button>
+        <button class="ok" type="submit">确定</button>
+      </div>
+    </form>
+  </div>
+  <script>
+    const RETURN_STAT = {
+      returned: 256,
+      returnedToday: 2,
+      total: 2725,
+      filed: 30,
+      classic: 32
+    };
+    const statusTone = {
+      "待处理": "st-wait",
+      "处理中": "st-doing",
+      "已办结": "st-done",
+      "已立案": "st-filed"
+    };
+    const DEFAULT_PROCESS_UNIT = "省公共资源交易中心（监管科）";
+    const CLUE_PROFILES = {
+      "XS-20260930-021": { name: "产业园项目用印线索（特征码/CA类）", source: "模型预警", type: "市本级行为类", dept: "省住建厅", limit: "剩7天", sensitive: true },
+      "XS-20260929-019": { name: "某和项目信用生情线索", source: "投诉举报", type: "主体资质类", dept: "省财政厅", limit: "剩9天", sensitive: true },
+      "XS-20260920-017": { name: "路桥工程违法分包线索", source: "部门移送", type: "履约类", dept: "××市交通局", limit: "剩15天", sensitive: true },
+      "XS-20260920-011": { name: "模型评审违规举报线索", source: "模型预警", type: "市本级行为类", dept: "专项工作站", limit: "—", sensitive: false },
+      "YK-2026-023": { name: "项目串通投标举报线索（移送公安）", source: "双向移送", type: "行刑衔接·正向移送", dept: "××市公安局", limit: "—", sensitive: true },
+      "YK-2026-021": { name: "项目虚假资质挂靠证件（移送公安）", source: "双向移送", type: "行刑衔接·正向移送", dept: "××区公安分局", limit: "—", sensitive: true },
+      "JF-2026-015": { name: "××单位工作人员涉评标线索", source: "双向移送", type: "纪法衔接·正向移送", dept: "省纪委监委", limit: "—", sensitive: true },
+      "FX-2026-008": { name: "明招机关退回行政处理线索", source: "双向移送", type: "行刑衔接·反向移送", dept: "省住建厅（重新分办）", limit: "—", sensitive: false }
+    };
+    /** 线索主数据（可与多条回传结果关联） */
+    const clues = [
+      { id: "XS-20260930-021", name: "产业园项目用印线索", transferDate: "2026-09-28", transferDept: "省公共资源交易中心" },
+      { id: "XS-20260929-019", name: "某和项目信用类线索", transferDate: "2026-09-28", transferDept: "省公共资源交易中心" },
+      { id: "XS-20260920-017", name: "路桥工程违法分包线索", transferDate: "2026-09-22", transferDept: "贵阳市公共资源交易中心" },
+      { id: "JF-2026-015", name: "工作人员涉评标线索", transferDate: "2026-09-15", transferDept: "省公共资源交易中心" },
+      { id: "XS-20260920-011", name: "模型评审违规举报线索", transferDate: "2026-09-08", transferDept: "观山湖区交易中心" },
+      { id: "YK-2026-023", name: "项目串通投标举报线索（移送公安）", transferDate: "2026-09-06", transferDept: "省公共资源交易中心" },
+      { id: "YK-2026-021", name: "项目虚假资质挂靠线索", transferDate: "2026-09-05", transferDept: "贵阳市公共资源交易中心" },
+      { id: "FX-2026-008", name: "明招机关退回行政处理线索", transferDate: "2026-09-01", transferDept: "省公共资源交易中心" }
+    ];
+    (function appendDemoCluesForPicker() {
+      const depts = ["省公共资源交易中心", "贵阳市公共资源交易中心", "观山湖区交易中心"];
+      for (let i = 1; i <= 36; i += 1) {
+        const seq = String(i).padStart(3, "0");
+        clues.push({
+          id: "XS-202608-" + seq,
+          name: "监管线索库条目 " + seq + "（演示分批加载）",
+          transferDate: "2026-08-" + String(Math.max(1, 28 - (i % 28))).padStart(2, "0"),
+          transferDept: depts[i % depts.length]
+        });
+      }
+    })();
+    const ENTER_CLUE_PAGE = 12;
+    let enterClueVisibleCount = ENTER_CLUE_PAGE;
+    let enterSelectedClueIds = new Set();
+    let enterAttachments = [];
+    /**
+     * 回传结果：clueIds 为关联线索（多对多）
+     * - 多个 clueIds → 一回传结果（合并回传）
+     * - 同一 clueId 出现在多条 returnResults → 一线索多次回传
+     */
+    let returnResults = [
+      {
+        id: "HC-R-2026-018",
+        clueIds: ["XS-20260930-021", "XS-20260929-019"],
+        processStatus: "已办结",
+        processUnit: "省住建厅",
+        conclusion: "行政约谈并整改",
+        attachment: "结论报告.pdf",
+        returned: true,
+        classic: false,
+        returnMode: "online"
+      },
+      {
+        id: "HC-R-2026-016",
+        clueIds: ["XS-20260920-017", "JF-2026-015"],
+        processStatus: "已立案",
+        processUnit: "省纪委监委",
+        conclusion: "并案立案调查",
+        attachment: "立案通知书.pdf",
+        returned: true,
+        classic: true,
+        returnMode: "online"
+      },
+      {
+        id: "HC-R-2026-011",
+        clueIds: ["XS-20260930-021"],
+        processStatus: "处理中",
+        processUnit: "",
+        conclusion: "",
+        attachment: "",
+        returned: false,
+        classic: false,
+        returnMode: "online"
+      },
+      {
+        id: "HC-R-2026-008",
+        clueIds: ["XS-20260920-011"],
+        processStatus: "待处理",
+        processUnit: "",
+        conclusion: "",
+        attachment: "",
+        returned: false,
+        classic: false,
+        returnMode: "offline"
+      }
+    ];
+    function esc(text) {
+      return String(text).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+    }
+    function attrVal(text) {
+      return String(text).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    }
+    const FILTER_COLS = [
+      { key: "transferDept", label: "移交部门" },
+      { key: "processStatus", label: "处理状态" },
+      { key: "processUnit", label: "处理单位" },
+      { key: "conclusion", label: "结论" },
+      { key: "attachment", label: "详情附件" }
+    ];
+    const colFilters = {
+      transferDept: [],
+      processStatus: [],
+      processUnit: [],
+      conclusion: [],
+      attachment: []
+    };
+    let openFilter = "";
+    function emptyColFilters() {
+      FILTER_COLS.forEach((col) => {
+        colFilters[col.key] = [];
+      });
+    }
+    function filterIcon() {
+      return '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.8 2.8h12.4L9.4 8.1v3.4l-2.8 1.5V8.1L1.8 2.8Z"/></svg>';
+    }
+    function isOutcomePendingStatus(status) {
+      return status === "待处理" || status === "处理中";
+    }
+    function fieldValue(view, key) {
+      if (key === "transferDept") return view.clue.transferDept;
+      if (key === "processStatus") return view.ret.processStatus;
+      if (isOutcomePendingStatus(view.ret.processStatus)) {
+        if (key === "processUnit" || key === "conclusion" || key === "attachment") return "—";
+      }
+      if (key === "processUnit") return view.ret.processUnit || "—";
+      if (key === "conclusion") return view.ret.conclusion || "—";
+      if (key === "attachment") return view.ret.attachment || "—";
+      return "";
+    }
+    function colMatch(view, skipKey) {
+      return FILTER_COLS.every((col) => {
+        if (col.key === skipKey) return true;
+        const picked = colFilters[col.key] || [];
+        if (!picked.length) return true;
+        return picked.indexOf(String(fieldValue(view, col.key))) >= 0;
+      });
+    }
+    function queryMatch(view) {
+      const q = document.getElementById("fQuery").value.trim().toLowerCase();
+      if (!q) return true;
+      const clue = view.clue;
+      const ret = view.ret;
+      return (
+        clue.id.toLowerCase().includes(q) ||
+        clue.name.toLowerCase().includes(q) ||
+        ret.id.toLowerCase().includes(q)
+      );
+    }
+    function matched(view) {
+      return queryMatch(view) && colMatch(view);
+    }
+    function isPickActive(col, value) {
+      const picked = colFilters[col] || [];
+      return picked.length && picked.indexOf(String(value)) >= 0;
+    }
+    function pickCell(col, value, innerHtml) {
+      const str = String(value);
+      const picked = colFilters[col] || [];
+      const active = picked.length === 1 && picked[0] === str;
+      const on = isPickActive(col, str) ? " is-on" : "";
+      const title = active ? "再次点击取消筛选" : "按此筛选";
+      return (
+        '<button type="button" class="cell-pick' + on + '" data-col="' + col + '" data-val="' + attrVal(str) + '" title="' + title + '">' +
+        (innerHtml != null ? innerHtml : esc(str)) +
+        "</button>"
+      );
+    }
+    function toggleColFilter(col, value) {
+      value = String(value);
+      const picked = colFilters[col] || [];
+      if (picked.length === 1 && picked[0] === value) colFilters[col] = [];
+      else colFilters[col] = [value];
+      closeColPop();
+      render();
+    }
+    function closeColPop() {
+      openFilter = "";
+      document.getElementById("colPop").hidden = true;
+    }
+    function placeColPop(anchor) {
+      const pop = document.getElementById("colPop");
+      const rect = anchor.getBoundingClientRect();
+      const margin = 8;
+      const width = pop.offsetWidth;
+      const height = pop.offsetHeight;
+      let left = Math.min(Math.max(margin, rect.right - width), window.innerWidth - width - margin);
+      let top = rect.bottom + 6;
+      if (top + height > window.innerHeight - margin) top = Math.max(margin, rect.top - height - 6);
+      pop.style.left = left + "px";
+      pop.style.top = top + "px";
+    }
+    function fillColPop(key) {
+      const col = FILTER_COLS.find((item) => item.key === key);
+      document.getElementById("colTitle").textContent = col ? col.label : "";
+      const query = document.getElementById("colQuery").value.trim();
+      const picked = colFilters[key] || [];
+      const values = [];
+      expandViewRows().forEach((view) => {
+        if (!queryMatch(view) || !colMatch(view, key)) return;
+        const value = String(fieldValue(view, key));
+        if (values.indexOf(value) < 0) values.push(value);
+      });
+      values.sort((a, b) => {
+        const ap = picked.indexOf(a) >= 0 ? 0 : 1;
+        const bp = picked.indexOf(b) >= 0 ? 0 : 1;
+        if (ap !== bp) return ap - bp;
+        return String(a).localeCompare(String(b), "zh");
+      });
+      const list = document.getElementById("colList");
+      list.replaceChildren();
+      const shown = values.filter((value) => !query || String(value).indexOf(query) >= 0);
+      if (!shown.length) {
+        const empty = document.createElement("div");
+        empty.className = "col-empty";
+        empty.textContent = "没有匹配项";
+        list.appendChild(empty);
+        return;
+      }
+      shown.forEach((value) => {
+        const label = document.createElement("label");
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.value = value;
+        input.checked = picked.indexOf(value) >= 0;
+        const span = document.createElement("span");
+        span.textContent = value;
+        span.title = value;
+        label.appendChild(input);
+        label.appendChild(span);
+        list.appendChild(label);
+      });
+    }
+    function openColFilter(key, anchor) {
+      const pop = document.getElementById("colPop");
+      if (openFilter === key && !pop.hidden) {
+        closeColPop();
+        return;
+      }
+      openFilter = key;
+      document.getElementById("colQuery").value = "";
+      pop.hidden = false;
+      fillColPop(key);
+      placeColPop(anchor);
+    }
+    function syncColPop() {
+      if (!openFilter) return;
+      const anchor = document.querySelector('[data-filter="' + openFilter + '"]');
+      if (!anchor) return;
+      fillColPop(openFilter);
+      placeColPop(anchor);
+    }
+    function renderHead() {
+      const plain = [
+        "线索编号",
+        "线索名称",
+        "移交日期"
+      ];
+      let html = plain.map((label) => "<th>" + label + "</th>").join("");
+      html += FILTER_COLS.map((col) => {
+        const on = (colFilters[col.key] || []).length ? " is-on" : "";
+        return (
+          '<th><div class="th-box"><span>' + esc(col.label) + '</span>' +
+          '<button type="button" class="th-filter' + on + '" data-filter="' + col.key + '" aria-label="筛选' + esc(col.label) + '">' +
+          filterIcon() + "</button></div></th>"
+        );
+      }).join("");
+      html += "<th>案例状态</th><th>操作</th>";
+      document.getElementById("tableHeadRow").innerHTML = html;
+    }
+    function clueById(id) {
+      return clues.find((row) => row.id === id);
+    }
+    function findReturn(id) {
+      return returnResults.find((row) => row.id === id);
+    }
+    function rowKey(returnId, clueId) {
+      return returnId + "::" + clueId;
+    }
+    function expandViewRows() {
+      const out = [];
+      returnResults.forEach((ret) => {
+        ret.clueIds.forEach((clueId) => {
+          const clue = clueById(clueId);
+          if (!clue) return;
+          out.push({ key: rowKey(ret.id, clueId), clue: clue, ret: ret });
+        });
+      });
+      return out;
+    }
+    function returnsForClue(clueId) {
+      return returnResults
+        .filter((ret) => ret.clueIds.includes(clueId))
+        .slice()
+        .sort((a, b) => a.id.localeCompare(b.id));
+    }
+    function groupViewsByClue(list) {
+      const order = [];
+      const map = new Map();
+      list.forEach((view) => {
+        if (!map.has(view.clue.id)) {
+          order.push(view.clue.id);
+          map.set(view.clue.id, []);
+        }
+        map.get(view.clue.id).push(view);
+      });
+      return order.map((clueId) => {
+        const views = map.get(clueId).slice().sort((a, b) => a.ret.id.localeCompare(b.ret.id));
+        return { clueId: clueId, views: views };
+      });
+    }
+    function renderStats() {
+      const s = RETURN_STAT;
+      document.getElementById("returnStats").innerHTML =
+        '<div class="return-stat-card"><span class="return-stat-subject">回传线索数<span class="return-stat-today">今日 ' + s.returnedToday + "</span></span>" +
+        '<span class="return-stat-num">' + s.returned + "</span></div>" +
+        '<div class="return-stat-card"><span class="return-stat-subject">线索总数</span><span class="return-stat-num">' + s.total + "</span></div>" +
+        '<div class="return-stat-card"><span class="return-stat-subject">已立案</span><span class="return-stat-num">' + s.filed + "</span></div>" +
+        '<div class="return-stat-card"><span class="return-stat-subject">经典案例</span><span class="return-stat-num">' + s.classic + "</span></div>";
+    }
+    function renderReturnRow(view, opts) {
+      const clue = view.clue;
+      const ret = view.ret;
+      const st = statusTone[ret.processStatus] || "st-wait";
+      const outcomeOpen = isOutcomePendingStatus(ret.processStatus);
+      const unitCell = outcomeOpen ? "—" : pickCell("processUnit", ret.processUnit || "—");
+      const conclusionCell = outcomeOpen ? "—" : pickCell("conclusion", ret.conclusion || "—");
+      const attachVal = ret.attachment || "—";
+      const fileCell = outcomeOpen || attachVal === "—" ? "—" : pickCell("attachment", attachVal);
+      let classicBtn;
+      if (!ret.returned) {
+        classicBtn = '<button type="button" class="is-muted" disabled title="需先完成回传">加入经典案例</button>';
+      } else if (ret.classic) {
+        classicBtn = '<button type="button" data-act="unclassic" data-return-id="' + esc(ret.id) + '">撤销经典案例</button>';
+      } else {
+        classicBtn = '<button type="button" data-act="classic" data-return-id="' + esc(ret.id) + '">加入经典案例</button>';
+      }
+      const caseCell = ret.classic
+        ? '<span class="pill st-classic">经典案例</span>'
+        : "—";
+      const returnBtn = ret.returned
+        ? ""
+        : '<button type="button" data-act="return" data-return-id="' + esc(ret.id) + '">回传</button>';
+      const mergeSub =
+        ret.clueIds.length > 1
+          ? '<span class="cell-sub">合并回传 · 共 ' + ret.clueIds.length + " 条线索</span>"
+          : "";
+      const indexBadge = opts.totalReturns > 1
+        ? '<span class="return-index">结论 ' + opts.index + "/" + opts.totalReturns + "</span>"
+        : "";
+      const clueBlock = opts.isFirst
+        ? "<td rowspan=\"" + opts.rowSpan + "\">" + esc(clue.id) + "</td>" +
+          '<td class="name" rowspan="' + opts.rowSpan + '">' + esc(clue.name) +
+          (opts.totalAllReturns > 1
+            ? '<span class="clue-return-count">' + opts.totalAllReturns + " 个回传结论" +
+              (opts.rowSpan < opts.totalAllReturns ? "（当前显示 " + opts.rowSpan + "）" : "") +
+              "</span>"
+            : "") +
+          "</td>" +
+          "<td rowspan=\"" + opts.rowSpan + "\">" + esc(clue.transferDate) + "</td>" +
+          '<td rowspan="' + opts.rowSpan + '">' + pickCell("transferDept", clue.transferDept) + "</td>"
+        : "";
+      const trClass = opts.isFirst ? "is-clue-group" : "is-clue-continued";
+      return (
+        '<tr class="' + trClass + '">' +
+        clueBlock +
+        "<td>" + pickCell("processStatus", ret.processStatus, '<span class="pill ' + st + '">' + esc(ret.processStatus) + "</span>") + "</td>" +
+        "<td>" + unitCell + "</td>" +
+        "<td>" + indexBadge + conclusionCell +
+        '<span class="cell-sub">' + esc(ret.id) + mergeSub + "</span></td>" +
+        "<td>" + fileCell + "</td>" +
+        '<td class="case-status">' + caseCell + "</td>" +
+        '<td class="ops-cell"><div class="ops">' +
+        '<button type="button" data-act="detail" data-row-key="' + esc(view.key) + '">查看</button>' +
+        returnBtn + classicBtn +
+        "</div></td></tr>"
+      );
+    }
+    function renderTable() {
+      const body = document.getElementById("rows");
+      const list = expandViewRows().filter(matched);
+      if (!list.length) {
+        body.innerHTML = '<tr><td class="empty" colspan="10">没有匹配的线索</td></tr>';
+        return;
+      }
+      const groups = groupViewsByClue(list);
+      body.innerHTML = groups.map((group) => {
+        const allForClue = returnsForClue(group.clueId);
+        const rowSpan = group.views.length;
+        const totalAll = allForClue.length;
+        return group.views.map((view, idx) => {
+          return renderReturnRow(view, {
+            isFirst: idx === 0,
+            rowSpan: rowSpan,
+            index: idx + 1,
+            totalReturns: rowSpan,
+            totalAllReturns: totalAll
+          });
+        }).join("");
+      }).join("");
+      syncColPop();
+    }
+    function render() {
+      renderStats();
+      renderHead();
+      renderTable();
+    }
+    function findView(key) {
+      const parts = String(key).split("::");
+      if (parts.length !== 2) return null;
+      const ret = findReturn(parts[0]);
+      const clue = clueById(parts[1]);
+      if (!ret || !clue || !ret.clueIds.includes(clue.id)) return null;
+      return { key: key, clue: clue, ret: ret };
+    }
+    function buildClueDetailItem(view) {
+      const clue = view.clue;
+      const ret = view.ret;
+      const profile = CLUE_PROFILES[clue.id] || {};
+      const handleMap = { "待处理": "待办理", "处理中": "办理中", "已办结": "已办理", "已立案": "已办理" };
+      const handoff = ret.returnMode === "offline" ? "线下移交" : "线上移交";
+      return {
+        id: clue.id,
+        name: profile.name || clue.name,
+        source: profile.source || "模型预警",
+        type: profile.type || "程序类",
+        dept: profile.dept || clue.transferDept,
+        limit: profile.limit || "—",
+        handoff: handoff,
+        handle: handleMap[ret.processStatus] || "",
+        sensitive: !!profile.sensitive
+      };
+    }
+    function openClueDetailFromReturn(view) {
+      if (window.ClueDetail && typeof window.ClueDetail.open === "function") {
+        window.ClueDetail.open(buildClueDetailItem(view));
+      }
+    }
+    document.getElementById("filters").addEventListener("submit", (event) => {
+      event.preventDefault();
+      render();
+    });
+    document.getElementById("tableHeadRow").addEventListener("click", (event) => {
+      const filterBtn = event.target.closest("[data-filter]");
+      if (!filterBtn) return;
+      openColFilter(filterBtn.dataset.filter, filterBtn);
+    });
+    document.getElementById("colQuery").addEventListener("input", () => {
+      if (openFilter) fillColPop(openFilter);
+    });
+    document.getElementById("colOk").addEventListener("click", () => {
+      if (!openFilter) return;
+      colFilters[openFilter] = [...document.querySelectorAll("#colList input:checked")].map((input) => input.value);
+      closeColPop();
+      render();
+    });
+    document.getElementById("colClear").addEventListener("click", () => {
+      if (!openFilter) return;
+      colFilters[openFilter] = [];
+      fillColPop(openFilter);
+    });
+    document.addEventListener("click", (event) => {
+      if (!openFilter) return;
+      if (event.target.closest("#colPop") || event.target.closest("[data-filter]")) return;
+      closeColPop();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && openFilter) closeColPop();
+    });
+    function fuzzyMatchClue(text, query) {
+      const hay = String(text).toLowerCase();
+      const q = query.trim().toLowerCase();
+      if (!q) return true;
+      if (hay.includes(q)) return true;
+      let at = 0;
+      for (let i = 0; i < q.length; i += 1) {
+        at = hay.indexOf(q[i], at);
+        if (at < 0) return false;
+        at += 1;
+      }
+      return true;
+    }
+    function clueSearchHaystack(clue) {
+      return clue.id + " " + clue.name + " " + (clue.transferDept || "");
+    }
+    function paintEnterCluePicks() {
+      const box = document.getElementById("enterCluePicks");
+      const ids = [...enterSelectedClueIds];
+      const clearBtn = document.getElementById("enterClueClear");
+      const countEl = document.getElementById("enterClueCount");
+      if (countEl) countEl.textContent = String(ids.length);
+      if (clearBtn) clearBtn.disabled = ids.length === 0;
+      box.classList.toggle("is-empty", ids.length === 0);
+      if (!ids.length) {
+        box.innerHTML = "";
+        return;
+      }
+      box.innerHTML = ids.map((id) => {
+        const clue = clueById(id);
+        const title = clue ? clue.id + " " + clue.name : id;
+        if (!clue) {
+          return '<span class="enter-clue-pick" title="' + esc(title) + '"><b>' + esc(id) + "</b></span>";
+        }
+        return (
+          '<span class="enter-clue-pick" title="' + esc(title) + '"><b>' + esc(clue.id) + "</b><em>" + esc(clue.name) + "</em></span>"
+        );
+      }).join("");
+    }
+    function filteredEnterClues() {
+      const query = document.getElementById("enterClueSearch").value;
+      return clues.filter((clue) => fuzzyMatchClue(clueSearchHaystack(clue), query));
+    }
+    function clearEnterClueSelection() {
+      if (!enterSelectedClueIds.size) return;
+      enterSelectedClueIds.clear();
+      paintEnterCluePicks();
+      renderEnterClueList(false);
+    }
+    function loadMoreEnterClues() {
+      const total = filteredEnterClues().length;
+      if (enterClueVisibleCount >= total) return;
+      enterClueVisibleCount = Math.min(total, enterClueVisibleCount + ENTER_CLUE_PAGE);
+      renderEnterClueList(false);
+    }
+    function renderEnterClueList(resetPage) {
+      if (resetPage) enterClueVisibleCount = ENTER_CLUE_PAGE;
+      const list = filteredEnterClues();
+      const box = document.getElementById("enterClueList");
+      if (!list.length) {
+        box.innerHTML = '<div class="enter-clue-empty">没有匹配的线索</div>';
+        return;
+      }
+      const slice = list.slice(0, enterClueVisibleCount);
+      let html = slice.map((clue) => {
+        const checked = enterSelectedClueIds.has(clue.id);
+        return (
+          '<label class="enter-clue-option' + (checked ? " is-checked" : "") + '">' +
+          '<input type="checkbox" value="' + attrVal(clue.id) + '"' + (checked ? " checked" : "") + " />" +
+          "<div><b>" + esc(clue.id) + "</b><span>" + esc(clue.name) + "</span></div></label>"
+        );
+      }).join("");
+      const remain = list.length - slice.length;
+      if (remain > 0) {
+        html += '<button type="button" class="enter-clue-more" data-enter-load-more>加载更多（还有 ' + remain + " 条）</button>";
+      } else if (list.length > ENTER_CLUE_PAGE) {
+        html += '<div class="enter-clue-end">已加载全部 ' + list.length + " 条</div>";
+      }
+      box.innerHTML = html;
+    }
+    function openEnterDialog() {
+      enterSelectedClueIds = new Set();
+      enterAttachments = [];
+      enterClueVisibleCount = ENTER_CLUE_PAGE;
+      document.getElementById("enterForm").reset();
+      document.getElementById("enterUnit").value = DEFAULT_PROCESS_UNIT;
+      document.getElementById("enterClueSearch").value = "";
+      paintEnterFiles();
+      renderEnterClueList(true);
+      paintEnterCluePicks();
+      document.getElementById("enterMask").classList.add("is-open");
+      document.getElementById("enterClueSearch").focus();
+    }
+    function formatFileSize(bytes) {
+      if (!bytes) return "0 B";
+      if (bytes < 1024) return bytes + " B";
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+      return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    }
+    function paintEnterFiles() {
+      document.getElementById("enterFileList").innerHTML = enterAttachments.map((file, index) => {
+        return '<li class="enter-file-item"><b title="' + esc(file.name) + '">' + esc(file.name) + '</b><em>' + esc(formatFileSize(file.size)) +
+          '</em><button type="button" class="enter-file-rm" data-enter-file-rm="' + index + '" aria-label="移除">×</button></li>';
+      }).join("");
+    }
+    function attachmentLabelFromFiles(files) {
+      if (!files.length) return "—";
+      if (files.length === 1) return files[0].name;
+      return files[0].name + " 等" + files.length + "份";
+    }
+    document.getElementById("btnManualEnter").addEventListener("click", openEnterDialog);
+    document.getElementById("enterCancel").addEventListener("click", () => {
+      document.getElementById("enterMask").classList.remove("is-open");
+    });
+    document.getElementById("enterClueClear").addEventListener("click", clearEnterClueSelection);
+    document.getElementById("enterClueSearch").addEventListener("input", () => renderEnterClueList(true));
+    document.getElementById("enterClueList").addEventListener("click", (event) => {
+      if (event.target.closest("[data-enter-load-more]")) {
+        loadMoreEnterClues();
+      }
+    });
+    document.getElementById("enterClueList").addEventListener("scroll", () => {
+      const box = document.getElementById("enterClueList");
+      if (box.scrollTop + box.clientHeight >= box.scrollHeight - 28) loadMoreEnterClues();
+    });
+    document.getElementById("enterClueList").addEventListener("change", (event) => {
+      const input = event.target.closest('input[type="checkbox"]');
+      if (!input) return;
+      if (input.checked) enterSelectedClueIds.add(input.value);
+      else enterSelectedClueIds.delete(input.value);
+      paintEnterCluePicks();
+      renderEnterClueList(false);
+    });
+    document.getElementById("enterFileAdd").addEventListener("click", () => {
+      document.getElementById("enterFileInput").click();
+    });
+    document.getElementById("enterFileInput").addEventListener("change", (event) => {
+      const picked = [...event.target.files];
+      enterAttachments = enterAttachments.concat(picked);
+      event.target.value = "";
+      paintEnterFiles();
+    });
+    document.getElementById("enterFileList").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-enter-file-rm]");
+      if (!button) return;
+      const index = Number(button.dataset.enterFileRm);
+      if (Number.isNaN(index)) return;
+      enterAttachments.splice(index, 1);
+      paintEnterFiles();
+    });
+    document.getElementById("enterForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const clueIds = [...enterSelectedClueIds];
+      if (!clueIds.length) {
+        window.alert("请至少选择一条线索。");
+        return;
+      }
+      const conclusion = document.getElementById("enterConclusion").value.trim();
+      if (!conclusion) {
+        window.alert("请填写处理结论。");
+        return;
+      }
+      const retSeq = String(returnResults.length + 1).padStart(3, "0");
+      const fileNames = enterAttachments.map((file) => file.name);
+      returnResults.unshift({
+        id: "HC-R-2026-" + retSeq,
+        clueIds: clueIds,
+        processStatus: "待处理",
+        processUnit: document.getElementById("enterUnit").value.trim() || DEFAULT_PROCESS_UNIT,
+        conclusion: conclusion,
+        attachment: attachmentLabelFromFiles(enterAttachments),
+        attachmentNames: fileNames,
+        returned: false,
+        classic: false,
+        returnMode: "online"
+      });
+      document.getElementById("enterMask").classList.remove("is-open");
+      render();
+    });
+    document.getElementById("rows").addEventListener("click", (event) => {
+      const pick = event.target.closest(".cell-pick");
+      if (pick) {
+        toggleColFilter(pick.dataset.col, pick.dataset.val);
+        return;
+      }
+      const btn = event.target.closest("button[data-act]");
+      if (!btn || btn.disabled) return;
+      const act = btn.dataset.act;
+      if (act === "detail") {
+        const view = findView(btn.dataset.rowKey);
+        if (view) openClueDetailFromReturn(view);
+        return;
+      }
+      const ret = findReturn(btn.dataset.returnId);
+      if (!ret) return;
+      if (act === "return") {
+        const clueLabels = ret.clueIds.map((cid) => {
+          const c = clueById(cid);
+          return c ? c.name : cid;
+        }).join("、");
+        if (window.confirm("确认回传结果「" + ret.id + "」？关联线索：" + clueLabels)) {
+          ret.returned = true;
+          if (ret.processStatus === "待处理") ret.processStatus = "已办结";
+          render();
+        }
+      } else if (act === "classic") {
+        if (!ret.returned) {
+          window.alert("请先完成回传，再加入经典案例。");
+          return;
+        }
+        ret.classic = true;
+        RETURN_STAT.classic += 1;
+        render();
+      } else if (act === "unclassic") {
+        if (window.confirm("确认撤销该回传结果的经典案例标记？")) {
+          ret.classic = false;
+          RETURN_STAT.classic = Math.max(0, RETURN_STAT.classic - 1);
+          render();
+        }
+      }
+    });
+    [document.getElementById("detailMask"), document.getElementById("enterMask")].forEach((mask) => {
+      mask.addEventListener("click", (event) => {
+        if (event.target === mask) mask.classList.remove("is-open");
+      });
+    });
+    render();
+  </script>
+</body>
+</html>

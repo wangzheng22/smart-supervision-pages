@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache" />
+  <title>招标代理视角</title>
+  <style>
+    :root { --ink: #16324f; --muted: #6d7f95; --risk: #ef4d4f; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      color: var(--ink);
+      font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      background: #f4f7fb;
+    }
+    a { font-family: inherit; color: inherit; }
+    .topbar {
+      flex: none;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 12px;
+      background: #fff;
+      border-bottom: 1px solid #e6eaf0;
+    }
+    .brand { display: flex; align-items: center; line-height: 0; }
+    .logo { width: 24px; height: 24px; object-fit: contain; display: block; }
+    .subject { font-size: 16px; font-weight: 650; color: #24364c; }
+    .hint { font-size: 12px; color: var(--muted); }
+    .back {
+      margin-left: auto;
+      height: 32px;
+      padding: 0 12px;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
+      background: #fff;
+      color: #3d4e64;
+      font-size: 13px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    .stage { position: relative; flex: 1; min-height: 0; }
+    html.is-embed .topbar { display: none; }
+    html.is-embed body { background: #f4f7fb; }
+    svg { display: block; width: 100%; height: 100%; }
+    .node { cursor: pointer; }
+    .node.is-on text { fill: #1f6feb; }
+    .node.is-on circle { stroke: #1f6feb; stroke-width: 3px; }
+    .legend {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      display: flex;
+      gap: 14px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 6px 16px rgba(22, 62, 112, 0.08);
+      color: #5e7088;
+      font-size: 12px;
+    }
+    .legend i { display: inline-block; width: 22px; height: 3px; margin-right: 6px; border-radius: 3px; vertical-align: middle; }
+    .legend .n { background: #8aa0b8; }
+    .legend .w { background: var(--risk); }
+  </style>
+  <script>if (new URLSearchParams(location.search).get("embed") === "1") document.documentElement.classList.add("is-embed");</script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="cockpit.html" title="返回首页"><img class="logo" src="logo.png" alt="工程交易" /></a>
+    <div class="subject">招标代理视角</div>
+    <div class="hint">左侧员工，右侧代理项目</div>
+    <a class="back" id="backInsight" href="insight.html">返回概览视图</a>
+  </header>
+  <div class="stage" id="stage">
+    <svg id="chart"></svg>
+    <div class="legend"><span><i class="n"></i>对应关系</span><span><i class="w"></i>预警关系</span></div>
+  </div>
+  <script src="mock-data.js?v=133"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const story = window.GUIZHOU && GUIZHOU.story;
+    const agencyName = params.get("agency") || (story && story.agency) || "贵州恒信招标代理有限公司";
+    document.getElementById("backInsight").href = "insight.html" + location.search;
+
+    const staff = (story && story.agency === agencyName && story.staff && story.staff.length)
+      ? story.staff
+      : ((window.GUIZHOU && GUIZHOU.peopleByUnit && GUIZHOU.peopleByUnit[agencyName]) || [
+      { name: "曾雨欣", role: "总经理" },
+      { name: "林雅琴", role: "项目经理" }
+    ]);
+    const projects = (window.GUIZHOU ? GUIZHOU.indexProjects.filter((item) => item.agency === agencyName) : []).map((item, index) => ({
+      name: item.name,
+      current: index === 0,
+      warn: item.level === "高风险"
+    }));
+    if (!projects.length) projects.push({ name: agencyName, current: true });
+
+    const svg = document.getElementById("chart");
+    const stage = document.getElementById("stage");
+
+    function polar(cx, cy, r, deg) {
+      const a = deg * Math.PI / 180;
+      return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r };
+    }
+
+    function draw() {
+      const width = stage.clientWidth;
+      const height = stage.clientHeight;
+      svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+      const cx = width * 0.36;
+      const cy = height * 0.5;
+      const hub = Math.min(78, height * 0.09);
+      const arcR = Math.min(width * 0.3, height * 0.4);
+      const parts = [];
+
+      staff.forEach((person, index) => {
+        const y = cy + (index - (staff.length - 1) / 2) * Math.min(64, (height - 140) / staff.length);
+        const from = { x: 196, y: y };
+        const deg = 168 + (index - (staff.length - 1) / 2) * 7;
+        const to = polar(cx, cy, hub + 6, deg);
+        const color = person.warn ? "#ef4d4f" : "#8aa0b8";
+        parts.push('<path d="M ' + from.x + " " + from.y + " C " + (from.x + 90) + " " + from.y + ", " + (cx - hub - 70) + " " + to.y + ", " + to.x + " " + to.y + '" fill="none" stroke="' + color + '" stroke-width="' + (person.warn ? 1.8 : 1.15) + '"/>');
+      });
+
+      const arcStart = -78;
+      const arcEnd = 78;
+      projects.forEach((project, index) => {
+        const deg = projects.length === 1 ? 0 : arcStart + (arcEnd - arcStart) * index / (projects.length - 1);
+        const from = polar(cx, cy, hub + 8, deg);
+        const to = polar(cx, cy, arcR, deg);
+        const bend = deg + (index - (projects.length - 1) / 2) * 0.55;
+        const mid = polar(cx, cy, arcR * 0.58, bend);
+        const color = project.warn ? "#ef4d4f" : "#8aa0b8";
+        parts.push('<path d="M ' + from.x + " " + from.y + " Q " + mid.x + " " + mid.y + " " + to.x + " " + to.y + '" fill="none" stroke="' + color + '" stroke-width="' + (project.warn ? 1.8 : 1) + '"/>');
+      });
+
+      parts.push(
+        '<g class="node" data-node="agency" data-name="' + agencyName + '">',
+        '<circle cx="' + cx + '" cy="' + cy + '" r="' + (hub + 28) + '" fill="#f4f8fd" stroke="#d7e4f4"/>',
+        '<circle cx="' + cx + '" cy="' + cy + '" r="' + (hub + 6) + '" fill="#e7f0fb"/>',
+        '<circle cx="' + cx + '" cy="' + cy + '" r="' + (hub - 28) + '" fill="#2f78f6" fill-opacity="0.16"/>',
+        '<text x="' + cx + '" y="' + (cy - 8) + '" text-anchor="middle" fill="#6d7f95" font-size="12">招标代理</text>',
+        '<text x="' + cx + '" y="' + (cy + 16) + '" text-anchor="middle" fill="#16324f" font-size="15" font-weight="650">' + agencyName + "</text>",
+        "</g>"
+      );
+
+      staff.forEach((person, index) => {
+        const y = cy + (index - (staff.length - 1) / 2) * Math.min(64, (height - 140) / staff.length);
+        const staffNode = { "郑凯": "lp-a", "林夏": "st-a1", "吴迪": "st-a2", "何倩": "st-a3" }[person.name] || "";
+        parts.push(
+          '<g class="node" data-node="' + staffNode + '" data-name="' + person.name + '">',
+          '<text x="28" y="' + (y - 6) + '" fill="#16324f" font-size="15" font-weight="650">' + person.name + "</text>",
+          '<text x="28" y="' + (y + 14) + '" fill="#6d7f95" font-size="12">' + person.role + "</text>",
+          '<circle cx="188" cy="' + y + '" r="4" fill="' + (person.warn ? "#ef4d4f" : "#2f78f6") + '"/>',
+          "</g>"
+        );
+      });
+
+      projects.forEach((project, index) => {
+        const deg = projects.length === 1 ? 0 : arcStart + (arcEnd - arcStart) * index / (projects.length - 1);
+        const at = polar(cx, cy, arcR + 10, deg);
+        const color = project.warn ? "#c43745" : (project.current ? "#1f6feb" : "#16324f");
+        const projectNode = { "翔安大桥工程": "project", "海沧海底隧道工程": "p3", "翔安机场市政工程": "p4" }[project.name] || "";
+        parts.push(
+          '<g class="node" data-node="' + projectNode + '" data-name="' + project.name + '">',
+          '<circle cx="' + polar(cx, cy, arcR, deg).x + '" cy="' + polar(cx, cy, arcR, deg).y + '" r="' + (project.warn ? 4.5 : 3.2) + '" fill="' + (project.warn ? "#ef4d4f" : "#8aa0b8") + '"/>',
+          '<text x="' + at.x + '" y="' + at.y + '" fill="' + color + '" font-size="12" font-weight="' + (project.current || project.warn ? "650" : "500") + '" transform="rotate(' + deg + " " + at.x + " " + at.y + ')" text-anchor="start">' + project.name + "</text>",
+          "</g>"
+        );
+      });
+
+      svg.innerHTML = parts.join("");
+      const focus = params.get("focus") || "";
+      const id = params.get("node") || "";
+      let best = null;
+      let bestScore = 0;
+      svg.querySelectorAll(".node").forEach((el) => {
+        const nodeName = el.getAttribute("data-name") || "";
+        const nodeId = el.getAttribute("data-node") || "";
+        let score = 0;
+        if (id && nodeId && nodeId === id) score = 1000;
+        else if (focus && (nodeName === focus || focus.indexOf(nodeName) >= 0 || nodeName.indexOf(focus) >= 0)) score = nodeName.length;
+        if (score > bestScore) {
+          bestScore = score;
+          best = el;
+        }
+      });
+      if (best) best.classList.add("is-on");
+    }
+
+    function openDetail(id, name) {
+      const next = new URLSearchParams(params);
+      next.delete("embed");
+      next.delete("view");
+      if (id) next.set("node", id);
+      if (name) next.set("focus", name);
+      const href = "analysis.html?" + next.toString();
+      if (window.parent !== window) window.parent.location.href = href;
+      else location.href = href;
+    }
+    svg.addEventListener("dblclick", (event) => {
+      const node = event.target.closest(".node");
+      if (!node) return;
+      openDetail(node.getAttribute("data-node") || "", node.getAttribute("data-name") || "");
+    });
+
+    draw();
+    window.addEventListener("resize", draw);
+  </script>
+</body>
+</html>
