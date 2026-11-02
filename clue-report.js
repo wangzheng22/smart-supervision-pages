@@ -7,6 +7,165 @@
       .replace(/"/g, "&quot;");
   }
 
+  function groupCluesByProject(clues) {
+    const groups = new Map();
+    (clues || []).forEach((item) => {
+      const pid = item.projectId || "__default__";
+      const pname = item.projectName || "当前项目";
+      if (!groups.has(pid)) groups.set(pid, { id: pid, name: pname, items: [] });
+      groups.get(pid).items.push(item);
+    });
+    return Array.from(groups.values());
+  }
+
+  function clueLevelTone(level) {
+    const text = String(level || "");
+    if (text.indexOf("中") >= 0) return " mid";
+    if (text.indexOf("低") >= 0) return " low";
+    return "";
+  }
+
+  function renderClueItemHtml(item, escFn, withModel) {
+    const tone = clueLevelTone(item.level);
+    const folded = item.open ? "" : " is-folded";
+    const steps = (item.steps || []).map((step) => "<li>" + escFn(step) + "</li>").join("");
+    let analysis = "";
+    if (withModel && item.model) {
+      analysis =
+        '<div class="analysis-row"><p class="clue-line"><em>分析</em>' + escFn(item.model) +
+        '</p><button type="button" class="model-toggle" data-toggle-clue="' + escFn(item.uid) +
+        '" aria-expanded="' + (item.open ? "true" : "false") + '" aria-label="' +
+        (item.open ? "收起分析" : "展开分析") + '"><i class="chev" aria-hidden="true"></i></button></div>' +
+        (steps ? '<div class="model-body"><ol>' + steps + "</ol></div>" : "");
+    } else if (item.model) {
+      analysis = '<p class="clue-line"><em>分析</em>' + escFn(item.model) + "</p>";
+    }
+    const delBtn = item.manual
+      ? '<button type="button" class="clue-del" data-remove-clue="' + escFn(item.uid) + '">删除</button>'
+      : '<button type="button" class="clue-del" data-exclude-clue="' + escFn(item.alertId) + '" title="从本报告隐藏">隐藏</button>';
+    return (
+      '<article class="clue-item' + tone + folded + '"><div class="clue-top"><span class="sev">' + escFn(item.level) +
+      "</span><strong>" + escFn(item.title) + "</strong>" + delBtn + '</div><p class="clue-line"><em>涉及主体</em>' +
+      escFn((item.whoNames || []).join("、")) + '</p><p class="clue-line"><em>事项</em>' + escFn(item.note || "待补充原因") +
+      "</p>" + analysis + "</article>"
+    );
+  }
+
+  function renderProcessBodyHtml(clues, options) {
+    const escFn = (options && options.esc) || esc;
+    const projectFold = (options && options.projectFold) || {};
+    const withModel = !options || options.withModel !== false;
+    if (!clues || !clues.length) {
+      return '<p class="process-empty">当前图区无亮显预警，请在图中点选主体或预警卡片</p>';
+    }
+    const groups = groupCluesByProject(clues);
+    if (groups.length <= 1) {
+      return groups[0].items.map((item) => renderClueItemHtml(item, escFn, withModel)).join("");
+    }
+    return groups.map((group) => {
+      const collapsed = projectFold[group.id] === true;
+      return (
+        '<section class="report-project-group' + (collapsed ? " is-collapsed" : "") + '">' +
+        '<button type="button" class="report-project-head" data-toggle-project="' + escFn(group.id) + '">' +
+        '<i class="report-project-chev" aria-hidden="true"></i><span class="report-project-name">' + escFn(group.name) +
+        '</span><span class="report-project-count">' + group.items.length + " 张</span></button>" +
+        '<div class="report-project-body">' +
+        group.items.map((item) => renderClueItemHtml(item, escFn, withModel)).join("") +
+        "</div></section>"
+      );
+    }).join("");
+  }
+
+  function collectReportAttachAlerts(clues, options) {
+    const opts = options || {};
+    const resolveAlert = opts.resolveAlert;
+    const getGraphAlerts = opts.getGraphAlerts;
+    const pool = typeof getGraphAlerts === "function" ? getGraphAlerts() || [] : [];
+    const seen = new Set();
+    const alerts = [];
+    function push(alert) {
+      if (!alert || !alert.id || seen.has(alert.id)) return;
+      seen.add(alert.id);
+      alerts.push(alert);
+    }
+    (clues || []).forEach((clue) => {
+      if (clue && clue.attachAlert) push(clue.attachAlert);
+    });
+    if (alerts.length) return alerts;
+    if (Array.isArray(opts.alerts)) opts.alerts.forEach((item) => push(item));
+    if (alerts.length) return alerts;
+    function pick(id) {
+      if (!id) return null;
+      if (typeof resolveAlert === "function") {
+        const hit = resolveAlert(id);
+        if (hit) return hit;
+      }
+      let hit = pool.find((a) => a && a.id === id);
+      if (hit) return hit;
+      return pool.find((a) => a && (a._mergedAlertIds || []).indexOf(id) >= 0) || null;
+    }
+    (clues || []).forEach((clue) => {
+      const id = clue && clue.alertId;
+      if (!id || seen.has(id)) return;
+      const alert = pick(id);
+      if (alert) push(alert);
+    });
+    return alerts;
+  }
+
+  function renderAlertAttachHtml(clues, options) {
+    const escFn = (options && options.esc) || esc;
+    const attachContext = (options && options.attachContext) || function () { return {}; };
+    const buildMerged = (typeof global !== "undefined" && global.buildMergedWarnAttachmentForestHtml) ||
+      (typeof window !== "undefined" && window.buildMergedWarnAttachmentForestHtml);
+    const buildOne = (typeof global !== "undefined" && global.buildWarnAttachmentForestHtml) ||
+      (typeof window !== "undefined" && window.buildWarnAttachmentForestHtml);
+    const alerts = collectReportAttachAlerts(clues, options);
+    if (!alerts.length) {
+      return '<p class="report-attach-empty">当前预警卡片暂无附件清单</p>';
+    }
+    let block = "";
+    if (typeof buildMerged === "function") {
+      block = buildMerged(alerts, (alert) => attachContext(alert), escFn, { innerOnly: true });
+    } else if (typeof buildOne === "function") {
+      block = alerts.map((alert) => buildOne(alert, attachContext(alert), escFn, { innerOnly: true })).join("");
+    } else {
+      return '<p class="report-attach-empty">暂无预警附件</p>';
+    }
+    return block || '<p class="report-attach-empty">当前预警卡片暂无附件清单</p>';
+  }
+
+  function buildCluesFromAlerts(alerts, ctx) {
+    const context = ctx || {};
+    const ui = context.clueUi || (context.clueUi = {});
+    const excluded = context.excludedIds || new Set();
+    const seq = context.clueSeqRef || { n: 1 };
+    const out = [];
+    (alerts || []).forEach((alert) => {
+      const id = alert && alert.id;
+      if (!id || excluded.has(id)) return;
+      const prev = ui[id] || context.clues && context.clues.find((c) => c.alertId === id);
+      const clue = {
+        uid: (prev && prev.uid) || ("c" + seq.n++),
+        alertId: id,
+        attachAlert: alert,
+        projectId: alert.projectId || "",
+        projectName: alert.projectName || "",
+        level: alert.levelFull || alert.level || "高",
+        title: alert.title || "",
+        note: alert.note || "",
+        whoNames: (alert.whoNames || []).slice(),
+        model: alert.model || "",
+        steps: (alert.steps || []).slice(),
+        open: prev ? prev.open !== false : true
+      };
+      ui[id] = clue;
+      out.push(clue);
+    });
+    (context.manualClues || []).forEach((manual) => out.push(manual));
+    return out;
+  }
+
   function pendingClueCatalog() {
     if (Array.isArray(global.PENDING_CLUES)) return global.PENDING_CLUES;
     return (Array.isArray(global.KNOWN_CLUES) ? global.KNOWN_CLUES : []).map((item) => ({ ...item, handoff: "待移交" }));
@@ -23,25 +182,46 @@
     '<div class="clue-report-backdrop" data-cr-backdrop></div>' +
     '<aside class="clue-report-drawer" aria-labelledby="cr-reportTitle" aria-hidden="true" inert>' +
     '<div class="report-head"><h2 id="cr-reportTitle">线索报告</h2><button class="report-x" type="button" data-cr-close aria-label="关闭">×</button></div>' +
-    '<section class="report-meta" aria-label="线索基本信息"><div class="pair">' +
+    '<section class="report-fixed-top" aria-label="线索报告固定信息"><div class="pair">' +
     '<div class="field"><label class="lab" for="cr-reportClueNo">线索编号</label><input id="cr-reportClueNo" class="clue-field-input" type="text" autocomplete="off" readonly /></div>' +
     '<div class="field"><label class="lab" for="cr-reportClueName">线索名称</label><div class="clue-name-row">' +
     '<input id="cr-reportClueName" class="clue-field-input" type="text" maxlength="80" autocomplete="off" readonly />' +
     '<div class="clue-pick-wrap"><button class="clue-pick-btn" type="button" data-cr-pick aria-label="从待移交线索中选择">' +
     '<img src="assets/icon-clue-directory.png" width="18" height="18" alt="" /></button>' +
-    '<span class="clue-pick-tip" role="tooltip" hidden>点击可选已有线索</span></div></div></div></div></section>' +
-    '<section class="report-conclusion" id="cr-reportConclusionBox"><h3>描述及AI查办指引</h3>' +
-    '<textarea id="cr-reportConclusion" aria-label="描述及AI查办指引" placeholder="暂未能自动总结原因，请输入描述及查办指引"></textarea>' +
-    '<button class="report-grip" type="button" data-cr-grip aria-label="调整结论区域高度"></button></section>' +
-    '<div class="report-body"><section class="report-process">' +
-    '<div class="process-head"><h3>分析过程<b data-cr-count>0</b></h3>' +
+    '<span class="clue-pick-tip" role="tooltip" hidden>点击可选已有线索</span></div></div></div></div>' +
+    '<div class="field report-guidance-field"><label class="lab" for="cr-reportGuidance">办案指引</label>' +
+    '<textarea id="cr-reportGuidance" class="report-guidance-input" aria-label="办案指引" placeholder="将结合预警情形生成下一步建议及建议移交部门"></textarea></div></section>' +
+    '<div class="report-body"><section class="report-findings">' +
+    '<h3>发现问题</h3><textarea id="cr-reportFindings" class="report-findings-input" aria-label="发现问题" placeholder="添加预警卡片后，将自动综合预警内容"></textarea></section>' +
+    '<section class="report-process">' +
+    '<div class="process-head"><h3>预警卡片<b data-cr-count>0</b></h3>' +
     '<button class="fold-all" type="button" data-cr-fold-all><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6.2l5 4.6 5-4.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>全部展开</span></button></div>' +
     '<div class="process-body" data-cr-process></div></section>' +
-    '<section class="report-files"><h3>附件</h3><label class="attach-pick">上传附件<input type="file" data-cr-files multiple accept=".pdf,.xls,.xlsx,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.avi,.mp3,.wav,.zip,.txt,.csv,.html,.htm" /></label>' +
-    '<p class="hint">可一次选择多个文件，也能继续追加</p><ul class="file-list" data-cr-file-list></ul></section></div>' +
+    '<section class="report-files"><h3>附件</h3>' +
+    '<div class="report-attach-block"><h4 class="report-attach-subhead">预警详情附件</h4><div class="report-attach-ref" data-cr-attach-ref></div></div>' +
+    '<div class="report-attach-block report-attach-upload"><h4 class="report-attach-subhead">补充上传</h4>' +
+    '<label class="attach-pick">上传附件<input type="file" data-cr-files multiple accept=".pdf,.xls,.xlsx,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.avi,.mp3,.wav,.zip,.txt,.csv,.html,.htm" /></label>' +
+    '<p class="hint">可一次选择多个文件，也能继续追加</p><ul class="file-list" data-cr-file-list></ul></div></section></div>' +
     '<div class="report-bar"><div class="report-handoff-meta"><span class="report-handoff-lab">线索状态</span>' +
     '<span class="report-handoff-pill st-move" data-cr-handoff>待移交</span></div>' +
-    '<button class="report-handoff-btn" type="button" data-cr-handoff-btn>移交</button></div></aside>';
+    '<div class="report-bar-actions">' +
+    '<button class="report-handoff-btn" type="button" data-cr-handoff-btn>移交</button>' +
+    '<button class="report-go" type="button" data-cr-report-go>生成报告</button></div></div></aside>';
+
+  const REPORT_FORMAT_DIALOG_HTML =
+    '<dialog class="report-format-dialog" data-cr-format-dialog aria-labelledby="cr-reportFormatTitle">' +
+    '<form data-cr-format-form method="dialog">' +
+    '<div class="report-format-head"><h3 id="cr-reportFormatTitle">选择导出格式</h3>' +
+    '<button class="report-format-x" type="button" data-cr-format-close aria-label="关闭">×</button></div>' +
+    '<p class="report-format-hint">可多选，将分别生成对应文件</p>' +
+    '<label class="report-format-check report-format-check--all">' +
+    '<input type="checkbox" data-cr-format-all checked /> 全选</label>' +
+    '<div class="report-format-options">' +
+    '<label class="report-format-check"><input type="checkbox" name="crReportFormat" value="pdf" checked /> pdf</label>' +
+    '<label class="report-format-check"><input type="checkbox" name="crReportFormat" value="word" checked /> word</label></div>' +
+    '<div class="report-format-actions">' +
+    '<button class="report-format-cancel" type="button" data-cr-format-cancel>取消</button>' +
+    '<button class="report-format-go" type="submit" data-cr-format-confirm>确定生成</button></div></form></dialog>';
 
   const PICK_DIALOG_HTML =
     '<dialog class="clue-pick-dialog" data-cr-pick-dialog aria-labelledby="cr-cluePickTitle">' +
@@ -56,13 +236,18 @@
     this.files = [];
     this.generated = "";
     this.generatedAt = "";
-    this.userEdited = false;
+    this.userEditedFindings = false;
+    this.userEditedGuidance = false;
     this.clueSeq = 1;
     this.typeGen = 0;
     this.handoff = "待移交";
     this.handoffDept = "";
     this.handoffHandle = "";
     this.activeRow = null;
+    this.projectFold = {};
+    this.excludedAlertIds = new Set();
+    this.manualClues = [];
+    this.clueUi = {};
     this._initDom();
     this._bindEvents();
     this.seedClueMeta();
@@ -79,6 +264,9 @@
       if (!document.querySelector("[data-cr-pick-dialog]")) {
         document.body.insertAdjacentHTML("beforeend", PICK_DIALOG_HTML);
       }
+      if (!document.querySelector("[data-cr-format-dialog]")) {
+        document.body.insertAdjacentHTML("beforeend", REPORT_FORMAT_DIALOG_HTML);
+      }
     } else {
       this.host = document.createElement("div");
       this.host.className = "clue-report-host " + layout;
@@ -87,19 +275,27 @@
       if (!document.querySelector("[data-cr-pick-dialog]")) {
         document.body.insertAdjacentHTML("beforeend", PICK_DIALOG_HTML);
       }
+      if (!document.querySelector("[data-cr-format-dialog]")) {
+        document.body.insertAdjacentHTML("beforeend", REPORT_FORMAT_DIALOG_HTML);
+      }
     }
     this.drawer = this.host.querySelector(".clue-report-drawer");
     this.$ = (sel) => this.host.querySelector(sel);
     this.noInput = this.$("#cr-reportClueNo");
     this.nameInput = this.$("#cr-reportClueName");
-    this.conclusion = this.$("#cr-reportConclusion");
-    this.conclusionBox = this.$("#cr-reportConclusionBox");
+    this.findingsInput = this.$("#cr-reportFindings");
+    this.guidanceInput = this.$("#cr-reportGuidance");
     this.processBody = this.host.querySelector("[data-cr-process]");
     this.processCount = this.host.querySelector("[data-cr-count]");
     this.fileList = this.host.querySelector("[data-cr-file-list]");
     this.fileInput = this.host.querySelector("[data-cr-files]");
     this.handoffEl = this.host.querySelector("[data-cr-handoff]");
     this.handoffBtn = this.host.querySelector("[data-cr-handoff-btn]");
+    this.reportGoBtn = this.host.querySelector("[data-cr-report-go]");
+    this.formatDialog = document.querySelector("[data-cr-format-dialog]");
+    this.formatForm = document.querySelector("[data-cr-format-form]");
+    this.formatSelectAll = document.querySelector("[data-cr-format-all]");
+    this.formatConfirm = document.querySelector("[data-cr-format-confirm]");
     this.pickDialog = document.querySelector("[data-cr-pick-dialog]");
     this.pickSearch = document.querySelector("[data-cr-pick-search]");
     this.pickList = document.querySelector("[data-cr-pick-list]");
@@ -141,6 +337,9 @@
     this.clues.push({
       uid,
       alertId: item.alertId || "",
+      projectId: item.projectId || "",
+      projectName: item.projectName || "",
+      manual: !!item.manual,
       level: item.level || "线索",
       title: item.title || "预警线索",
       note: item.note || "",
@@ -149,6 +348,33 @@
       steps: (item.steps || []).slice(),
       open: item.open !== false
     });
+  };
+
+  ClueReport.prototype.refreshFromGraph = function () {
+    if (typeof this.options.getGraphAlerts !== "function") return;
+    const seqRef = { n: this.clueSeq };
+    this.clues = buildCluesFromAlerts(this.options.getGraphAlerts() || [], {
+      clueUi: this.clueUi,
+      excludedIds: this.excludedAlertIds,
+      clueSeqRef: seqRef,
+      manualClues: this.manualClues,
+      clues: this.clues
+    });
+    this.clueSeq = seqRef.n;
+    this.render();
+    if (this.open) this.syncConclusion();
+  };
+
+  ClueReport.prototype.syncFromGraphAlerts = function (alerts) {
+    const seqRef = { n: this.clueSeq };
+    this.clues = buildCluesFromAlerts(alerts, {
+      clueUi: this.clueUi,
+      excludedIds: this.excludedAlertIds,
+      clueSeqRef: seqRef,
+      manualClues: this.manualClues,
+      clues: this.clues
+    });
+    this.clueSeq = seqRef.n;
   };
 
   ClueReport.prototype.warningRowId = function (row) {
@@ -211,64 +437,149 @@
   ClueReport.prototype.openFromWarningRow = function (row) {
     if (!row) return;
     this.activeRow = row;
-    this.ensureClueForRow(row);
     this.applyRowClueMeta(row);
     if (!row.clueNo) this.syncRowClueMeta(row);
     this.generated = "";
     this.openDrawer();
-    this.syncConclusion();
-    this.render();
+    if (typeof this.options.getGraphAlerts === "function") this.refreshFromGraph();
+    else {
+      this.ensureClueForRow(row);
+      this.syncConclusion();
+      this.render();
+    }
   };
 
   ClueReport.prototype.addFromWarningRow = function (row) {
     if (!row) return;
     this.activeRow = row;
-    const id = this.warningRowId(row);
-    if (this.clues.some((c) => c.alertId === id)) {
-      this.applyRowClueMeta(row);
-      this.openDrawer();
-      this.render();
-      return;
-    }
     this.handoff = "待移交";
     this.handoffDept = "";
     this.handoffHandle = "";
     row.handoff = "待移交";
-    this.ensureClueForRow(row);
     this.ensureClueMeta();
     this.syncRowClueMeta(row);
     this.generated = "";
     this.openDrawer();
-    this.syncConclusion();
-    this.render();
+    if (typeof this.options.getGraphAlerts === "function") this.refreshFromGraph();
+    else {
+      this.ensureClueForRow(row);
+      this.syncConclusion();
+      this.render();
+    }
   };
 
   ClueReport.prototype.renderHandoffBar = function () {
-    if (!this.handoffEl || !this.handoffBtn) return;
+    if (!this.handoffEl) return;
     const handoff = this.handoff || "待移交";
     this.handoffEl.textContent = handoff;
     this.handoffEl.className = "report-handoff-pill " + this.handoffTone(handoff);
     const pending = handoff === "待移交";
-    this.handoffBtn.disabled = !pending;
-    this.handoffBtn.hidden = !pending;
+    if (this.handoffBtn) {
+      this.handoffBtn.disabled = !pending;
+      this.handoffBtn.hidden = !pending;
+    }
+    if (this.reportGoBtn) this.reportGoBtn.disabled = this.clues.length === 0;
   };
 
-  ClueReport.prototype.canSummarize = function (item) {
-    return !!(item && (item.note || item.model || (item.steps && item.steps.length)));
+  ClueReport.prototype.resetReportFormatDialog = function () {
+    if (!this.formatForm) return;
+    this.formatForm.querySelectorAll('input[name="crReportFormat"]').forEach((input) => {
+      input.checked = true;
+    });
+    if (this.formatSelectAll) this.formatSelectAll.checked = true;
+    this.syncReportFormatConfirmState();
   };
 
-  ClueReport.prototype.autoConclusion = function () {
-    const ready = this.clues.filter((item) => this.canSummarize(item));
-    if (!ready.length) return "";
+  ClueReport.prototype.selectedReportFormats = function () {
+    if (!this.formatForm) return [];
+    return [...this.formatForm.querySelectorAll('input[name="crReportFormat"]:checked')].map((input) => input.value);
+  };
+
+  ClueReport.prototype.syncReportFormatConfirmState = function () {
+    if (!this.formatConfirm) return;
+    this.formatConfirm.disabled = this.selectedReportFormats().length === 0;
+  };
+
+  ClueReport.prototype.openReportFormatDialog = function () {
+    if (!this.clues.length || !this.formatDialog) return;
+    this.resetReportFormatDialog();
+    this.formatDialog.showModal();
+  };
+
+  ClueReport.prototype.clueRiskBucket = function (level) {
+    const text = String(level || "");
+    if (text.indexOf("高") >= 0) return "high";
+    if (text.indexOf("中") >= 0) return "mid";
+    if (text.indexOf("低") >= 0) return "low";
+    return "other";
+  };
+
+  ClueReport.prototype.autoFindings = function () {
+    if (!this.clues.length) return "";
     const names = [];
-    ready.forEach((item) => item.whoNames.forEach((name) => { if (!names.includes(name)) names.push(name); }));
-    const lines = ready.map((item, index) => (index + 1) + ". " + item.whoNames.join("与") + "：" + item.title + "。" + item.note);
-    return "围绕" + names.join("、") + "，本次归集 " + ready.length + " 条预警线索。\n" + lines.join("\n") + "\n综合上述情形，相关交易存在需核查的异常关联，建议责任部门结合关系图与模型分析过程开展核查。";
+    const themes = [];
+    const counts = { high: 0, mid: 0, low: 0, other: 0 };
+    this.clues.forEach((item) => {
+      item.whoNames.forEach((name) => { if (name && !names.includes(name)) names.push(name); });
+      const theme = String(item.title || item.note || "").trim();
+      if (theme && !themes.includes(theme)) themes.push(theme);
+      counts[this.clueRiskBucket(item.level)] += 1;
+    });
+    const levelParts = [];
+    if (counts.high) levelParts.push("高风险 " + counts.high + " 张");
+    if (counts.mid) levelParts.push("中风险 " + counts.mid + " 张");
+    if (counts.low) levelParts.push("低风险 " + counts.low + " 张");
+    if (counts.other) levelParts.push("其他 " + counts.other + " 张");
+    const nameText = !names.length
+      ? "相关主体"
+      : names.length <= 3
+        ? names.join("、")
+        : names.slice(0, 3).join("、") + "等 " + names.length + " 个主体";
+    const themeText = !themes.length
+      ? "多项异常预警"
+      : themes.length <= 4
+        ? themes.join("、")
+        : themes.slice(0, 4).join("、") + "等";
+    let text = "本次线索共归集 " + this.clues.length + " 张预警卡片";
+    if (levelParts.length) text += "（" + levelParts.join("、") + "）";
+    text += "，主要涉及" + nameText + "。";
+    text += "综合卡片预警内容，集中反映" + themeText + "等风险信号，相关交易环节存在需重点核查的合规与公平性问题。";
+    return text;
   };
 
-  ClueReport.prototype.typewrite = function (text) {
-    const gen = ++this.typeGen;
-    this.conclusion.value = "";
+  ClueReport.prototype.suggestedDepts = function () {
+    const depts = [];
+    const add = (name) => {
+      const text = String(name || "").trim();
+      if (text && !depts.includes(text)) depts.push(text);
+    };
+    add(this.handoffDept);
+    add("公共资源交易中心");
+    add("行业主管部门");
+    const hasHigh = this.clues.some((item) => String(item.level || "").indexOf("高") >= 0);
+    if (hasHigh) add("纪检监察部门");
+    add("审计部门");
+    return depts;
+  };
+
+  ClueReport.prototype.autoGuidance = function () {
+    if (!this.clues.length) return "";
+    const depts = this.suggestedDepts();
+    const steps = [
+      "1. 对照预警卡片核实涉及主体、事项及模型分析结论，补充交易过程与关系图谱等佐证。",
+      "2. 结合发现问题开展交叉比对，确认是否存在围标串标、利益输送等需立案或移交的情形。",
+      "3. 按职责分工发起核查、约谈或线索移交，并在系统中登记处置进展与反馈结果。"
+    ];
+    return steps.join("\n") + "\n\n建议移交/协同部门：" + depts.join("、") + "。";
+  };
+
+  ClueReport.prototype.typewriteInto = function (input, text, gen, done) {
+    if (!input || !text) {
+      if (input) input.value = "";
+      if (typeof done === "function") done();
+      return;
+    }
+    input.value = "";
     let index = 0;
     const timer = window.setInterval(() => {
       if (gen !== this.typeGen) {
@@ -276,32 +587,90 @@
         return;
       }
       index = Math.min(text.length, index + 1);
-      this.conclusion.value = text.slice(0, index);
-      this.conclusion.scrollTop = this.conclusion.scrollHeight;
-      if (index >= text.length) window.clearInterval(timer);
+      input.value = text.slice(0, index);
+      input.scrollTop = input.scrollHeight;
+      if (index >= text.length) {
+        window.clearInterval(timer);
+        if (typeof done === "function") done();
+      }
     }, 32);
   };
 
   ClueReport.prototype.syncConclusion = function () {
-    const text = this.autoConclusion();
-    if (!text) {
+    const findings = this.autoFindings();
+    const guidance = this.autoGuidance();
+    if (!findings && !guidance) {
       this.typeGen += 1;
-      if (!this.userEdited) this.conclusion.value = "";
+      if (!this.userEditedFindings) this.findingsInput.value = "";
+      if (!this.userEditedGuidance) this.guidanceInput.value = "";
       return;
     }
-    this.userEdited = false;
+    const gen = ++this.typeGen;
+    const writeGuidance = (onDone) => {
+      if (this.userEditedGuidance) {
+        if (typeof onDone === "function") onDone();
+        return;
+      }
+      if (!guidance) {
+        this.guidanceInput.value = "";
+        if (typeof onDone === "function") onDone();
+        return;
+      }
+      if (!this.open) {
+        this.guidanceInput.value = guidance;
+        if (typeof onDone === "function") onDone();
+        return;
+      }
+      this.typewriteInto(this.guidanceInput, guidance, gen, onDone);
+    };
+    if (this.userEditedFindings) {
+      writeGuidance();
+      return;
+    }
+    this.userEditedFindings = false;
     if (!this.open) {
-      this.typeGen += 1;
-      this.conclusion.value = text;
+      this.findingsInput.value = findings;
+      writeGuidance();
       return;
     }
-    this.typewrite(text);
+    if (!findings) {
+      this.findingsInput.value = "";
+      writeGuidance();
+      return;
+    }
+    this.typewriteInto(this.findingsInput, findings, gen, () => writeGuidance());
   };
 
-  ClueReport.prototype.renderAttach = function () {
+  ClueReport.prototype.renderUploadFiles = function () {
+    if (!this.fileList) return;
     this.fileList.innerHTML = this.files.map((file, index) =>
       '<li><span title="' + esc(file.name) + '">' + esc(file.name) + '</span><button type="button" data-remove-file="' + index + '">删除</button></li>'
     ).join("");
+  };
+
+  ClueReport.prototype.renderAlertAttachRefs = function () {
+    const host = this.host.querySelector("[data-cr-attach-ref]");
+    if (!host) return;
+    const resolve = typeof this.options.resolveAlert === "function"
+      ? this.options.resolveAlert
+      : (id) => {
+          const list = typeof this.options.getGraphAlerts === "function" ? this.options.getGraphAlerts() : [];
+          return (list || []).find((item) => item.id === id);
+        };
+    const ctxFn = typeof this.options.attachContext === "function"
+      ? this.options.attachContext
+      : function () { return {}; };
+    const poolFn = typeof this.options.getGraphAlerts === "function" ? this.options.getGraphAlerts : null;
+    host.innerHTML = renderAlertAttachHtml(this.clues, {
+      esc: esc,
+      alerts: poolFn ? poolFn() || [] : [],
+      getGraphAlerts: poolFn || undefined,
+      resolveAlert: resolve,
+      attachContext: ctxFn
+    });
+    const bind = (typeof global !== "undefined" && global.CatalogAttach) ||
+      (typeof window !== "undefined" && window.CatalogAttach);
+    if (bind && bind.bindRoot) bind.bindRoot(host);
   };
 
   ClueReport.prototype.render = function () {
@@ -314,22 +683,13 @@
       foldAll.querySelector("span").textContent = allOpen ? "全部收起" : "全部展开";
     }
     this.renderHandoffBar();
-    if (!this.clues.length) {
-      this.processBody.innerHTML = '<p class="process-empty">尚未添加线索</p>';
-      return;
-    }
-    this.processBody.innerHTML = this.clues.map((item) => {
-      const tone = item.level === "中风险" ? " mid" : item.level === "低风险" ? " low" : "";
-      const folded = item.open ? "" : " is-folded";
-      const steps = (item.steps || []).map((step) => "<li>" + esc(step) + "</li>").join("");
-      const analysis = item.model
-        ? '<p class="clue-line"><em>分析</em>' + esc(item.model) + "</p>"
-        : "";
-      return '<article class="clue-item' + tone + folded + '"><div class="clue-top"><span class="sev">' + esc(item.level) +
-        "</span><strong>" + esc(item.title) + '</strong><button type="button" class="clue-del" data-remove-clue="' + esc(item.uid) +
-        '">删除</button></div><p class="clue-line"><em>涉及主体</em>' + esc(item.whoNames.join("、")) +
-        '</p><p class="clue-line"><em>事项</em>' + esc(item.note || "待补充原因") + "</p>" + analysis + "</article>";
-    }).join("");
+    this.processBody.innerHTML = renderProcessBodyHtml(this.clues, {
+      esc: esc,
+      projectFold: this.projectFold,
+      withModel: true
+    });
+    this.renderAlertAttachRefs();
+    this.renderUploadFiles();
   };
 
   ClueReport.prototype.reportHeaderLines = function () {
@@ -346,8 +706,11 @@
     if (this.generatedAt) lines.push("生成时间：" + this.generatedAt);
     lines.push.apply(lines, this.reportHeaderLines());
     lines.push("");
-    lines.push(this.conclusion.value || this.autoConclusion());
-    lines.push("", "分析过程");
+    lines.push("发现问题");
+    lines.push(this.findingsInput.value || this.autoFindings());
+    lines.push("", "办案指引");
+    lines.push(this.guidanceInput.value || this.autoGuidance());
+    lines.push("", "预警卡片");
     if (!this.clues.length) lines.push("尚未添加线索");
     this.clues.forEach((item, index) => {
       lines.push("", (index + 1) + ". " + item.title + "（" + item.level + "）");
@@ -486,14 +849,73 @@
       self.render();
     });
     this.processBody.addEventListener("click", (event) => {
+      const projBtn = event.target.closest("[data-toggle-project]");
+      if (projBtn) {
+        const pid = projBtn.getAttribute("data-toggle-project");
+        self.projectFold[pid] = !self.projectFold[pid];
+        self.render();
+        return;
+      }
+      const toggle = event.target.closest("[data-toggle-clue]");
+      if (toggle) {
+        const clue = self.clues.find((item) => item.uid === toggle.getAttribute("data-toggle-clue"));
+        if (clue) clue.open = !clue.open;
+        self.render();
+        return;
+      }
+      const excludeBtn = event.target.closest("[data-exclude-clue]");
+      if (excludeBtn) {
+        self.excludedAlertIds.add(excludeBtn.getAttribute("data-exclude-clue"));
+        self.generated = "";
+        self.refreshFromGraph();
+        return;
+      }
       const button = event.target.closest("[data-remove-clue]");
       if (!button) return;
-      self.clues = self.clues.filter((item) => item.uid !== button.dataset.removeClue);
+      const uid = button.getAttribute("data-remove-clue");
+      self.manualClues = self.manualClues.filter((item) => item.uid !== uid);
+      self.clues = self.clues.filter((item) => item.uid !== uid);
       self.generated = "";
       self.syncConclusion();
       self.render();
     });
-    this.handoffBtn.addEventListener("click", () => {
+    if (this.reportGoBtn) {
+      this.reportGoBtn.addEventListener("click", () => self.openReportFormatDialog());
+    }
+    if (this.formatForm) {
+      this.formatForm.querySelectorAll('input[name="crReportFormat"]').forEach((input) => {
+        input.addEventListener("change", () => {
+          if (self.formatSelectAll) {
+            const boxes = self.formatForm.querySelectorAll('input[name="crReportFormat"]');
+            self.formatSelectAll.checked = [...boxes].every((box) => box.checked);
+          }
+          self.syncReportFormatConfirmState();
+        });
+      });
+      if (this.formatSelectAll) {
+        this.formatSelectAll.addEventListener("change", () => {
+          const on = self.formatSelectAll.checked;
+          self.formatForm.querySelectorAll('input[name="crReportFormat"]').forEach((input) => {
+            input.checked = on;
+          });
+          self.syncReportFormatConfirmState();
+        });
+      }
+      const formatClose = this.formatForm.querySelector("[data-cr-format-close]");
+      const formatCancel = this.formatForm.querySelector("[data-cr-format-cancel]");
+      if (formatClose) formatClose.addEventListener("click", () => self.formatDialog.close());
+      if (formatCancel) formatCancel.addEventListener("click", () => self.formatDialog.close());
+      this.formatForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const formats = self.selectedReportFormats();
+        if (!formats.length) return;
+        if (typeof self.options.onGenerateReport === "function") {
+          self.options.onGenerateReport(formats, self);
+        }
+        self.formatDialog.close();
+      });
+    }
+    if (this.handoffBtn) this.handoffBtn.addEventListener("click", () => {
       if (self.handoff !== "待移交") return;
       if (!global.ClueHandoff) return;
       global.ClueHandoff.open({
@@ -512,43 +934,30 @@
             self.options.onHandoffChange(result, self.activeRow);
           }
           self.renderHandoffBar();
+          if (!self.userEditedGuidance && self.clues.length) {
+            const guidance = self.autoGuidance();
+            const gen = ++self.typeGen;
+            if (self.open) self.typewriteInto(self.guidanceInput, guidance, gen, null);
+            else self.guidanceInput.value = guidance;
+          }
         }
       });
     });
-    this.conclusion.addEventListener("input", () => { self.typeGen += 1; self.userEdited = true; });
-    const grip = this.host.querySelector("[data-cr-grip]");
-    grip.addEventListener("pointerdown", (event) => {
-      event.preventDefault();
-      const startY = event.clientY;
-      const startH = self.conclusionBox.getBoundingClientRect().height;
-      const max = Math.max(160, self.drawer.clientHeight - 180);
-      function move(nextEvent) {
-        const next = Math.min(max, Math.max(128, startH + nextEvent.clientY - startY));
-        self.conclusionBox.style.height = next + "px";
-      }
-      function end() {
-        grip.removeEventListener("pointermove", move);
-        grip.removeEventListener("pointerup", end);
-        grip.removeEventListener("pointercancel", end);
-      }
-      grip.setPointerCapture(event.pointerId);
-      grip.addEventListener("pointermove", move);
-      grip.addEventListener("pointerup", end);
-      grip.addEventListener("pointercancel", end);
-    });
+    this.findingsInput.addEventListener("input", () => { self.typeGen += 1; self.userEditedFindings = true; });
+    this.guidanceInput.addEventListener("input", () => { self.userEditedGuidance = true; });
     this.fileInput.addEventListener("change", () => {
       [...self.fileInput.files].forEach((file) => {
         const same = self.files.some((item) => item.name === file.name && item.size === file.size && item.lastModified === file.lastModified);
         if (!same) self.files.push(file);
       });
       self.fileInput.value = "";
-      self.renderAttach();
+      self.renderUploadFiles();
     });
     this.fileList.addEventListener("click", (event) => {
       const button = event.target.closest("[data-remove-file]");
       if (!button) return;
       self.files.splice(Number(button.dataset.removeFile), 1);
-      self.renderAttach();
+      self.renderUploadFiles();
     });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && self.open) self.close();
@@ -562,7 +971,8 @@
       files: this.files.slice(),
       clueNo: this.noInput.value,
       clueName: this.nameInput.value,
-      conclusion: this.conclusion.value
+      findings: this.findingsInput.value,
+      guidance: this.guidanceInput.value
     };
   };
 
@@ -578,6 +988,10 @@
     },
     mount: function (options) {
       return new ClueReport(Object.assign({ layout: "slide", parent: document.body }, options || {}));
-    }
+    },
+    buildCluesFromAlerts: buildCluesFromAlerts,
+    renderProcessBodyHtml: renderProcessBodyHtml,
+    renderAlertAttachHtml: renderAlertAttachHtml,
+    groupCluesByProject: groupCluesByProject
   };
-})(window);
+})(typeof window !== "undefined" ? window : globalThis);

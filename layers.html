@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache" />
   <title>分层探索</title>
+  <link rel="stylesheet" href="risk-level.css" />
   <style>
-    :root { --ink: #16324f; --muted: #6d7f95; --risk: #ef4d4f; }
+    :root { --ink: #16324f; --muted: #6d7f95; --risk: var(--risk-high-ink); }
     * { box-sizing: border-box; }
     html, body { margin: 0; height: 100%; }
     body {
@@ -99,9 +100,6 @@
     .legend .bidders { background: #8f9ede; }
     .legend .experts { background: #5eb8c9; }
     .legend .n { background: rgba(120, 155, 215, 0.7); }
-    .legend .w.high { background: #ef4d4f; }
-    .legend .w.mid { background: #e5922a; }
-    .legend .w.low { background: #2f9e6b; }
   </style>
   <script>if (new URLSearchParams(location.search).get("embed") === "1") document.documentElement.classList.add("is-embed");</script>
   <script type="importmap">
@@ -198,10 +196,10 @@
     }
     function toneRank(tone) { return tone === "high" ? 3 : tone === "mid" ? 2 : tone === "low" ? 1 : 0; }
     function strongerTone(a, b) { return toneRank(a) >= toneRank(b) ? a : b; }
-    const TONE_NUM = { high: 0xef4d4f, mid: 0xe5922a, low: 0x2f9e6b };
-    const TONE_INK = { high: "#c43745", mid: "#e5922a", low: "#2f9e6b" };
-    const TONE_SOFT = { high: "#fff1f2", mid: "#fff6eb", low: "#eef8f3" };
-    const TONE_EDGE = { high: "#f3b4b8", mid: "#f3d3a4", low: "#b7e0cc" };
+    const TONE_NUM = { high: 0xf21818, mid: 0xa639fd, low: 0xfda939 };
+    const TONE_INK = { high: "#f21818", mid: "#a639fd", low: "#c88400" };
+    const TONE_SOFT = { high: "#fde8e8", mid: "#f3ebff", low: "#fff4e0" };
+    const TONE_EDGE = { high: "#f8b4b4", mid: "#d4b8f8", low: "#ffe0b3" };
     const rowLevel = {};
     function rememberLevel(key, level) {
       const tone = toneName(level);
@@ -868,7 +866,7 @@
       }
       flows.forEach((flow) => {
         const on = !focused || (flow.alertIds || [flow.alertId]).some((alertId) => alerts.has(alertId));
-        const hex = TONE_NUM[shownTone(flow.alertIds, flow.tone)] || 0xef4d4f;
+        const hex = TONE_NUM[shownTone(flow.alertIds, flow.tone)] || 0xf21818;
         flow.tube.material.color.set(on ? hex : gray);
         flow.tube.material.opacity = on ? 1 : 0.2;
         flow.glowTube.material.color.set(on ? hex : gray);

@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>智能监管系统</title>
+  <link rel="stylesheet" href="risk-level.css" />
   <style>
     :root {
       --ink: #16324f;
@@ -14,7 +15,7 @@
       --blue-soft: #eaf2ff;
       --blue-mist: #f3f7fc;
       --panel: #e7eef8;
-      --risk: #e23d4e;
+      --risk: var(--risk-high-ink);
       --card: #ffffff;
       --shadow: 0 10px 30px rgba(22, 62, 112, 0.06);
       --radius: 16px;
@@ -660,6 +661,22 @@
 
   <script src="mock-data.js?v=133"></script>
   <script>
+    const RISK_LEVEL_STYLE = {
+      "高风险": { color: "#f21818", background: "color-mix(in srgb, #f21818 15%, #fff)" },
+      "中风险": { color: "#a639fd", background: "color-mix(in srgb, #a639fd 15%, #fff)" },
+      "低风险": { color: "#c88400", background: "color-mix(in srgb, #fda939 15%, #fff)" }
+    };
+    function riskLevelColor(level) {
+      const style = RISK_LEVEL_STYLE[level] || RISK_LEVEL_STYLE["高风险"];
+      return style.color;
+    }
+    function applyRiskBadge(el, level) {
+      const full = level || "高风险";
+      const style = RISK_LEVEL_STYLE[full] || RISK_LEVEL_STYLE["高风险"];
+      el.style.color = style.color;
+      el.style.background = style.background;
+    }
+
     const projectNotes = [
       "投标文件异常一致，多家投标人存在人员与设备交叉，建议核查围标串标线索。",
       "报价梯度明显，且与历史项目投标组合高度重合，建议复核竞争性。",
@@ -847,8 +864,7 @@
           const span = document.createElement("span");
           span.className = "cell" + (key === "title" ? " title" : "") + (key === "level" ? " risk" : "");
           span.textContent = key === "title" ? item.name : key === "level" ? item.level : (item[key] || "—");
-          if (key === "level" && item.level === "中风险") span.style.color = "#d97706";
-          if (key === "level" && item.level === "低风险") span.style.color = "#15803d";
+          if (key === "level") span.style.color = riskLevelColor(item.level);
           button.appendChild(span);
         });
         const view = document.createElement("span");
@@ -865,8 +881,7 @@
         button.querySelector(".name").textContent = item.name;
         const risk = button.querySelector(".risk");
         risk.textContent = item.level || "高风险";
-        if (item.level === "中风险") risk.style.color = "#d97706";
-        if (item.level === "低风险") risk.style.color = "#15803d";
+        risk.style.color = riskLevelColor(item.level);
         button.querySelector(".view").addEventListener("click", (event) => {
           event.stopPropagation();
           openInsight(kind, item);
@@ -1030,8 +1045,7 @@
       document.getElementById("drawerNote").textContent = item.note;
       const badge = document.querySelector("#drawer .badge");
       badge.textContent = item.level || "高风险";
-      badge.style.color = item.level === "中风险" ? "#d97706" : item.level === "低风险" ? "#15803d" : "";
-      badge.style.background = item.level === "中风险" ? "#fff7ed" : item.level === "低风险" ? "#f0fdf4" : "";
+      applyRiskBadge(badge, item.level);
       if (kind === "project") {
         setFacts([
           ["行业领域", item.cat],
@@ -1084,8 +1098,7 @@
         const risk = document.createElement("span");
         risk.className = "risk";
         risk.textContent = item.level || "高风险";
-        if (item.level === "中风险") risk.style.color = "#d97706";
-        if (item.level === "低风险") risk.style.color = "#15803d";
+        risk.style.color = riskLevelColor(item.level);
         top.append(who, risk);
         const note = document.createElement("div");
         note.style.marginTop = "4px";

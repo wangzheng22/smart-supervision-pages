@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache" />
   <title>招标代理视角</title>
+  <link rel="stylesheet" href="risk-level.css" />
   <style>
-    :root { --ink: #16324f; --muted: #6d7f95; --risk: #ef4d4f; }
+    :root { --ink: #16324f; --muted: #6d7f95; --risk: var(--risk-high-ink); }
     * { box-sizing: border-box; }
     html, body { margin: 0; height: 100%; }
     body {
@@ -126,7 +127,7 @@
         const from = { x: 196, y: y };
         const deg = 168 + (index - (staff.length - 1) / 2) * 7;
         const to = polar(cx, cy, hub + 6, deg);
-        const color = person.warn ? "#ef4d4f" : "#8aa0b8";
+        const color = person.warn ? "#f21818" : "#8aa0b8";
         parts.push('<path d="M ' + from.x + " " + from.y + " C " + (from.x + 90) + " " + from.y + ", " + (cx - hub - 70) + " " + to.y + ", " + to.x + " " + to.y + '" fill="none" stroke="' + color + '" stroke-width="' + (person.warn ? 1.8 : 1.15) + '"/>');
       });
 
@@ -138,7 +139,7 @@
         const to = polar(cx, cy, arcR, deg);
         const bend = deg + (index - (projects.length - 1) / 2) * 0.55;
         const mid = polar(cx, cy, arcR * 0.58, bend);
-        const color = project.warn ? "#ef4d4f" : "#8aa0b8";
+        const color = project.warn ? "#f21818" : "#8aa0b8";
         parts.push('<path d="M ' + from.x + " " + from.y + " Q " + mid.x + " " + mid.y + " " + to.x + " " + to.y + '" fill="none" stroke="' + color + '" stroke-width="' + (project.warn ? 1.8 : 1) + '"/>');
       });
 
@@ -159,7 +160,7 @@
           '<g class="node" data-node="' + staffNode + '" data-name="' + person.name + '">',
           '<text x="28" y="' + (y - 6) + '" fill="#16324f" font-size="15" font-weight="650">' + person.name + "</text>",
           '<text x="28" y="' + (y + 14) + '" fill="#6d7f95" font-size="12">' + person.role + "</text>",
-          '<circle cx="188" cy="' + y + '" r="4" fill="' + (person.warn ? "#ef4d4f" : "#2f78f6") + '"/>',
+          '<circle cx="188" cy="' + y + '" r="4" fill="' + (person.warn ? "#f21818" : "#2f78f6") + '"/>',
           "</g>"
         );
       });
@@ -167,11 +168,11 @@
       projects.forEach((project, index) => {
         const deg = projects.length === 1 ? 0 : arcStart + (arcEnd - arcStart) * index / (projects.length - 1);
         const at = polar(cx, cy, arcR + 10, deg);
-        const color = project.warn ? "#c43745" : (project.current ? "#1f6feb" : "#16324f");
+        const color = project.warn ? "#f21818" : (project.current ? "#1f6feb" : "#16324f");
         const projectNode = { "翔安大桥工程": "project", "海沧海底隧道工程": "p3", "翔安机场市政工程": "p4" }[project.name] || "";
         parts.push(
           '<g class="node" data-node="' + projectNode + '" data-name="' + project.name + '">',
-          '<circle cx="' + polar(cx, cy, arcR, deg).x + '" cy="' + polar(cx, cy, arcR, deg).y + '" r="' + (project.warn ? 4.5 : 3.2) + '" fill="' + (project.warn ? "#ef4d4f" : "#8aa0b8") + '"/>',
+          '<circle cx="' + polar(cx, cy, arcR, deg).x + '" cy="' + polar(cx, cy, arcR, deg).y + '" r="' + (project.warn ? 4.5 : 3.2) + '" fill="' + (project.warn ? "#f21818" : "#8aa0b8") + '"/>',
           '<text x="' + at.x + '" y="' + at.y + '" fill="' + color + '" font-size="12" font-weight="' + (project.current || project.warn ? "650" : "500") + '" transform="rotate(' + deg + " " + at.x + " " + at.y + ')" text-anchor="start">' + project.name + "</text>",
           "</g>"
         );

@@ -1,3 +1,5 @@
+@import url("risk-level.css");
+
 /* 线索报告公共模块 */
 .clue-report-host {
   --cr-blue: #2f78f6;
@@ -30,6 +32,8 @@
   width: min(440px, 100vw);
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
   background: #fff;
   box-shadow: -8px 0 32px rgba(22, 62, 112, 0.14);
   transform: translateX(100%);
@@ -57,6 +61,7 @@
 
 .clue-report-drawer .report-head {
   flex: none;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -80,29 +85,54 @@
   cursor: pointer;
 }
 .clue-report-drawer .report-x:hover { background: #f4f7fb; }
-.clue-report-drawer .report-meta {
+.clue-report-drawer .report-fixed-top {
   flex: none;
-  padding: 12px 16px 10px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px 14px;
+  border-bottom: 1px solid #e8eef6;
+  background: #fff;
 }
-.clue-report-drawer .report-meta .pair {
+.clue-report-drawer .report-fixed-top .pair {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   align-items: start;
 }
-.clue-report-drawer .report-meta .field {
+.clue-report-drawer .report-fixed-top .field {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   min-width: 0;
 }
-.clue-report-drawer .report-meta .field .lab {
+.clue-report-drawer .report-fixed-top .field .lab {
   display: block;
   margin-bottom: 3px;
   font-size: 14px;
   line-height: 1.25;
   color: var(--cr-ink);
   font-weight: 550;
+}
+.clue-report-drawer .report-guidance-field {
+  margin-top: 2px;
+}
+.clue-report-drawer .report-guidance-input {
+  width: 100%;
+  min-height: 88px;
+  max-height: 160px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #e1e8f2;
+  border-radius: 8px;
+  resize: none;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--cr-ink);
+  font-family: inherit;
+  box-sizing: border-box;
 }
 .clue-report-drawer .clue-field-input {
   width: 100%;
@@ -115,7 +145,7 @@
   font-size: 13px;
   box-sizing: border-box;
 }
-.clue-report-drawer .report-meta .field > .clue-field-input {
+.clue-report-drawer .report-fixed-top .field > .clue-field-input {
   height: 34px;
   min-height: 34px;
 }
@@ -132,7 +162,7 @@
   height: 34px;
   min-height: 34px;
 }
-.clue-report-drawer .report-meta .clue-name-row .clue-field-input {
+.clue-report-drawer .report-fixed-top .clue-name-row .clue-field-input {
   flex: 1;
   min-width: 0;
   height: 34px;
@@ -167,58 +197,39 @@
 }
 .clue-report-drawer .clue-pick-tip[hidden] { display: none; }
 
-.clue-report-drawer .report-conclusion {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  height: 210px;
-  min-height: 128px;
-  padding: 14px 16px 0;
-  border-bottom: 1px solid #e8eef6;
+.clue-report-drawer .report-findings {
+  margin-bottom: 16px;
 }
-.clue-report-drawer .report-conclusion h3 {
-  margin: 0;
+.clue-report-drawer .report-findings h3 {
+  margin: 0 0 8px;
   font-size: 14px;
   font-weight: 650;
   color: var(--cr-ink);
 }
-.clue-report-drawer .report-conclusion textarea {
-  flex: 1;
-  min-height: 0;
-  margin: 8px 0 0;
+.clue-report-drawer .report-findings-input {
+  width: 100%;
+  min-height: 88px;
+  margin: 0;
   padding: 10px 12px;
   border: 1px solid #e1e8f2;
   border-radius: 8px;
-  resize: none;
+  resize: vertical;
+  overflow-y: auto;
   font-size: 13px;
   line-height: 1.6;
   color: var(--cr-ink);
   font-family: inherit;
+  box-sizing: border-box;
 }
-.clue-report-drawer .report-grip {
-  flex: none;
-  height: 14px;
-  margin: 0 -16px;
-  border: 0;
-  background: transparent;
-  cursor: ns-resize;
-  position: relative;
-}
-.clue-report-drawer .report-grip::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 5px;
-  width: 36px;
-  height: 3px;
-  margin-left: -18px;
-  border-radius: 2px;
-  background: #d5deea;
+.clue-report-drawer .report-process {
+  margin-top: 0;
 }
 .clue-report-drawer .report-body {
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 14px 16px 8px;
 }
 .clue-report-drawer .process-head {
@@ -261,6 +272,90 @@
 .clue-report-drawer .fold-all svg { width: 14px; height: 14px; transition: transform 0.2s ease; }
 .clue-report-drawer .fold-all.is-open svg { transform: rotate(180deg); }
 .clue-report-drawer .process-body { display: grid; gap: 10px; margin-top: 10px; }
+.report-project-group {
+  border: 1px solid #e6edf6;
+  border-radius: 10px;
+  background: #f8fbff;
+  overflow: hidden;
+}
+.report-project-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  background: #eef4ff;
+  color: #24364c;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+.report-project-head:hover { background: #e3edff; }
+.report-project-chev {
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid #6d7f95;
+  border-bottom: 1.5px solid #6d7f95;
+  transform: rotate(45deg) translateY(-1px);
+  flex: none;
+}
+.report-project-group.is-collapsed .report-project-chev {
+  transform: rotate(-45deg) translateY(1px);
+}
+.report-project-name { flex: 1; min-width: 0; }
+.report-project-count {
+  flex: none;
+  font-size: 12px;
+  font-weight: 550;
+  color: #6d7f95;
+}
+.report-project-body {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+}
+.report-project-group.is-collapsed .report-project-body { display: none; }
+.clue-report-drawer .analysis-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.clue-report-drawer .analysis-row .clue-line { flex: 1; min-width: 0; margin: 0; }
+.clue-report-drawer .model-toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+.clue-report-drawer .model-toggle:hover { background: #e8eef8; }
+.clue-report-drawer .model-toggle .chev {
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid #6d7f95;
+  border-bottom: 1.5px solid #6d7f95;
+  transform: rotate(45deg) translateY(-1px);
+}
+.clue-report-drawer .clue-item.is-folded .model-toggle .chev { transform: rotate(-45deg); }
+.clue-report-drawer .clue-item.is-folded .model-body { display: none; }
+.clue-report-drawer .model-body { margin-top: 6px; }
+.clue-report-drawer .clue-item ol {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: #3d5166;
+  font-size: 12px;
+  line-height: 1.6;
+}
 .clue-report-drawer .process-empty { margin: 0; font-size: 13px; color: var(--cr-muted); }
 .clue-report-drawer .clue-item {
   padding: 12px;
@@ -275,13 +370,9 @@
   height: 20px;
   padding: 0 6px;
   border-radius: 4px;
-  background: #fff1f3;
-  color: #e23d55;
   font-size: 12px;
   font-weight: 600;
 }
-.clue-report-drawer .clue-item.mid .sev { background: #fff4e8; color: #e5922a; }
-.clue-report-drawer .clue-item.low .sev { background: #eef8f3; color: #2f9e6b; }
 .clue-report-drawer .clue-del {
   flex: none;
   border: 0;
@@ -301,8 +392,149 @@
   color: #8b97a6;
   font-style: normal;
 }
-.clue-report-drawer .report-files { margin-top: 16px; }
-.clue-report-drawer .report-files h3 { margin: 0 0 8px; font-size: 14px; }
+.clue-report-drawer .report-files,
+.report .report-files { margin-top: 16px; }
+.clue-report-drawer .report-files h3,
+.report .report-files h3 { margin: 0 0 8px; font-size: 14px; }
+.report-attach-block { margin-top: 12px; }
+.report-attach-block:first-of-type { margin-top: 0; }
+.report-attach-subhead {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--cr-ink, #24364c);
+}
+.report-attach-ref .catalog-attach-section { margin: 0; }
+.report-attach-ref .catalog-attach-forest,
+.report-attach-ref .catalog-attach-tree {
+  max-height: none;
+  overflow: visible;
+}
+.report-attach-ref .catalog-attach-tree-block {
+  overflow: visible;
+}
+.report-attach-ref .catalog-attach-row.is-file .catalog-attach-label {
+  font-weight: 500;
+  color: #1a3a5c;
+}
+.report-attach-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--cr-muted, #6d7f95);
+  line-height: 1.5;
+}
+.report-attach-upload { margin-top: 14px; padding-top: 14px; border-top: 1px solid #e8eef6; }
+
+/* 生成报告 — 格式多选弹窗 */
+.report-format-dialog {
+  width: min(360px, calc(100vw - 32px));
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 20px 48px rgba(22, 62, 112, 0.2);
+}
+.report-format-dialog::backdrop {
+  background: rgba(16, 32, 54, 0.45);
+}
+.report-format-dialog form {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+.report-format-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e8eef6;
+}
+.report-format-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--cr-ink, #24364c);
+}
+.report-format-x {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #6d7f95;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.report-format-x:hover { background: #f4f7fb; }
+.report-format-hint {
+  margin: 0;
+  padding: 12px 16px 0;
+  font-size: 12px;
+  color: var(--cr-muted, #6d7f95);
+}
+.report-format-check--all {
+  margin: 12px 16px 0;
+}
+.report-format-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 16px 16px;
+}
+.report-format-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #e1e8f2;
+  border-radius: 8px;
+  background: #fafbfd;
+  font-size: 14px;
+  color: var(--cr-ink, #24364c);
+  cursor: pointer;
+}
+.report-format-check:has(input:checked) {
+  border-color: #b9d0fb;
+  background: #f3f7ff;
+}
+.report-format-check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--cr-blue, #2f78f6);
+}
+.report-format-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 16px 16px;
+}
+.report-format-cancel,
+.report-format-go {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.report-format-cancel {
+  border: 1px solid #d7dee8;
+  background: #fff;
+  color: #3d5166;
+}
+.report-format-go {
+  border: 0;
+  background: var(--cr-blue, #2f78f6);
+  color: #fff;
+}
+.report-format-go:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
 .clue-report-drawer .attach-pick {
   position: relative;
   display: inline-flex;
@@ -344,8 +576,10 @@
   font-size: 12px;
   cursor: pointer;
 }
-.clue-report-drawer .report-bar {
+.clue-report-drawer .report-bar,
+.report .report-bar {
   flex: none;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -353,17 +587,27 @@
   padding: 12px 16px;
   border-top: 1px solid #e8eef6;
 }
-.clue-report-drawer .report-handoff-meta {
+.report-bar-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.clue-report-drawer .report-handoff-meta,
+.report .report-handoff-meta {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
 }
-.clue-report-drawer .report-handoff-lab {
+.clue-report-drawer .report-handoff-lab,
+.report .report-handoff-lab {
   font-size: 13px;
   color: var(--cr-muted);
 }
-.clue-report-drawer .report-handoff-pill {
+.clue-report-drawer .report-handoff-pill,
+.report .report-handoff-pill {
   display: inline-flex;
   align-items: center;
   height: 24px;
@@ -373,23 +617,33 @@
   font-weight: 550;
   line-height: 24px;
 }
-.clue-report-drawer .report-handoff-pill.st-move { background: #fff6eb; color: #e5922a; }
-.clue-report-drawer .report-handoff-pill.st-sent { background: #eef2ff; color: #4f6bed; }
-.clue-report-drawer .report-handoff-pill.st-offline { background: #f0f4f8; color: #5e7088; }
-.clue-report-drawer .report-handoff-btn {
+.clue-report-drawer .report-handoff-pill.st-move,
+.report .report-handoff-pill.st-move { background: #fff6eb; color: #e5922a; }
+.clue-report-drawer .report-handoff-pill.st-sent,
+.report .report-handoff-pill.st-sent { background: #eef2ff; color: #4f6bed; }
+.clue-report-drawer .report-handoff-pill.st-offline,
+.report .report-handoff-pill.st-offline { background: #f0f4f8; color: #5e7088; }
+.clue-report-drawer .report-handoff-btn,
+.report .report-handoff-btn {
   flex: none;
   height: 32px;
   padding: 0 16px;
   border: 0;
   border-radius: 6px;
-  background: var(--cr-blue);
+  background: var(--cr-blue, #2f78f6);
   color: #fff;
   font-size: 13px;
   cursor: pointer;
 }
 .clue-report-drawer .report-handoff-btn:disabled,
-.clue-report-drawer .report-handoff-btn[hidden] {
+.clue-report-drawer .report-handoff-btn[hidden],
+.report .report-handoff-btn:disabled,
+.report .report-handoff-btn[hidden] {
   display: none;
+}
+.clue-report-drawer .report-bar-actions .report-go,
+.report .report-bar-actions .report-go {
+  flex: none;
 }
 
 .clue-handoff-mask {

@@ -4,19 +4,35 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>预警列表</title>
-  <link rel="stylesheet" href="shell.css?v=16" />
-  <link rel="stylesheet" href="clue-report.css?v=7" />
+  <link rel="stylesheet" href="shell.css?v=17" />
+  <link rel="stylesheet" href="risk-level.css?v=4" />
+  <link rel="stylesheet" href="view-catalog.css?v=31" />
+  <link rel="stylesheet" href="industry-cascade.css?v=2" />
+  <link rel="stylesheet" href="clue-report.css?v=14" />
   <script src="shell.js?v=19" defer></script>
+  <script src="industry-catalog.js?v=2"></script>
+  <script src="industry-cascade.js?v=2"></script>
   <script src="mock-data.js?v=135"></script>
   <script src="clue-handoff.js?v=2"></script>
-  <script src="clue-report.js?v=4"></script>
+  <script src="level-utils.js?v=17"></script>
+  <script src="catalog-attach.js?v=5"></script>
+  <script src="clue-report.js?v=13"></script>
   <style>
     :root {
       --ink: #16324f;
       --muted: #6d7f95;
       --line: #e4ebf5;
       --blue: #2f78f6;
-      --risk: #ef3b3b;
+      --risk: var(--risk-high-ink, #f21818);
+      --risk-high: #f21818;
+      --risk-mid: #a639fd;
+      --risk-low: #fda939;
+      --risk-high-bg: color-mix(in srgb, var(--risk-high) 15%, #fff);
+      --risk-mid-bg: color-mix(in srgb, var(--risk-mid) 15%, #fff);
+      --risk-low-bg: color-mix(in srgb, var(--risk-low) 15%, #fff);
+      --risk-high-ink: #f21818;
+      --risk-mid-ink: #a639fd;
+      --risk-low-ink: #c88400;
       --shadow: 0 10px 30px rgba(22, 62, 112, 0.08);
     }
     * { box-sizing: border-box; }
@@ -119,78 +135,225 @@
       padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 0;
     }
-    .tabs {
-      display: flex;
-      gap: 10px;
+    .stat-cards {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
       width: 100%;
       flex: none;
+      padding-bottom: 10px;
+      margin-bottom: 0;
+      overflow: visible;
     }
-    .tabs button {
-      flex: 1;
+    .table-card {
+      margin-top: 12px;
+    }
+    @media (max-width: 1400px) {
+      .stat-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 820px) {
+      .stat-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .stat-cards button {
+      position: relative;
+      box-sizing: border-box;
       min-width: 0;
-      height: 52px;
-      padding: 0 12px;
-      display: inline-flex;
+      height: 72px;
+      padding: 0 10px 0 78px;
+      display: flex;
       align-items: center;
-      justify-content: flex-start;
-      gap: 10px;
+      gap: 8px;
+      overflow: visible;
       border: 1px solid #e3eaf3;
-      border-radius: 8px;
+      border-radius: 10px;
       background: #fff;
       color: #24364c;
-      font-size: 14px;
+      text-align: left;
       box-shadow: 0 1px 2px rgba(22, 50, 90, 0.04);
     }
-    .tabs button .tab-ico {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      background: #eef4ff;
-      color: #2f78f6;
-      display: grid;
-      place-items: center;
-      flex: none;
+    .stat-cards button.is-on {
+      border-color: #7eb3ff;
+      box-shadow: 0 0 0 1px rgba(47, 120, 246, 0.16);
     }
-    .tabs button .tab-ico svg {
-      width: 18px;
-      height: 18px;
+    .stat-cards .card-ico {
+      position: absolute;
+      left: 4px;
+      bottom: -10px;
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
       display: block;
+      pointer-events: none;
     }
-    .tabs button .tab-meta {
-      display: inline-flex;
+    .stat-cards .card-body {
+      flex: 1;
+      min-width: 0;
+      display: flex;
       align-items: center;
-      gap: 6px;
+      height: 100%;
+    }
+    .stat-cards .card-metrics {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
       min-width: 0;
     }
-    .tabs button em {
-      font-style: normal;
+    .stat-cards .card-summary {
+      flex: 1;
+      min-width: 0;
+      height: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+    }
+    .stat-cards .card-title {
+      margin: 0;
+      font-size: 11px;
+      font-weight: 500;
+      color: #8b97a6;
+      line-height: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stat-cards .card-total {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1;
+      color: #16324f;
+      letter-spacing: -0.02em;
+    }
+    .stat-cards .card-tiers {
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .stat-cards .card-tier {
+      box-sizing: border-box;
+      width: 26px;
+      height: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      border-radius: 4px;
+    }
+    .stat-cards .card-tier.is-hi {
+      background: color-mix(in srgb, var(--risk-high) 10%, #fff);
+    }
+    .stat-cards .card-tier.is-mid {
+      background: color-mix(in srgb, var(--risk-mid) 10%, #fff);
+    }
+    .stat-cards .card-tier.is-lo {
+      background: color-mix(in srgb, var(--risk-low) 10%, #fff);
+    }
+    .stat-cards .card-tier[data-risk] {
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: box-shadow 0.15s ease, transform 0.12s ease;
+    }
+    .stat-cards .card-tier[data-risk]:hover {
+      transform: translateY(-1px);
+    }
+    .stat-cards .card-tier.is-filter-on {
+      box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 35%, #fff);
+    }
+    .stat-cards .card-tier.is-hi.is-filter-on { border-color: color-mix(in srgb, var(--risk-high) 45%, #fff); }
+    .stat-cards .card-tier.is-mid.is-filter-on { border-color: color-mix(in srgb, var(--risk-mid) 45%, #fff); }
+    .stat-cards .card-tier.is-lo.is-filter-on { border-color: color-mix(in srgb, var(--risk-low) 45%, #fff); }
+    .stat-cards .card-tier span {
+      font-size: 11px;
+      color: #8b97a6;
+      line-height: 1;
+    }
+    .stat-cards .card-tier b {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .stat-cards .card-tier.is-hi b { color: #f21818; }
+    .stat-cards .card-tier.is-mid b { color: var(--risk-mid-ink); }
+    .stat-cards .card-tier.is-lo b { color: var(--risk-low-ink); }
+    .filters .search-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #eef2f7;
+      min-width: 0;
+    }
+    .filters .search-row input {
+      flex: 0 0 60%;
+      width: 60%;
+      max-width: 60%;
+      min-width: 160px;
+      height: 36px;
+      padding: 0 12px 0 36px;
+      border: 1px solid #d7dee8;
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--ink);
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Ccircle cx='7' cy='7' r='4.5' fill='none' stroke='%238b97a6' stroke-width='1.4'/%3E%3Cpath d='M10.5 10.5 14 14' stroke='%238b97a6' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 12px center;
+    }
+    .search-recent {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .search-recent-label {
+      flex: none;
+      font-size: 12px;
+      color: #8b97a6;
+      white-space: nowrap;
+    }
+    .search-recent-list {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .search-recent-empty {
+      font-size: 12px;
+      color: #b7c0cc;
+    }
+    .recent-chip {
+      max-width: 140px;
+      height: 28px;
+      padding: 0 10px;
+      border: 1px solid #e4ebf5;
+      border-radius: 14px;
+      background: #f7f9fc;
+      color: #3d5166;
+      font-size: 12px;
+      line-height: 26px;
+      cursor: pointer;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-weight: 550;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     }
-    .tabs button b {
+    .recent-chip:hover {
+      border-color: #b9d0fb;
+      background: #eef4ff;
       color: var(--blue);
-      font-weight: 700;
-      font-size: 15px;
     }
-    .tabs button.is-on {
-      border-color: #7eb3ff;
-      box-shadow: 0 0 0 1px rgba(47, 120, 246, 0.18);
-    }
-    .tabs button.is-on .tab-ico {
-      background: #2f78f6;
-      color: #fff;
-    }
-    .tabs button.is-on em { color: #1f6feb; }
     .filters, .table-card {
       background: #fff;
       border-radius: 8px;
       box-shadow: var(--shadow);
     }
-    .filters { padding: 16px; }
+    .filters { padding: 16px; margin-top: 0; }
     .grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -230,6 +393,9 @@
       border: 1px solid #d7dee8;
       border-radius: 6px;
       background: #fff;
+    }
+    .field-industry2 {
+      align-items: center;
     }
     .range input {
       flex: 1 1 0;
@@ -292,22 +458,15 @@
       max-width: none;
       box-shadow: none;
     }
-    .high { color: var(--risk); font-weight: 650; }
-    .mid { color: #e5922a; font-weight: 650; }
-    .low { color: #2f9e6b; font-weight: 650; }
-    .tag {
-      display: inline-flex;
-      align-items: center;
-      height: 22px;
-      padding: 0 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 650;
-      line-height: 1;
-    }
-    .tag.high { color: var(--risk); background: #fff1f0; }
-    .tag.mid { color: #d48806; background: #fff7e8; }
-    .tag.low { color: #2f9e6b; background: #eef8f3; }
+    td.high, td.mid, td.low { font-weight: 650; }
+    td.high { color: var(--risk-high-ink); }
+    td.mid { color: var(--risk-mid-ink); }
+    td.low { color: var(--risk-low-ink); }
+    /* 风险度标签：与顶部统计卡同色，不依赖 @import 是否成功 */
+    .tag.high { color: var(--risk-high-ink); background: var(--risk-high-bg); border-color: color-mix(in srgb, var(--risk-high) 28%, #fff); }
+    .tag.mid { color: var(--risk-mid-ink); background: var(--risk-mid-bg); border-color: color-mix(in srgb, var(--risk-mid) 28%, #fff); }
+    .tag.low { color: var(--risk-low-ink); background: var(--risk-low-bg); border-color: color-mix(in srgb, var(--risk-low) 28%, #fff); }
+    .tag.muted { color: #8b97a6; background: color-mix(in srgb, #8b97a6 15%, #fff); border-color: color-mix(in srgb, #8b97a6 22%, #fff); }
     td.num { font-variant-numeric: tabular-nums; }
     .ops { display: flex; gap: 8px; }
     .ops button {
@@ -430,6 +589,145 @@
     .ignore-info:focus-visible .ignore-tip {
       opacity: 1;
       visibility: visible;
+    }
+    .view-record-cell { overflow: visible; }
+    .view-record {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 40px;
+      min-height: 32px;
+      padding: 8px 12px;
+      margin: -8px -12px;
+      border-radius: 4px;
+      outline: none;
+      transition: background 0.12s ease;
+    }
+    .view-record:hover,
+    .view-record:focus-visible {
+      background: color-mix(in srgb, var(--blue) 8%, transparent);
+    }
+    .view-record-trigger {
+      color: var(--blue);
+      font-weight: 650;
+      font-variant-numeric: tabular-nums;
+      cursor: pointer;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: color 0.12s ease, border-color 0.12s ease;
+    }
+    .view-record:hover .view-record-trigger,
+    .view-record:focus-visible .view-record-trigger {
+      color: #1a5fd0;
+      border-bottom-color: #b9d0fb;
+    }
+    .view-record.is-empty .view-record-trigger {
+      color: #8b97a6;
+      font-weight: 400;
+      cursor: default;
+      border-bottom-color: transparent;
+    }
+    #viewRecordPop {
+      position: fixed;
+      z-index: 90;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      width: 280px;
+      max-width: calc(100vw - 24px);
+      max-height: min(600px, calc(100vh - 24px));
+      padding: 0;
+      border: 1px solid #e6ebf2;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 12px 32px rgba(22, 50, 90, 0.14);
+      overflow: hidden;
+      pointer-events: auto;
+    }
+    #viewRecordPop[hidden] { display: none; }
+    #viewRecordPop::after {
+      content: "";
+      position: absolute;
+      left: 100%;
+      top: var(--arrow-y, 50%);
+      transform: translateY(-50%);
+      border: 7px solid transparent;
+      border-left-color: #fff;
+      filter: drop-shadow(1px 0 0 #e6ebf2);
+    }
+    .view-record-pop-head {
+      flex: none;
+      margin: 0;
+      padding: 14px 14px 12px;
+      font-size: 14px;
+      font-weight: 650;
+      color: #24364c;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      background: #fff;
+      border-bottom: 1px solid #eef2f7;
+      border-radius: 8px 8px 0 0;
+    }
+    .view-record-pop-body {
+      flex: 1;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 12px 14px 14px 0;
+    }
+    .view-record-timeline {
+      list-style: none;
+      margin: 0 0 0 20px;
+      padding: 2px 0 2px 12px;
+      border-left: 1px solid #d8d8d8;
+      min-width: 0;
+      overflow: visible;
+    }
+    .view-record-item {
+      position: relative;
+      padding: 0 0 14px 0;
+    }
+    .view-record-item:last-child { padding-bottom: 0; }
+    .view-record-item::before {
+      content: "";
+      position: absolute;
+      left: -17px;
+      top: 5px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #d8d8d8;
+      box-sizing: border-box;
+    }
+    .view-record-item time {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+      color: #8b97a6;
+      line-height: 1.35;
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .view-record-item strong {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 14px;
+      font-weight: 650;
+      color: #24364c;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .view-record-item span {
+      display: block;
+      font-size: 12px;
+      color: #8b97a6;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .ignore-dialog {
       width: min(480px, calc(100vw - 32px));
@@ -608,8 +906,15 @@
     </div>
   </header>
   <main class="page" id="listPage">
-    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="stat-cards" id="tabs" role="tablist"></div>
     <form class="filters" id="filters">
+      <div class="search-row">
+        <input id="f-keyword" type="search" autocomplete="off" placeholder="请输入名称或编号" />
+        <div class="search-recent" id="searchRecent">
+          <span class="search-recent-label">最近搜索</span>
+          <div class="search-recent-list" id="searchRecentList"></div>
+        </div>
+      </div>
       <div class="grid" id="filterGrid"></div>
       <div class="actions"><button class="search-btn" type="submit">搜索</button><button class="reset-btn" id="resetFilters" type="button">重置</button></div>
     </form>
@@ -637,6 +942,7 @@
       </div>
       <div class="pager" id="pager"></div>
     </section>
+    <div id="viewRecordPop" hidden role="tooltip" aria-live="polite"></div>
     <div class="col-pop" id="colPop" hidden>
       <strong id="colTitle"></strong>
       <input id="colQuery" type="search" placeholder="搜索筛选项" />
@@ -665,15 +971,239 @@
   </dialog>
   <iframe class="detail-frame" id="detailFrame" hidden title="预警详情"></iframe>
   <script>
-    const icon = (paths) => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + "</svg>";
     const tabs = [
-      { id: "project", label: "项目预警", icon: icon('<path d="M2 5.5 8 2.5l6 3L8 8.5 2 5.5Z"/><path d="m2 8.5 6 3 6-3"/><path d="m2 11.5 6 3 6-3"/>') },
-      { id: "owner", label: "招标人预警", icon: icon('<path d="M3 14V6.5L8 3l5 3.5V14"/><path d="M6.5 14v-4h3v4"/><path d="M2 14h12"/>') },
-      { id: "agency", label: "招标代理预警", icon: icon('<rect x="2.2" y="5" width="11.6" height="8" rx="1.2"/><path d="M6 5V3.8A1 1 0 0 1 7 2.8h2a1 1 0 0 1 1 1V5"/><path d="M2.2 8.6h11.6"/>') },
-      { id: "bidder", label: "投标人预警", icon: icon('<circle cx="6" cy="5.4" r="2"/><circle cx="11.1" cy="6" r="1.5"/><path d="M2.4 13.2c.5-2.1 2-3.2 3.6-3.2s3.1 1.1 3.6 3.2"/><path d="M10 10.3c1.1-.3 2.2.1 3 1.2"/>') },
-      { id: "expert", label: "专家预警", icon: icon('<circle cx="8" cy="5" r="2.1"/><path d="M3.4 13.4c.6-2.3 2.4-3.5 4.6-3.5s4 1.2 4.6 3.5"/><path d="M12.2 2.6 12.6 3.6h1.1l-.9.7.3 1.1-.9-.6-.9.6.3-1.1-.9-.7h1.1l.4-1Z"/>') },
-      { id: "staff", label: "工作人员预警", icon: icon('<rect x="3" y="2.4" width="10" height="11.2" rx="1.2"/><circle cx="8" cy="6.3" r="1.5"/><path d="M5.4 11.4c.4-1.2 1.4-1.8 2.6-1.8s2.2.6 2.6 1.8"/>') }
+      { id: "project", label: "项目数量", icon: "assets/warn-card-project.png", searchKeys: ["code", "name"], searchPlaceholder: "请输入项目名称或项目编号" },
+      { id: "owner", label: "招标人数量", icon: "assets/warn-card-owner.png?v=2", searchKeys: ["name", "credit"], searchPlaceholder: "请输入招标人名称或统一社会信用代码" },
+      { id: "agency", label: "招标代理数量", icon: "assets/warn-card-agency.png", searchKeys: ["name", "credit"], searchPlaceholder: "请输入代理机构名称或统一社会信用代码" },
+      { id: "bidder", label: "投标人数量", icon: "assets/warn-card-bidder.png", searchKeys: ["name", "credit"], searchPlaceholder: "请输入投标人名称或统一社会信用代码" },
+      { id: "expert", label: "专家数量", icon: "assets/warn-card-expert.png", searchKeys: ["name", "code"], searchPlaceholder: "请输入专家姓名或专家编号" },
+      { id: "staff", label: "工作人员数量", icon: "assets/warn-card-staff.png", searchKeys: ["name"], searchPlaceholder: "请输入工作人员姓名" }
     ];
+    function warnTier(level) {
+      const text = String(level || "");
+      if (!text || text === "无预警" || text === "无风险" || text === "—") return "none";
+      if (text.indexOf("高") >= 0) return "high";
+      if (text.indexOf("中") >= 0) return "mid";
+      if (text.indexOf("低") >= 0) return "low";
+      return "none";
+    }
+    function displayLevel(level) {
+      const tier = warnTier(level);
+      if (tier === "high") return "高风险";
+      if (tier === "mid") return "中风险";
+      if (tier === "low") return "低风险";
+      return "无风险";
+    }
+    function entityKey(row) {
+      return row.tab + ":" + (row.id || row.code || row.name);
+    }
+    function mergeCatalogRows(seedRows) {
+      const G = window.GUIZHOU || {};
+      const map = new Map();
+      seedRows.forEach((row) => map.set(entityKey(row), Object.assign({}, row)));
+      const upsert = (row) => {
+        const key = entityKey(row);
+        if (!map.has(key)) {
+          map.set(key, row);
+          return;
+        }
+        const cur = map.get(key);
+        if (warnTier(cur.level) === "none" && warnTier(row.level) !== "none") Object.assign(cur, row);
+      };
+      (G.indexProjects || []).forEach((p, i) => {
+        if ([...map.values()].some((r) => r.tab === "project" && r.name === p.name)) return;
+        upsert({
+          tab: "project",
+          code: "PRJ" + String(i + 1).padStart(3, "0"),
+          name: p.name,
+          money: "—",
+          date: p.date || "",
+          regulator: p.regulator || "—",
+          trade: p.cat || "—",
+          bidder: p.bidder || "—",
+          agency: p.agency || "—",
+          level: "",
+          point: "—",
+          views: 0,
+          trust: "—",
+          warnType: "—",
+          source: "交易系统",
+          form: "公开招标",
+          stage: "招标中",
+          region: "贵阳市",
+          id: "PRJ" + String(i + 1).padStart(3, "0"),
+          deal: "—"
+        });
+      });
+      Object.keys(G.graphs || {}).forEach((title) => {
+        const graph = G.graphs[title];
+        if ([...map.values()].some((r) => r.tab === "project" && r.name === title)) return;
+        upsert({
+          tab: "project",
+          code: graph.id || title,
+          name: title,
+          money: "—",
+          date: "—",
+          regulator: "—",
+          trade: "—",
+          bidder: graph.owner || "—",
+          agency: graph.agency || "—",
+          level: "",
+          point: "—",
+          views: 0,
+          trust: "—",
+          warnType: "—",
+          source: "交易系统",
+          form: "公开招标",
+          stage: "招标中",
+          region: "—",
+          id: graph.id || title,
+          deal: "—"
+        });
+      });
+      (G.companies || []).forEach((company, i) => {
+        let tab = "bidder";
+        if (company.role === "招标人") tab = "owner";
+        else if (company.role === "招标代理") tab = "agency";
+        if ([...map.values()].some((r) => r.tab === tab && r.name === company.name)) return;
+        const base = {
+          tab,
+          name: company.name,
+          region: "—",
+          trade: company.cat || "—",
+          level: "",
+          point: "—",
+          views: 0,
+          trust: "—",
+          warnType: "—",
+          source: "交易系统",
+          id: tab + "-" + i,
+          deal: "—"
+        };
+        if (tab === "owner") Object.assign(base, { credit: "—", handled: 0 });
+        if (tab === "agency") Object.assign(base, { credit: "—", jobs: 0, years: 0 });
+        if (tab === "bidder") Object.assign(base, { credit: "—", qualify: "—", projects: 0, wins: 0 });
+        upsert(base);
+      });
+      Object.values(G.graphs || {}).forEach((graph) => {
+        (graph.bidders || []).forEach((bidder) => {
+          const name = bidder.full || bidder.name;
+          if ([...map.values()].some((r) => r.tab === "bidder" && r.name === name)) return;
+          upsert({
+            tab: "bidder",
+            name,
+            credit: "—",
+            region: "—",
+            qualify: "—",
+            projects: 0,
+            wins: 0,
+            level: bidder.warn ? "高风险" : "",
+            point: bidder.warn ? "关联项目存在异常特征" : "—",
+            views: 0,
+            trust: "—",
+            warnType: "—",
+            source: "交易系统",
+            id: bidder.id,
+            deal: bidder.warn ? "未处置" : "—"
+          });
+        });
+        (graph.experts || []).forEach((expert) => {
+          if ([...map.values()].some((r) => r.tab === "expert" && r.name === expert.name)) return;
+          upsert({
+            tab: "expert",
+            name: expert.name,
+            code: expert.id,
+            major: "—",
+            region: "—",
+            reviews: 0,
+            level: expert.warn ? "高风险" : "",
+            point: expert.warn ? "评标行为异常" : "—",
+            views: 0,
+            trust: "—",
+            warnType: "—",
+            source: "交易系统",
+            id: expert.id,
+            deal: expert.warn ? "未处置" : "—"
+          });
+        });
+      });
+      (G.experts || []).forEach((name, i) => {
+        if ([...map.values()].some((r) => r.tab === "expert" && r.name === name)) return;
+        upsert({
+          tab: "expert",
+          name,
+          code: "ZJ" + String(i + 1).padStart(3, "0"),
+          major: "—",
+          region: "—",
+          reviews: 0,
+          level: "",
+          point: "—",
+          views: 0,
+          trust: "—",
+          warnType: "—",
+          source: "交易系统",
+          id: "ZJ" + String(i + 1).padStart(3, "0"),
+          deal: "—"
+        });
+      });
+      (G.staffNames || []).forEach((name, i) => {
+        if ([...map.values()].some((r) => r.tab === "staff" && r.name === name)) return;
+        upsert({
+          tab: "staff",
+          name,
+          unit: "—",
+          post: "—",
+          region: "—",
+          level: "",
+          point: "—",
+          views: 0,
+          trust: "—",
+          warnType: "—",
+          source: "交易系统",
+          id: "ST" + String(i + 1).padStart(3, "0"),
+          deal: "—"
+        });
+      });
+      return [...map.values()];
+    }
+    function tabStats(tabId) {
+      const list = catalogRows.filter((row) => row.tab === tabId);
+      const stats = { total: list.length, high: 0, mid: 0, low: 0 };
+      list.forEach((row) => {
+        const tier = warnTier(row.level);
+        if (tier === "high") stats.high += 1;
+        else if (tier === "mid") stats.mid += 1;
+        else if (tier === "low") stats.low += 1;
+      });
+      return stats;
+    }
+    function appendNoRiskDemoRows(list) {
+      const demo = [
+        { tab: "project", code: "DEMO-P-001", name: "息烽县城区停车位智能化改造项目", money: "980", date: "2026-07-12", regulator: "贵阳市公共资源交易中心", trade: "市政工程", bidder: "息烽县综合行政执法局", agency: "贵州开源招标咨询有限公司", level: "", point: "—", views: 8, trust: "高", warnType: "—", source: "交易系统", form: "公开招标", stage: "已定标", region: "贵阳市", id: "DEMO-P-001", deal: "—" },
+        { tab: "project", code: "DEMO-P-002", name: "从江县民族村寨消防通道整治工程", money: "620", date: "2026-06-28", regulator: "黔东南州公共资源交易中心", trade: "建设工程", bidder: "从江县住房和城乡建设局", agency: "黔东南州公共招标代理有限公司", level: "", point: "—", views: 3, trust: "中", warnType: "—", source: "交易系统", form: "公开招标", stage: "招标中", region: "黔东南州", id: "DEMO-P-002", deal: "—" },
+        { tab: "project", code: "DEMO-P-003", name: "册亨县高标准农田灌溉渠系项目", money: "1,850", date: "2026-05-16", regulator: "黔西南州公共资源交易中心", trade: "水利工程", bidder: "册亨县农业农村局", agency: "黔西南州工程咨询招标有限公司", level: "", point: "—", views: 0, trust: "高", warnType: "—", source: "监管报送", form: "公开招标", stage: "进场前", region: "黔西南州", id: "DEMO-P-003", deal: "—" },
+        { tab: "project", code: "DEMO-P-004", name: "德江县中小学智慧黑板采购项目", money: "430", date: "2026-08-03", regulator: "铜仁市公共资源交易中心", trade: "政府采购", bidder: "德江县教育局", agency: "铜仁梵净招标代理有限公司", level: "", point: "—", views: 5, trust: "高", warnType: "—", source: "交易系统", form: "竞争性谈判", stage: "已定标", region: "铜仁市", id: "DEMO-P-004", deal: "—" },
+        { tab: "owner", name: "安顺市平坝区农业农村局", credit: "11520400MB1D48201X", region: "安顺市", trade: "政府采购", handled: 6, level: "", point: "—", views: 2, trust: "高", warnType: "—", source: "交易系统", id: "DEMO-O-001", deal: "—" },
+        { tab: "owner", name: "金沙县文体广电旅游局", credit: "11520523MB1E11802Y", region: "毕节市", trade: "建设工程", handled: 4, level: "", point: "—", views: 0, trust: "中", warnType: "—", source: "监管报送", id: "DEMO-O-002", deal: "—" },
+        { tab: "owner", name: "雷山县乡村振兴局", credit: "11522634MB1F22003Z", region: "黔东南州", trade: "乡村振兴", handled: 9, level: "", point: "—", views: 1, trust: "高", warnType: "—", source: "交易系统", id: "DEMO-O-003", deal: "—" },
+        { tab: "agency", name: "六盘水恒达工程招标有限公司", credit: "91520200MA6AL8801A", region: "六盘水市", jobs: 38, years: 5, level: "", point: "—", views: 4, trust: "高", warnType: "—", source: "交易系统", id: "DEMO-A-001", deal: "—" },
+        { tab: "agency", name: "毕节智信项目管理有限公司", credit: "91520500MA6DN9902B", region: "毕节市", jobs: 52, years: 3, level: "", point: "—", views: 0, trust: "中", warnType: "—", source: "监管报送", id: "DEMO-A-002", deal: "—" },
+        { tab: "bidder", name: "贵州顺达市政建设有限公司", credit: "91520100MA6HJ1103C", region: "贵阳市", qualify: "市政公用二级", projects: 24, wins: 3, level: "", point: "—", views: 6, trust: "高", warnType: "—", source: "交易系统", id: "DEMO-B-001", deal: "—" },
+        { tab: "bidder", name: "遵义市汇川水利水电工程有限公司", credit: "91520300MA6E22004D", region: "遵义市", qualify: "水利水电二级", projects: 17, wins: 2, level: "", point: "—", views: 0, trust: "中", warnType: "—", source: "交易系统", id: "DEMO-B-002", deal: "—" },
+        { tab: "bidder", name: "贵州云图信息技术股份有限公司", credit: "91520100MA6GL3305E", region: "贵安新区", qualify: "无", projects: 11, wins: 1, level: "", point: "—", views: 2, trust: "高", warnType: "—", source: "监管报送", id: "DEMO-B-003", deal: "—" },
+        { tab: "bidder", name: "铜仁市碧江建筑工程有限公司", credit: "91520602MA6DK4406F", region: "铜仁市", qualify: "施工总承包二级", projects: 31, wins: 4, level: "", point: "—", views: 1, trust: "高", warnType: "—", source: "交易系统", id: "DEMO-B-004", deal: "—" },
+        { tab: "expert", name: "周静", code: "ZJ-DEMO-001", major: "房屋建筑", region: "贵阳市", reviews: 126, level: "", point: "—", views: 0, trust: "高", warnType: "—", source: "交易系统", id: "ZJ-DEMO-001", deal: "—" },
+        { tab: "expert", name: "吴磊", code: "ZJ-DEMO-002", major: "政府采购", region: "遵义市", reviews: 88, level: "", point: "—", views: 3, trust: "中", warnType: "—", source: "交易系统", id: "ZJ-DEMO-002", deal: "—" },
+        { tab: "expert", name: "郑晓梅", code: "ZJ-DEMO-003", major: "水利水电", region: "黔南州", reviews: 142, level: "", point: "—", views: 1, trust: "高", warnType: "—", source: "监管报送", id: "ZJ-DEMO-003", deal: "—" },
+        { tab: "staff", name: "陈雨", unit: "贵州省公共资源交易中心", post: "信息审核", region: "贵阳市", level: "", point: "—", views: 0, trust: "高", warnType: "—", source: "交易系统", id: "ST-DEMO-001", deal: "—" },
+        { tab: "staff", name: "黄俊", unit: "遵义市公共资源交易中心", post: "评标场所管理", region: "遵义市", level: "", point: "—", views: 2, trust: "高", warnType: "—", source: "交易系统", id: "ST-DEMO-002", deal: "—" },
+        { tab: "staff", name: "何琳", unit: "贵阳贵咨招标有限公司", post: "项目负责人", region: "贵阳市", level: "", point: "—", views: 0, trust: "中", warnType: "—", source: "监管报送", id: "ST-DEMO-003", deal: "—" }
+      ];
+      demo.forEach((row) => {
+        if (!list.some((item) => entityKey(item) === entityKey(row))) list.push(row);
+      });
+      return list;
+    }
     const base = {
       "GC202609186": ["贵阳市观山湖区金融城二期市政道路工程", "18,600", "2026-09-26", "贵阳市公共资源交易中心", "建设工程", "贵阳城市发展投资集团有限公司", "公开招标", "招标中", "贵阳市", "贵州建工招标代理有限公司"],
       "GC202609142": ["遵义市中心城区供水管网改造工程", "46,500", "2026-09-25", "遵义市公共资源交易中心", "建设工程", "遵义市水务投资有限责任公司", "公开招标", "招标中", "遵义市", "遵义宏达招标代理有限公司"],
@@ -777,9 +1307,19 @@
       });
       return out;
     }
-    let rows = expandRows(window.GUIZHOU.rows);
+    const catalogRows = appendNoRiskDemoRows(mergeCatalogRows(window.GUIZHOU.rows));
+    if (window.IndustryCatalog) {
+      catalogRows.forEach((item) => {
+        if (item.tab === "project") IndustryCatalog.enrichProjectTrade(item);
+      });
+    }
     const dealStates = ["未处置", "已忽略", "已转线索"];
-    rows.forEach((item, index) => {
+    catalogRows.forEach((item, index) => {
+      if (warnTier(item.level) === "none") {
+        if (!item.deal || item.deal === "未处置") item.deal = "—";
+        return;
+      }
+      if (item.deal && item.deal !== "—") return;
       const key = String(item.id || item.code || item.name || index);
       let n = 0;
       for (let i = 0; i < key.length; i += 1) n = (n * 33 + key.charCodeAt(i)) >>> 0;
@@ -789,6 +1329,7 @@
         item.ignoreReason = "经复核暂无异常，按程序予以忽略。";
       }
     });
+    let rows = expandRows(catalogRows);
     if (new URLSearchParams(location.search).get("scope") === "clue") {
       rows = rows.filter((item) => item.deal === "已转线索");
       document.title = "预警线索";
@@ -805,24 +1346,25 @@
     const params = new URLSearchParams(location.search);
     const regionOpts = ["全省", "贵阳市", "遵义市", "六盘水市", "安顺市", "毕节市", "铜仁市", "黔西南州", "黔东南州", "黔南州", "贵安新区"];
     const sourceOpts = ["全部", "交易系统", "监管报送"];
-    const levelOpts = ["全部", "高风险", "中风险", "低风险"];
     const dealOpts = ["全部", "未处置", "已忽略", "已转线索"];
-    const dealField = { key: "deal", label: "预警状态", type: "select", all: "全部", options: dealOpts };
-    const dealCol = { key: "deal", label: "预警状态", filter: true };
+    const riskStateOpts = ["全部", "高风险", "中风险", "低风险", "无风险"];
+    const riskStateField = { key: "riskState", label: "风险状态", type: "select", all: "全部", options: riskStateOpts };
+    const dealField = { key: "deal", label: "处置状态", type: "select", all: "全部", options: dealOpts };
+    const dealCol = { key: "deal", label: "处置状态", filter: true };
     const statusOpts = ["全部", "未查看", "已查看"];
     const tradeOpts = ["全部", "建设工程", "政府采购", "国企采购", "能源行业"];
+    const tradeL1Opts = tradeOpts.slice(1);
     const opsCol = { key: "ops", label: "操作", pin: "r" };
     const views = {
       project: {
         pin1: "148px", pin2: "240px",
         filters: [
-          { key: "keyword", label: "项目名称/编号", type: "search", placeholder: "请输入项目名称或编号", keys: ["code", "name"] },
-          { key: "trade", label: "行业类型", type: "select", all: "全部", options: tradeOpts },
+          riskStateField,
+          { key: "trade", label: "行业类型", type: "industry2", all: "全部", options: tradeL1Opts },
           { key: "region", label: "地区", type: "select", all: "全省", options: regionOpts },
           { key: "form", label: "组织形式", type: "select", all: "全部", options: ["全部", "公开招标", "邀请招标", "竞争性谈判"] },
           { key: "warnType", label: "预警类型", type: "select", all: "全部", options: ["全部", "投标人特征识别", "围标串标", "中标率异常", "拆分项目", "应进未进", "资格条件定制"] },
           { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
-          { key: "level", label: "预警等级", type: "select", all: "全部", options: levelOpts },
           dealField,
           { key: "stage", label: "项目进展时间", type: "select", all: "全部", options: ["全部", "进场前", "招标中", "已定标"] },
           { key: "range", label: "进场时间", type: "range" }
@@ -835,7 +1377,7 @@
           { key: "regulator", label: "所属交易中心", filter: true },
           { key: "trade", label: "项目所属行业", filter: true },
           { key: "bidder", label: "招标人", filter: true },
-          { key: "level", label: "项目风险度", sort: true, rank: true },
+          { key: "level", label: "风险度", sort: true, rank: true },
           dealCol,
           { key: "point", label: "项目风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
@@ -846,14 +1388,13 @@
       owner: {
         pin1: "220px", pin2: "188px",
         filters: [
-          { key: "keyword", label: "招标人名称/代码", type: "search", placeholder: "请输入名称或信用代码", keys: ["name", "credit"] },
+          riskStateField,
           { key: "region", label: "地区", type: "select", all: "全省", options: regionOpts },
           { key: "trade", label: "所属行业", type: "select", all: "全部", options: tradeOpts },
           { key: "handled", label: "经办项目数", type: "min", placeholder: "≥10" },
           { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
           { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "中标集中", "倾向性条款", "任职关联", "需求代编"] },
-          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts },
           dealField
         ],
         columns: [
@@ -862,7 +1403,7 @@
           { key: "region", label: "地区", filter: true },
           { key: "trade", label: "所属行业", filter: true },
           { key: "handled", label: "经办项目数", sort: true, num: true },
-          { key: "level", label: "项目风险度", sort: true, rank: true },
+          { key: "level", label: "风险度", sort: true, rank: true },
           dealCol,
           { key: "point", label: "风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
@@ -873,14 +1414,13 @@
       agency: {
         pin1: "220px", pin2: "188px",
         filters: [
-          { key: "keyword", label: "代理机构名称/代码", type: "search", placeholder: "请输入名称或信用代码", keys: ["name", "credit"] },
+          riskStateField,
           { key: "region", label: "地区", type: "select", all: "全省", options: regionOpts },
           { key: "jobs", label: "承揽项目数", type: "min", placeholder: "≥50" },
           { key: "years", label: "机构成立年限", type: "select", all: "全部", options: ["全部", "1年以内", "1至3年", "3至8年", "8年以上"] },
           { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
           { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "文件同源", "新成立承接", "投诉集中", "资格条件定制"] },
-          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts },
           dealField
         ],
         columns: [
@@ -888,7 +1428,7 @@
           { key: "credit", label: "统一社会信用代码", pin: "l2" },
           { key: "region", label: "地区", filter: true },
           { key: "jobs", label: "承揽项目数", sort: true, num: true },
-          { key: "level", label: "项目风险度", sort: true, rank: true },
+          { key: "level", label: "风险度", sort: true, rank: true },
           dealCol,
           { key: "point", label: "风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
@@ -899,14 +1439,13 @@
       bidder: {
         pin1: "220px", pin2: "188px",
         filters: [
-          { key: "keyword", label: "投标人名称/代码", type: "search", placeholder: "请输入名称或信用代码", keys: ["name", "credit"] },
-          { key: "region", label: "地区", type: "select", all: "全省", options: regionOpts },
+          riskStateField,
+          { key: "region", label: "地区", type: "select", all: "全部", options: regionOpts },
           { key: "qualify", label: "资质等级", type: "select", all: "全部", options: ["全部", "施工总承包一级", "施工总承包二级", "市政公用一级", "市政公用二级", "无"] },
           { key: "trade", label: "所属行业", type: "select", all: "全部", options: tradeOpts },
           { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
           { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "机器码一致", "围标串标", "中标率异常", "实名制异常"] },
-          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts },
           dealField
         ],
         columns: [
@@ -916,7 +1455,7 @@
           { key: "qualify", label: "资质等级", filter: true },
           { key: "projects", label: "参与项目数", sort: true, num: true },
           { key: "wins", label: "中标次数", sort: true, num: true },
-          { key: "level", label: "项目风险度", sort: true, rank: true },
+          { key: "level", label: "风险度", sort: true, rank: true },
           dealCol,
           { key: "point", label: "风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
@@ -927,14 +1466,13 @@
       expert: {
         pin1: "96px", pin2: "96px",
         filters: [
-          { key: "keyword", label: "专家姓名/编号", type: "search", placeholder: "请输入姓名或编号", keys: ["name", "code"] },
+          riskStateField,
           { key: "major", label: "评标专业", type: "select", all: "全部", options: ["全部", "工程造价", "市政工程", "房屋建筑", "水利水电", "政府采购"] },
           { key: "region", label: "抽取地区", type: "select", all: "全省", options: regionOpts },
           { key: "reviews", label: "参评次数", type: "min", placeholder: "≥100" },
           { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
           { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "打分偏离", "单位关联"] },
-          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts },
           dealField
         ],
         columns: [
@@ -943,7 +1481,7 @@
           { key: "major", label: "评标专业", filter: true },
           { key: "region", label: "抽取地区", filter: true },
           { key: "reviews", label: "参评次数", sort: true, num: true },
-          { key: "level", label: "项目风险度", sort: true, rank: true },
+          { key: "level", label: "风险度", sort: true, rank: true },
           dealCol,
           { key: "point", label: "风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
@@ -954,14 +1492,13 @@
       staff: {
         pin1: "88px", pin2: "220px",
         filters: [
-          { key: "keyword", label: "姓名", type: "search", placeholder: "请输入姓名", keys: ["name"] },
+          riskStateField,
           { key: "unit", label: "所属单位", type: "select", all: "全部", options: ["全部", "贵州省公共资源交易中心", "遵义市公共资源交易中心", "贵州建工招标代理有限公司", "贵阳贵咨招标有限公司"] },
           { key: "post", label: "岗位", type: "select", all: "全部", options: ["全部", "交易系统运维", "评标场所管理", "项目负责人", "信息审核"] },
           { key: "region", label: "地区", type: "select", all: "全省", options: regionOpts },
           { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
           { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "异常登录", "异常访问", "任职关联"] },
-          { key: "level", label: "风险度", type: "select", all: "全部", options: levelOpts },
           dealField
         ],
         columns: [
@@ -984,23 +1521,204 @@
       cols().forEach((col) => { if (col.filter) bag[col.key] = []; });
       return bag;
     }
-    const rank = { "高风险": 3, "中风险": 2, "低风险": 1, "高": 3, "中": 2, "低": 1 };
+    const rank = { "高风险": 3, "中风险": 2, "低风险": 1, "无风险": 0, "高": 3, "中": 2, "低": 1 };
     const state = {
       tab: tabs.some((item) => item.id === params.get("tab")) ? params.get("tab") : "project",
       page: 1,
       pageSize: 10,
       sort: { key: "", dir: "" },
       colFilters: {},
-      openFilter: ""
+      openFilter: "",
+      industryCascadeFilter: null
     };
 
     function esc(value) {
       return String(value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
     }
+    function pad2(n) { return String(n).padStart(2, "0"); }
+    function formatViewTime(date) {
+      return date.getFullYear() + "-" + pad2(date.getMonth() + 1) + "-" + pad2(date.getDate()) + " " +
+        pad2(date.getHours()) + ":" + pad2(date.getMinutes()) + ":" + pad2(date.getSeconds());
+    }
+    function viewRowSeed(row) {
+      const key = String(row.id || row.code || row.name || "");
+      let hash = 0;
+      for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+      return hash;
+    }
+    function viewRecordsForRow(row) {
+      const total = Number(row.views) || 0;
+      if (total <= 0) return [];
+      const show = Math.min(total, 99);
+      const names = ["吴杰", "汪平", "赵雅", "张明", "刘洋", "陈静"];
+      const baseOrg = row.regulator || row.unit || "贵州省公共资源交易中心";
+      const dept = baseOrg.indexOf("监察科") >= 0 ? baseOrg : baseOrg + "监察科";
+      const seed = viewRowSeed(row);
+      const list = [];
+      for (let i = 0; i < show; i++) {
+        const d = new Date("2025-11-05T08:55:27");
+        d.setDate(d.getDate() - i);
+        d.setHours(8 + (seed + i * 3) % 9, (55 - i * 4 + 60) % 60, (27 + i * 7) % 60);
+        list.push({
+          at: formatViewTime(d),
+          name: names[(seed + i) % names.length],
+          dept: dept
+        });
+      }
+      return list;
+    }
+    function viewRecordPopHtml(records, total) {
+      const items = records.map((item) => (
+        "<li class=\"view-record-item\">" +
+        "<time>" + esc(item.at) + "</time>" +
+        "<strong>" + esc(item.name) + "</strong>" +
+        "<span>" + esc(item.dept) + "</span></li>"
+      )).join("");
+      return (
+        "<div class=\"view-record-pop-head\">查看记录 ( " + total + " )</div>" +
+        "<div class=\"view-record-pop-body\"><ul class=\"view-record-timeline\">" + items + "</ul></div>"
+      );
+    }
+    function viewRecordCellHtml(row, cls) {
+      const count = Number(row.views) || 0;
+      if (count <= 0) {
+        return "<td class=\"" + cls + " num view-record-cell\">—</td>";
+      }
+      return (
+        "<td class=\"" + cls + " num view-record-cell\">" +
+        "<span class=\"view-record\" tabindex=\"0\" data-row-i=\"" + rows.indexOf(row) + "\">" +
+        "<span class=\"view-record-trigger\">" + count + "</span></span></td>"
+      );
+    }
+    let viewRecordPopTimer = 0;
+    let viewRecordAnchor = null;
+    function hideViewRecordPop() {
+      viewRecordAnchor = null;
+      const pop = document.getElementById("viewRecordPop");
+      if (pop) pop.hidden = true;
+    }
+    function placeViewRecordPop(anchor, row) {
+      const pop = document.getElementById("viewRecordPop");
+      if (!pop || !anchor) return;
+      const records = viewRecordsForRow(row);
+      if (!records.length) {
+        hideViewRecordPop();
+        return;
+      }
+      pop.innerHTML = viewRecordPopHtml(records, Number(row.views) || records.length);
+      pop.hidden = false;
+      const rect = anchor.getBoundingClientRect();
+      const gap = 10;
+      pop.style.visibility = "hidden";
+      pop.style.left = "0";
+      pop.style.top = "0";
+      const popW = pop.offsetWidth;
+      const popH = pop.offsetHeight;
+      let left = rect.left - popW - gap;
+      let top = rect.top + rect.height / 2 - popH / 2;
+      left = Math.max(8, left);
+      top = Math.max(8, Math.min(top, window.innerHeight - popH - 8));
+      pop.style.left = left + "px";
+      pop.style.top = top + "px";
+      const arrowY = Math.max(18, Math.min(popH - 18, rect.top + rect.height / 2 - top));
+      pop.style.setProperty("--arrow-y", arrowY + "px");
+      pop.style.visibility = "";
+    }
+    function scheduleHideViewRecordPop() {
+      clearTimeout(viewRecordPopTimer);
+      viewRecordPopTimer = setTimeout(hideViewRecordPop, 280);
+    }
+    function cancelHideViewRecordPop() {
+      clearTimeout(viewRecordPopTimer);
+    }
     function tone(level) {
+      if (warnTier(level) === "none") return "muted";
       if (level === "高风险" || level === "高") return "high";
       if (level === "中风险" || level === "中") return "mid";
       return "low";
+    }
+    function syncSearchPlaceholder() {
+      const tabDef = tabs.find((item) => item.id === state.tab);
+      const input = document.getElementById("f-keyword");
+      if (input && tabDef) input.placeholder = tabDef.searchPlaceholder;
+    }
+    const RECENT_SEARCH_MAX = 8;
+    function recentSearchKey() {
+      return "warningsRecentSearch:" + state.tab;
+    }
+    function loadRecentSearches() {
+      try {
+        const raw = localStorage.getItem(recentSearchKey());
+        const list = raw ? JSON.parse(raw) : [];
+        return Array.isArray(list) ? list.filter((item) => String(item || "").trim()) : [];
+      } catch (error) {
+        return [];
+      }
+    }
+    function saveRecentSearch(keyword) {
+      const text = String(keyword || "").trim();
+      if (!text) return;
+      const list = loadRecentSearches().filter((item) => item !== text);
+      list.unshift(text);
+      try {
+        localStorage.setItem(recentSearchKey(), JSON.stringify(list.slice(0, RECENT_SEARCH_MAX)));
+      } catch (error) { /* ignore quota */ }
+      renderRecentSearches();
+    }
+    function renderRecentSearches() {
+      const box = document.getElementById("searchRecentList");
+      if (!box) return;
+      const list = loadRecentSearches();
+      if (!list.length) {
+        box.innerHTML = '<span class="search-recent-empty">暂无</span>';
+        return;
+      }
+      box.innerHTML = list.map((kw) => (
+        '<button type="button" class="recent-chip" data-kw="' + esc(kw) + '" title="' + esc(kw) + '">' + esc(kw) + "</button>"
+      )).join("");
+    }
+    function applyRecentSearch(keyword) {
+      const input = document.getElementById("f-keyword");
+      if (!input) return;
+      input.value = keyword;
+      state.page = 1;
+      saveRecentSearch(keyword);
+      render();
+    }
+    function statCardTierForRiskState(risk) {
+      if (!risk || risk === "全部" || risk === "无风险") return "";
+      if (risk === "高风险" || risk === "中风险" || risk === "低风险") return risk;
+      return "";
+    }
+    function syncStatCardTierActive() {
+      const select = document.getElementById("f-riskState");
+      const activeTier = statCardTierForRiskState((select && select.value) || "全部");
+      document.querySelectorAll("#tabs .card-tier[data-risk]").forEach((el) => {
+        const onTab = el.closest("button[role=tab]");
+        const on = activeTier !== "" && el.dataset.risk === activeTier && onTab && onTab.classList.contains("is-on");
+        el.classList.toggle("is-filter-on", on);
+      });
+    }
+    function applyRiskStateFromTier(tabId, riskLabel) {
+      if (state.tab !== tabId) {
+        state.tab = tabId;
+        state.page = 1;
+        state.sort = { key: "", dir: "" };
+        closePop();
+        state.colFilters = emptyColFilters();
+        renderFilters();
+        syncSearchPlaceholder();
+        renderRecentSearches();
+        const next = new URLSearchParams(location.search);
+        next.set("tab", tabId);
+        try { history.replaceState(null, "", "warnings.html?" + next.toString()); } catch (error) {}
+        renderTabs();
+      }
+      const select = document.getElementById("f-riskState");
+      if (select) select.value = riskLabel;
+      state.page = 1;
+      render();
+      syncStatCardTierActive();
     }
     function yearBand(value) {
       if (value < 1) return "1年以内";
@@ -1008,24 +1726,55 @@
       if (value < 8) return "3至8年";
       return "8年以上";
     }
+    function mountIndustry2Cascade() {
+      if (state.industryCascadeFilter) {
+        state.industryCascadeFilter.destroy();
+        state.industryCascadeFilter = null;
+      }
+      const field = views[state.tab].filters.find((item) => item.type === "industry2");
+      const host = document.getElementById("f-industryCascade");
+      if (!field || !host || !window.IndustryCascade) return;
+      state.industryCascadeFilter = IndustryCascade.mount(host, {
+        theme: "light",
+        allL1Label: field.all,
+        subAllLabel: field.all,
+        l1Names: field.options || [],
+        value: { l1: field.all, sub: "" },
+        onChange: () => {
+          state.page = 1;
+          syncStatCardTierActive();
+          render();
+        },
+      });
+    }
     function renderFilters() {
       const grid = document.getElementById("filterGrid");
       grid.innerHTML = views[state.tab].filters.map((field) => {
         if (field.type === "range") {
           return "<label class=\"field\"><span>进场时间</span><span class=\"range\"><input id=\"f-from\" type=\"date\" value=\"2023-01-01\" /><i>至</i><input id=\"f-to\" type=\"date\" value=\"2026-10-13\" /></span></label>";
         }
+        if (field.type === "industry2") {
+          return "<label class=\"field field-industry2\"><span>" + esc(field.label) + "</span><div id=\"f-industryCascade\"></div></label>";
+        }
         if (field.type === "select") {
           return "<label class=\"field\"><span>" + esc(field.label) + "</span><select id=\"f-" + field.key + "\">" + field.options.map((value) => "<option value=\"" + esc(value) + "\">" + esc(value) + "</option>").join("") + "</select></label>";
         }
         return "<label class=\"field\"><span>" + esc(field.label) + "</span><input id=\"f-" + field.key + "\" type=\"" + (field.type === "min" ? "text" : "search") + "\" placeholder=\"" + esc(field.placeholder || "") + "\" /></label>";
       }).join("");
+      mountIndustry2Cascade();
     }
     function readFilters() {
-      const filters = {};
+      const filters = { keyword: (document.getElementById("f-keyword") && document.getElementById("f-keyword").value.trim()) || "" };
       views[state.tab].filters.forEach((field) => {
         if (field.type === "range") {
           filters.from = document.getElementById("f-from").value;
           filters.to = document.getElementById("f-to").value;
+        } else if (field.type === "industry2") {
+          const picked = state.industryCascadeFilter
+            ? state.industryCascadeFilter.getValue()
+            : { l1: field.all, sub: "" };
+          filters.trade = (picked.l1 || field.all).trim();
+          filters.tradeSub = (picked.sub || field.all).trim();
         } else {
           const input = document.getElementById("f-" + field.key);
           filters[field.key] = input ? input.value.trim() : "";
@@ -1035,14 +1784,20 @@
     }
     function matched(row, filters) {
       if (row.tab !== state.tab) return false;
+      const tabDef = tabs.find((item) => item.id === state.tab);
+      if (filters.keyword && tabDef && !tabDef.searchKeys.some((key) => String(row[key] || "").indexOf(filters.keyword) >= 0)) return false;
       return views[state.tab].filters.every((field) => {
-        if (field.type === "search") {
-          const query = filters[field.key];
-          return !query || field.keys.some((key) => String(row[key] || "").indexOf(query) >= 0);
+        if (field.type === "industry2") {
+          const IC = window.IndustryCatalog;
+          if (IC) return IC.matchIndustryFilter(row, filters.trade, filters.tradeSub, field.all);
+          const value = filters.trade;
+          if (!value || value === field.all) return true;
+          return String(row.trade) === value;
         }
         if (field.type === "select") {
           const value = filters[field.key];
           if (!value || value === field.all) return true;
+          if (field.key === "riskState") return displayLevel(row.level) === value;
           if (field.key === "viewState") return value === "未查看" ? row.views === 0 : row.views > 0;
           if (field.key === "years") return yearBand(row.years) === value;
           return String(row[field.key]) === value;
@@ -1155,14 +1910,31 @@
         const button = document.createElement("button");
         button.type = "button";
         button.className = item.id === state.tab ? "is-on" : "";
-        const count = rows.filter((row) => row.tab === item.id).length;
-        button.innerHTML = '<span class="tab-ico">' + item.icon + '</span><span class="tab-meta"><em>' + esc(item.label) + "</em><b>" + count + "</b></span>";
+        button.dataset.tab = item.id;
+        button.setAttribute("role", "tab");
+        button.setAttribute("aria-selected", item.id === state.tab ? "true" : "false");
+        const stats = tabStats(item.id);
+        button.innerHTML =
+          '<img class="card-ico" src="' + esc(item.icon) + '" width="72" height="72" alt="" decoding="async" />' +
+          '<div class="card-body">' +
+          '<div class="card-metrics">' +
+          '<div class="card-summary">' +
+          '<span class="card-title">' + esc(item.label) + "</span>" +
+          '<b class="card-total">' + stats.total + "</b>" +
+          "</div>" +
+          '<div class="card-tiers">' +
+          '<div class="card-tier is-hi" data-risk="高风险" role="button" tabindex="-1" title="筛选高风险"><span>高</span><b>' + stats.high + "</b></div>" +
+          '<div class="card-tier is-mid" data-risk="中风险" role="button" tabindex="-1" title="筛选中风险"><span>中</span><b>' + stats.mid + "</b></div>" +
+          '<div class="card-tier is-lo" data-risk="低风险" role="button" tabindex="-1" title="筛选低风险"><span>低</span><b>' + stats.low + "</b></div>" +
+          "</div></div></div>";
         button.addEventListener("click", () => {
           state.tab = item.id;
           state.page = 1;
           state.sort = { key: "", dir: "" };
           closePop();
           renderFilters();
+          syncSearchPlaceholder();
+          renderRecentSearches();
           state.colFilters = emptyColFilters();
           const next = new URLSearchParams(location.search);
           next.set("tab", item.id);
@@ -1172,7 +1944,18 @@
         });
         box.appendChild(button);
       });
+      syncStatCardTierActive();
     }
+    document.getElementById("tabs").addEventListener("click", (event) => {
+      const tier = event.target.closest(".card-tier[data-risk]");
+      if (!tier) return;
+      event.stopPropagation();
+      event.preventDefault();
+      const tabBtn = tier.closest("button[role=tab]");
+      const tabId = tabBtn && tabBtn.dataset.tab;
+      if (!tabId || !tier.dataset.risk) return;
+      applyRiskStateFromTier(tabId, tier.dataset.risk);
+    });
     function renderPager(total) {
       const pages = Math.max(1, Math.ceil(total / state.pageSize));
       if (state.page > pages) state.page = pages;
@@ -1202,16 +1985,20 @@
         });
       });
     }
+    function cellValue(row, key) {
+      if (key === "level") return displayLevel(row.level);
+      return row[key];
+    }
     function colMatch(row, skip) {
       return cols().every((col) => {
         if (!col.filter || col.key === skip) return true;
         const picked = state.colFilters[col.key] || [];
-        return !picked.length || picked.indexOf(String(row[col.key])) >= 0;
+        return !picked.length || picked.indexOf(String(cellValue(row, col.key))) >= 0;
       });
     }
     function sortValue(row, key) {
       const col = cols().find((item) => item.key === key) || {};
-      if (col.rank) return rank[row[key]] || 0;
+      if (col.rank) return rank[cellValue(row, key)] || rank[row[key]] || 0;
       if (col.num) return Number(String(row[key]).replace(/,/g, "")) || 0;
       return row[key] || "";
     }
@@ -1243,12 +2030,12 @@
     }
     function pickCell(row, key, className) {
       const picked = state.colFilters[key] || [];
-      const value = String(row[key]);
-      const active = picked.length === 1 && picked[0] === value;
-      const on = picked.length && picked.indexOf(value) >= 0 ? " is-on" : "";
+      const shown = String(cellValue(row, key));
+      const active = picked.length === 1 && picked[0] === shown;
+      const on = picked.length && picked.indexOf(shown) >= 0 ? " is-on" : "";
       const title = active ? "再次点击取消筛选" : "按此筛选";
       const cls = className ? ' class="' + className + '"' : "";
-      return "<td" + cls + "><button type=\"button\" class=\"cell-pick" + on + "\" data-col=\"" + key + "\" title=\"" + title + "\">" + esc(row[key]) + "</button></td>";
+      return "<td" + cls + "><button type=\"button\" class=\"cell-pick" + on + "\" data-col=\"" + key + "\" title=\"" + title + "\">" + esc(shown) + "</button></td>";
     }
     function closePop() {
       state.openFilter = "";
@@ -1275,7 +2062,8 @@
       const values = [];
       rows.forEach((row) => {
         if (!matched(row, filters) || !colMatch(row, key)) return;
-        if (values.indexOf(row[key]) < 0) values.push(row[key]);
+        const value = cellValue(row, key);
+        if (values.indexOf(value) < 0) values.push(value);
       });
       values.sort((a, b) => {
         const ap = picked.indexOf(a) >= 0 ? 0 : 1;
@@ -1347,9 +2135,10 @@
       const view = list.slice((state.page - 1) * state.pageSize, state.page * state.pageSize);
       const body = document.getElementById("body");
       if (!view.length) {
-        body.innerHTML = '<tr class="is-empty"><td class="empty" colspan="' + cols().length + '">当前条件下没有预警</td></tr>';
+        body.innerHTML = '<tr class="is-empty"><td class="empty" colspan="' + cols().length + '">当前条件下没有数据</td></tr>';
         renderPager(0);
         syncPop();
+        syncStatCardTierActive();
         return;
       }
       body.innerHTML = view.map((row) => (
@@ -1380,7 +2169,8 @@
               "<span class=\"ignore-tip\" role=\"tooltip\">" + esc(reason) + "</span></span></span></td>";
           }
           if (col.filter) return pickCell(row, col.key, cls);
-          if (col.key === "level") return "<td class=\"" + cls + "\"><span class=\"tag " + tone(row.level) + "\">" + esc(row.level) + "</span></td>";
+          if (col.key === "level") return "<td class=\"" + cls + "\"><span class=\"tag " + tone(row.level) + "\">" + esc(displayLevel(row.level)) + "</span></td>";
+          if (col.key === "views") return viewRecordCellHtml(row, cls);
           const raw = row[col.key];
           return "<td" + (cls ? " class=\"" + cls + "\"" : "") + ">" + esc(raw === 0 || raw ? raw : "—") + "</td>";
         }).join("") +
@@ -1388,19 +2178,65 @@
       )).join("");
       renderPager(list.length);
       syncPop();
+      syncStatCardTierActive();
     }
     document.getElementById("filters").addEventListener("submit", (event) => {
       event.preventDefault();
       state.page = 1;
+      const keyword = document.getElementById("f-keyword");
+      if (keyword && keyword.value.trim()) saveRecentSearch(keyword.value.trim());
       render();
+    });
+    document.getElementById("body").addEventListener("mouseenter", (event) => {
+      const hold = event.target.closest(".view-record");
+      if (!hold) return;
+      cancelHideViewRecordPop();
+      const idx = Number(hold.dataset.rowI);
+      const row = rows[idx];
+      if (!row) return;
+      viewRecordAnchor = hold;
+      placeViewRecordPop(hold, row);
+    }, true);
+    document.getElementById("body").addEventListener("mouseleave", (event) => {
+      const hold = event.target.closest(".view-record");
+      if (!hold) return;
+      if (event.relatedTarget && (hold.contains(event.relatedTarget) || document.getElementById("viewRecordPop").contains(event.relatedTarget))) return;
+      scheduleHideViewRecordPop();
+    }, true);
+    document.getElementById("viewRecordPop").addEventListener("mouseenter", cancelHideViewRecordPop);
+    document.getElementById("viewRecordPop").addEventListener("mouseleave", (event) => {
+      if (event.relatedTarget && event.relatedTarget.closest && event.relatedTarget.closest(".view-record")) return;
+      scheduleHideViewRecordPop();
+    });
+    document.getElementById("tableScroll").addEventListener("scroll", hideViewRecordPop);
+    window.addEventListener("resize", hideViewRecordPop);
+
+    document.getElementById("searchRecentList").addEventListener("click", (event) => {
+      const chip = event.target.closest(".recent-chip[data-kw]");
+      if (!chip) return;
+      applyRecentSearch(chip.getAttribute("data-kw") || chip.textContent || "");
+    });
+    document.getElementById("filterGrid").addEventListener("change", (event) => {
+      if (event.target.id === "f-riskState") {
+        state.page = 1;
+        syncStatCardTierActive();
+        render();
+      }
     });
     document.getElementById("resetFilters").addEventListener("click", () => {
       document.getElementById("filters").reset();
+      const industryField = views[state.tab].filters.find((item) => item.type === "industry2");
+      if (state.industryCascadeFilter && industryField) {
+        state.industryCascadeFilter.setValue({ l1: industryField.all, sub: "" });
+      }
+      const keyword = document.getElementById("f-keyword");
+      if (keyword) keyword.value = "";
       state.colFilters = emptyColFilters();
       state.sort = { key: "", dir: "" };
       state.page = 1;
       closePop();
       render();
+      syncStatCardTierActive();
     });
     document.querySelector("thead").addEventListener("click", (event) => {
       const filterBtn = event.target.closest("[data-filter]");
@@ -1423,7 +2259,7 @@
       if (pick) {
         const row = rows[Number(pick.closest("tr").dataset.i)];
         const col = pick.dataset.col;
-        const value = String(row[col]);
+        const value = String(cellValue(row, col));
         const picked = state.colFilters[col] || [];
         if (picked.length === 1 && picked[0] === value) {
           state.colFilters[col] = [];
@@ -1527,7 +2363,7 @@
     function syncFilterOptions() {
       ["project", "owner", "agency", "bidder", "expert", "staff"].forEach((tab) => {
         views[tab].filters.forEach((field) => {
-          if (field.type !== "select" || field.key === "viewState" || field.key === "years" || field.key === "level" || field.key === "source" || field.key === "deal") return;
+          if (field.type !== "select" || field.key === "viewState" || field.key === "years" || field.key === "source" || field.key === "deal" || field.key === "riskState") return;
           const values = [];
           rows.forEach((row) => {
             if (row.tab !== tab) return;
@@ -1540,6 +2376,8 @@
     }
     syncFilterOptions();
     renderFilters();
+    syncSearchPlaceholder();
+    renderRecentSearches();
     state.colFilters = emptyColFilters();
     renderTabs();
     render();

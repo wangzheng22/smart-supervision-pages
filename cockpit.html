@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>公共资源交易监管驾驶舱</title>
   <link rel="stylesheet" href="shell.css?v=20" />
+  <link rel="stylesheet" href="industry-cascade.css?v=2" />
   <script src="shell.js?v=19" defer></script>
   <script type="importmap">
   {
@@ -23,9 +24,9 @@
       --muted: #8ea4c8;
       --up: #ff5d6c;
       --down: #3ee0a0;
-      --high: #ff4d4f;
-      --mid: #fa8c16;
-      --low: #f5d76e;
+      --high: #f21818;
+      --mid: #a639fd;
+      --low: #fda939;
     }
     * { box-sizing: border-box; }
     html, body { height: 100%; }
@@ -72,10 +73,12 @@
     }
     .topbar-end .top-filters {
       gap: 8px;
+      align-items: center;
     }
     .industry {
       height: 32px;
-      min-width: 148px;
+      min-width: 168px;
+      max-width: 220px;
       padding: 0 28px 0 12px;
       color: #d6e8ff;
       background: rgba(8, 24, 52, 0.9) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238ec4ff' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 10px center;
@@ -197,7 +200,7 @@
     }
     .donut {
       width: 76px; height: 76px; flex: none; border-radius: 50%;
-      background: conic-gradient(#ff4d4f 0 38.5%, #fa8c16 0 82.7%, #f5d76e 0 100%);
+      background: conic-gradient(var(--high) 0 38.5%, var(--mid) 0 82.7%, var(--low) 0 100%);
       display: grid; place-items: center; position: relative;
     }
     .donut::before {
@@ -329,8 +332,8 @@
       line-height: 1;
       white-space: nowrap;
     }
-    .tag .hi { background: #e23d3d; }
-    .tag .mid { background: #e5922a; }
+    .tag .hi { background: var(--high); color: #fff; }
+    .tag .mid { background: var(--mid); color: #fff; }
     .tag .today { color: #c5d4e8; font-size: 18px; font-weight: 550; line-height: 1; white-space: nowrap; }
     .tag .today b { margin-left: 6px; color: #e8f2ff; font-weight: 700; }
     .right {
@@ -359,9 +362,9 @@
     .right .sub a { color: #49c2ff; text-decoration: none; flex: none; }
     .right .counts { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .right .lv { font-weight: 700; white-space: nowrap; }
-    .right .lv.高 { color: #e23d3d; }
-    .right .lv.中 { color: #e5922a; }
-    .right .lv.低 { color: #3dbe86; }
+    .right .lv.高 { color: var(--high); }
+    .right .lv.中 { color: var(--mid); }
+    .right .lv.低 { color: var(--low); }
     .list { min-height: 0; overflow-x: hidden; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 2px; }
     .item {
       display: block;
@@ -396,9 +399,9 @@
       font-weight: 650;
       line-height: 1.35;
     }
-    .item .risk.高 { background: #e23d3d; }
-    .item .risk.中 { background: #e5922a; }
-    .item .risk.低 { background: #2f9e6b; }
+    .item .risk.高 { background: var(--high); color: #fff; }
+    .item .risk.中 { background: var(--mid); }
+    .item .risk.低 { background: var(--low); color: #1a2744; }
     .item .time { font-size: 12px; font-weight: 650; letter-spacing: 0.2px; }
     .item .line { margin: 6px 0; border-top: 1px dashed rgba(190, 206, 224, 0.45); }
     .item .tt { font-size: 14px; font-weight: 720; line-height: 1.35; }
@@ -406,9 +409,9 @@
     .item .facts span { color: #8ea0b8; margin-right: 6px; }
     .item .facts b { font-weight: 550; }
     .item .pt { margin-top: 6px; font-size: 12px; font-weight: 650; line-height: 1.35; }
-    .item .pt.高 { color: #e23d3d; }
-    .item .pt.中 { color: #e5922a; }
-    .item .pt.低 { color: #3dbe86; }
+    .item .pt.高 { color: var(--high); }
+    .item .pt.中 { color: var(--mid); }
+    .item .pt.低 { color: var(--low); }
     .item .pt i { display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: currentColor; }
     .dock {
       position: absolute;
@@ -446,14 +449,7 @@
       <div class="topbar-spacer" aria-hidden="true"></div>
       <div class="topbar-end">
         <div class="top-filters">
-          <select class="industry" id="industry" aria-label="行业">
-            <option>全部行业</option>
-            <option>建设工程</option>
-            <option>政府采购</option>
-            <option>交通</option>
-            <option>水利</option>
-            <option>土地矿产</option>
-          </select>
+          <div id="industryCascade" aria-label="行业"></div>
           <select class="industry" id="region" aria-label="地市">
             <option>全部地市</option>
             <option>贵州省（全省）</option>
@@ -497,9 +493,9 @@
             <div class="donut-chart-row">
               <div class="donut" aria-hidden="true"><span>2317</span></div>
               <div class="legend">
-                <div><i style="background:#ff4d4f"></i>高 892</div>
-                <div><i style="background:#fa8c16"></i>中 1024</div>
-                <div><i style="background:#f5d76e"></i>低 401</div>
+                <div><i style="background:#f21818"></i>高 892</div>
+                <div><i style="background:#a639fd"></i>中 1024</div>
+                <div><i style="background:#fda939"></i>低 401</div>
               </div>
             </div>
           </article>
@@ -555,6 +551,8 @@
     </div>
   </div>
 
+  <script src="industry-catalog.js?v=2"></script>
+  <script src="industry-cascade.js?v=2"></script>
   <script src="mock-data.js?v=133"></script>
   <script type="module">
     import * as THREE from "three";
@@ -1224,10 +1222,10 @@
         { name: "园林绿化", count: 1080, amount: 64.8 }
       ],
       建设工程: [
-        { name: "交通", count: 2680, amount: 248.6 },
-        { name: "住建", count: 3680, amount: 312.4 },
-        { name: "水利", count: 1540, amount: 156.8 },
-        { name: "农业", count: 980, amount: 68.2 }
+        { name: "交通工程", count: 2680, amount: 248.6 },
+        { name: "房屋建筑", count: 3680, amount: 312.4 },
+        { name: "水利工程", count: 1540, amount: 156.8 },
+        { name: "农业农村", count: 980, amount: 68.2 }
       ],
       政府采购: [
         { name: "货物类", count: 2180, amount: 72.4 },
@@ -1271,18 +1269,34 @@
       return Number.isInteger(value) ? String(value) : value.toFixed(1);
     }
     const INDUSTRY_CHART_REF = { w: 316, h: 106 };
-    let currentIndustryName = "全部行业";
+    let currentIndustryKey = "全部行业";
+    let cockpitIndustryCascade = null;
 
-    function renderIndustry(name) {
-      currentIndustryName = name;
-      const items = industryPack[name] || industryPack["全部行业"];
+    function renderIndustryFromKey(key) {
+      const IC = window.IndustryCatalog;
+      const picked = IC ? IC.splitCockpitIndustryValue(key) : { l1: key, sub: "" };
+      renderIndustry(picked.l1, picked.sub);
+    }
+
+    function renderIndustry(name, sub) {
+      const IC = window.IndustryCatalog;
+      currentIndustryKey = sub && IC ? IC.formatTrade(name, sub) : (sub ? name + "-" + sub : name);
+      let items = industryPack[name] || industryPack["全部行业"];
+      const subFilter = sub || "";
+      if (name === "建设工程" && subFilter) {
+        const hit = items.find((item) => item.name === subFilter);
+        items = hit ? [hit] : items.filter((item) => item.name === subFilter);
+      }
       const count = items.reduce((sum, item) => sum + item.count, 0);
       const amount = Math.round(items.reduce((sum, item) => sum + item.amount, 0) * 10) / 10;
       document.getElementById("kpiCount").textContent = count.toLocaleString("zh-CN");
       document.getElementById("kpiAmount").textContent = amount.toLocaleString("zh-CN", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      const barLabel = subFilter ? name + "-" + subFilter : name;
       document.getElementById("barTitle").textContent = name === "全部行业"
         ? "分行业交易"
-        : (COCKPIT_DESK === "engineering" && name === "建设工程" ? "交易统计" : name + "细分");
+        : (COCKPIT_DESK === "engineering" && name === "建设工程" && !subFilter
+          ? "交易统计"
+          : (subFilter ? barLabel : name + "细分"));
       const qtyTicks = axisTicks(Math.max(...items.map((item) => item.count)));
       const amtTicks = axisTicks(Math.max(...items.map((item) => item.amount)));
       const qtyMax = qtyTicks[3];
@@ -1338,16 +1352,25 @@
         if (pack && pack.length > 1) return;
         industryPack[item.name] = [{ name: item.name, count: item.count, amount: item.amount }];
       });
-      const industry = document.getElementById("industry");
-      industry.innerHTML = "<option>全部行业</option>" + allInd.map((item) => "<option>" + item.name + "</option>").join("");
+      const indNames = allInd.map((item) => item.name);
       if (COCKPIT_DESK === "engineering") {
         industryPack["建设工程"] = [
-          { name: "交通", count: 2680, amount: 248.6 },
-          { name: "住建", count: 3680, amount: 312.4 },
-          { name: "水利", count: 1540, amount: 156.8 },
-          { name: "农业", count: 980, amount: 68.2 }
+          { name: "交通工程", count: 2680, amount: 248.6 },
+          { name: "房屋建筑", count: 3680, amount: 312.4 },
+          { name: "水利工程", count: 1540, amount: 156.8 },
+          { name: "农业农村", count: 980, amount: 68.2 }
         ];
-        industry.value = "建设工程";
+      }
+      if (window.IndustryCascade) {
+        if (cockpitIndustryCascade) cockpitIndustryCascade.destroy();
+        cockpitIndustryCascade = IndustryCascade.mount(document.getElementById("industryCascade"), {
+          theme: "cockpit",
+          allL1Label: "全部行业",
+          subAllLabel: "全部",
+          l1Names: indNames,
+          value: COCKPIT_DESK === "engineering" ? { l1: "建设工程", sub: "" } : { l1: "全部行业", sub: "" },
+          onChange: (picked) => renderIndustryFromKey(picked.key),
+        });
       }
       const rows = GUIZHOU.rows;
       const high = rows.filter((row) => row.level === "高风险").length;
@@ -1358,10 +1381,13 @@
       donut.querySelector("span").textContent = String(rows.length);
       document.querySelector(".donut-card .v").textContent = rows.length.toLocaleString("zh-CN");
       const legend = document.querySelectorAll(".donut-card .legend div");
-      legend[0].innerHTML = '<i style="background:#ff4d4f"></i>高 ' + high;
-      legend[1].innerHTML = '<i style="background:#fa8c16"></i>中 ' + mid;
-      legend[2].innerHTML = '<i style="background:#f5d76e"></i>低 ' + low;
-      donut.style.background = "conic-gradient(#ff4d4f 0 " + (high / total * 100).toFixed(1) + "%, #fa8c16 0 " + ((high + mid) / total * 100).toFixed(1) + "%, #f5d76e 0 100%)";
+      const RH = "#f21818";
+      const RM = "#a639fd";
+      const RL = "#fda939";
+      legend[0].innerHTML = '<i style="background:' + RH + '"></i>高 ' + high;
+      legend[1].innerHTML = '<i style="background:' + RM + '"></i>中 ' + mid;
+      legend[2].innerHTML = '<i style="background:' + RL + '"></i>低 ' + low;
+      donut.style.background = "conic-gradient(" + RH + " 0 " + (high / total * 100).toFixed(1) + "%, " + RM + " 0 " + ((high + mid) / total * 100).toFixed(1) + "%, " + RL + " 0 100%)";
       const subjects = new Set(rows.filter((row) => row.tab !== "project").map((row) => row.tab + ":" + row.name));
       const projects = new Set(rows.filter((row) => row.tab === "project").map((row) => row.code || row.name));
       const minis = document.querySelectorAll(".kpi.mini .v");
@@ -1383,21 +1409,38 @@
         clue.querySelector(".num").textContent = String(rows.length);
       }
     }
-    const industrySelect = document.getElementById("industry");
-    industrySelect.addEventListener("change", () => renderIndustry(industrySelect.value));
+    if (window.IndustryCascade && !cockpitIndustryCascade) {
+      cockpitIndustryCascade = IndustryCascade.mount(document.getElementById("industryCascade"), {
+        theme: "cockpit",
+        allL1Label: "全部行业",
+        subAllLabel: "全部",
+        l1Names: ["建设工程", "政府采购", "交通", "水利", "土地矿产"],
+        value: { l1: "全部行业", sub: "" },
+        onChange: (picked) => renderIndustryFromKey(picked.key),
+      });
+    }
     const industryChartEl = document.getElementById("industryChart");
     if (typeof ResizeObserver !== "undefined") {
       let industryChartFrame = 0;
       const industryChartObserver = new ResizeObserver(() => {
         cancelAnimationFrame(industryChartFrame);
-        industryChartFrame = requestAnimationFrame(() => renderIndustry(currentIndustryName));
+        industryChartFrame = requestAnimationFrame(() => renderIndustryFromKey(currentIndustryKey));
       });
       industryChartObserver.observe(industryChartEl);
     }
-    const initialIndustry = COCKPIT_DESK === "engineering" ? "建设工程" : industrySelect.value;
-    if (COCKPIT_DESK === "engineering") industrySelect.value = "建设工程";
-    renderIndustry(initialIndustry);
-    requestAnimationFrame(() => renderIndustry(currentIndustryName));
+    if (cockpitIndustryCascade && COCKPIT_DESK === "engineering") {
+      cockpitIndustryCascade.setValue({ l1: "建设工程", sub: "" });
+    }
+    function cockpitIndustryKey() {
+      if (!cockpitIndustryCascade) return "全部行业";
+      const v = cockpitIndustryCascade.getValue();
+      const IC = window.IndustryCatalog;
+      if (!v.l1 || v.l1 === "全部行业") return "全部行业";
+      if (v.sub && IC) return IC.formatTrade(v.l1, v.sub);
+      return v.l1;
+    }
+    renderIndustryFromKey(cockpitIndustryKey());
+    requestAnimationFrame(() => renderIndustryFromKey(currentIndustryKey));
 
     function tick() {
       const now = new Date();
