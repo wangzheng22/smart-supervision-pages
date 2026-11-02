@@ -7,10 +7,12 @@
   <title>概览视图</title>
   <script>if (new URLSearchParams(location.search).get("bare") === "1") document.documentElement.classList.add("is-bare");</script>
   <link rel="stylesheet" href="shell.css?v=16" />
-  <link rel="stylesheet" href="view-catalog.css?v=18" />
-  <link rel="stylesheet" href="clue-report.css?v=7" />
+  <link rel="stylesheet" href="view-catalog.css?v=31" />
+  <link rel="stylesheet" href="clue-report.css?v=16" />
   <script src="clue-handoff.js?v=2"></script>
-  <script src="clue-report.js?v=4"></script>
+  <script src="level-utils.js?v=17"></script>
+  <script src="catalog-attach.js?v=5"></script>
+  <script src="clue-report.js?v=14"></script>
   <script src="shell.js?v=19" defer></script>
   <style>
     :root {
@@ -19,7 +21,7 @@
       --line: #e4ebf5;
       --blue: #2f78f6;
       --blue-deep: #0e3d78;
-      --risk: #ef3b3b;
+      --risk: var(--risk-high-ink);
       --panel: 300px;
       --shadow: 0 10px 30px rgba(22, 62, 112, 0.08);
     }
@@ -300,12 +302,48 @@
     .clue-pick-row b { display: block; font-size: 14px; line-height: 1.45; color: #24364c; font-weight: 650; }
     .clue-pick-row span { display: block; margin-top: 4px; font-size: 12px; line-height: 1.5; color: #6d7f95; }
     .clue-pick-empty { padding: 32px 16px; text-align: center; color: #8b97a6; font-size: 13px; }
-    .report-meta {
+    .report-fixed-top {
       flex: none;
-      padding: 12px 16px 10px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px 16px 14px;
+      border-bottom: 1px solid #e8eef6;
       background: #fff;
     }
-    .report-meta .pair { margin-top: 0; gap: 10px; }
+    .report-fixed-top .pair { margin-top: 0; gap: 10px; }
+    .report-guidance-input {
+      width: 100%;
+      min-height: 88px;
+      max-height: 160px;
+      padding: 10px 12px;
+      border: 1px solid #e1e8f2;
+      border-radius: 8px;
+      resize: none;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #24364c;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+    .report-findings { margin-bottom: 16px; }
+    .report-findings h3 { margin: 0 0 8px; font-size: 14px; font-weight: 650; color: #24364c; }
+    .report-findings-input {
+      width: 100%;
+      min-height: 88px;
+      padding: 10px 12px;
+      border: 1px solid #e1e8f2;
+      border-radius: 8px;
+      resize: vertical;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #24364c;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
     .pack-body > .pair { gap: 10px; }
     .field textarea { min-height: 112px; padding: 8px 10px; resize: vertical; line-height: 1.65; }
     .field input[readonly] { background: #f6f8fb; color: #3d4e64; }
@@ -335,7 +373,7 @@
       border: 0;
       border-radius: 4px;
       background: transparent;
-      color: #c43745;
+      color: var(--risk-high-ink);
       font-size: 12px;
     }
     .file-list button:hover { background: rgba(239, 59, 59, 0.08); }
@@ -511,7 +549,6 @@
     }
     .node.kind-builder .cell,
     .node.kind-supervisor .cell { width: 16px; height: 16px; }
-    .cell.is-risk { background: #ef3d3d; }
     .cell.is-on { box-shadow: 0 0 0 2px #16324f; }
 
     .sheet {
@@ -588,9 +625,6 @@
     }
     .panel .entity-name .glyph { flex: none; margin-top: 2px; width: 18px; height: 16px; color: var(--blue); }
     .panel .entity-name.is-risk .glyph,
-    .panel .entity-name.lv-high .glyph { color: #ef4d4f; }
-    .panel .entity-name.lv-mid .glyph { color: #e5922a; }
-    .panel .entity-name.lv-low .glyph { color: #2f9e6b; }
     .panel .tabs {
       display: flex;
       gap: 0;
@@ -715,18 +749,6 @@
       background: linear-gradient(180deg, #f6fdf9 0%, #e7f6ee 100%);
       box-shadow: 0 8px 18px rgba(47, 158, 107, 0.06);
     }
-    .warn-card.high.on {
-      border-color: #e23d55;
-      box-shadow: 0 0 0 1px #e23d55, 0 10px 22px rgba(226, 61, 85, 0.12);
-    }
-    .warn-card.mid.on {
-      border-color: #e5922a;
-      box-shadow: 0 0 0 1px #e5922a, 0 10px 22px rgba(229, 146, 42, 0.12);
-    }
-    .warn-card.low.on {
-      border-color: #2f9e6b;
-      box-shadow: 0 0 0 1px #2f9e6b, 0 10px 22px rgba(47, 158, 107, 0.12);
-    }
     .warn-head { display: flex; align-items: flex-start; gap: 8px; }
     .warn-card .sev {
       display: inline-flex;
@@ -737,15 +759,10 @@
       padding: 0 6px;
       border-radius: 4px;
       background: #fff1f3;
-      color: #e23d55;
       font-size: 12px;
       font-weight: 600;
     }
-    .warn-card h3 { margin: 0; flex: 1; min-width: 0; font-size: 14px; line-height: 1.45; font-weight: 650; color: #e23d55; }
-    .warn-card.mid .sev { background: #fff4e8; color: #e5922a; }
-    .warn-card.mid h3 { color: #e5922a; }
-    .warn-card.low .sev { background: #eef8f3; color: #2f9e6b; }
-    .warn-card.low h3 { color: #2f9e6b; }
+    .warn-card h3 { margin: 0; flex: 1; min-width: 0; font-size: 14px; line-height: 1.45; font-weight: 650; }
     .warn-card .who { margin: 8px 0 4px; font-size: 12px; color: #3d5166; }
     .warn-card p { margin: 0; font-size: 12px; line-height: 1.55; color: #6d7f95; }
     .warn-foot { display: flex; justify-content: flex-end; margin-top: 10px; }
@@ -779,6 +796,8 @@
       z-index: 8;
       display: flex;
       flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
       background: #fff;
       border-radius: 12px;
       box-shadow: 0 16px 40px rgba(22, 62, 112, 0.16);
@@ -789,6 +808,7 @@
     .report.is-open { transform: none; pointer-events: auto; }
     .report-head {
       flex: none;
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -807,43 +827,14 @@
       line-height: 1;
     }
     .report-x:hover { background: #f4f7fb; }
-    .report-body { flex: 1; min-height: 0; overflow: auto; padding: 14px 16px 8px; }
-    .report-conclusion {
-      flex: none;
-      display: flex;
-      flex-direction: column;
-      height: 210px;
-      min-height: 128px;
-      padding: 14px 16px 0;
-      border-bottom: 1px solid #e8eef6;
-    }
-    .report-conclusion textarea {
-      flex: 1;
+    .report-body {
+      flex: 1 1 0;
       min-height: 0;
-      margin: 8px 0 0;
-      resize: none;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 14px 16px 8px;
     }
-    .report-grip {
-      flex: none;
-      height: 14px;
-      margin: 0 -16px;
-      border: 0;
-      background: transparent;
-      cursor: ns-resize;
-      position: relative;
-    }
-    .report-grip::before {
-      content: "";
-      position: absolute;
-      left: 50%;
-      top: 5px;
-      width: 36px;
-      height: 3px;
-      margin-left: -18px;
-      border-radius: 2px;
-      background: #d5deea;
-    }
-    .report-grip:hover::before { background: #9eb6de; }
     .report-sec h3, .process-toggle {
       margin: 0;
       font-size: 14px;
@@ -973,14 +964,10 @@
       height: 20px;
       padding: 0 6px;
       border-radius: 4px;
-      background: #fff1f3;
-      color: #e23d55;
       font-size: 12px;
       line-height: 20px;
       font-weight: 600;
     }
-    .clue-item.mid .sev { background: #fff4e8; color: #e5922a; }
-    .clue-item.low .sev { background: #eef8f3; color: #2f9e6b; }
     .clue-del {
       flex: none;
       height: 24px;
@@ -991,58 +978,30 @@
       color: #8b97a6;
       font-size: 12px;
     }
-    .clue-del:hover { background: #fff1f3; color: #e23d55; }
+    .clue-del:hover { background: var(--risk-high-bg); color: var(--risk-high-ink); }
     .clue-line { margin: 8px 0 0; font-size: 12px; line-height: 1.55; color: #3d5166; }
     .clue-line em { font-style: normal; color: #8b97a6; margin-right: 6px; }
     .clue-item ol { margin: 6px 0 0; padding-left: 18px; color: #3d5166; font-size: 12px; line-height: 1.6; }
     .report-bar {
       position: relative;
       flex: none;
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       gap: 10px;
       padding: 12px 16px;
       border-top: 1px solid #e8eef6;
     }
-    .report-set { position: relative; flex: none; }
-    .report-set > button, .report-go {
+    .report-go {
       height: 32px;
       padding: 0 14px;
       border-radius: 6px;
       font-size: 13px;
+      flex: none;
     }
-    .report-set > button {
-      border: 1px solid #d7dee8;
-      background: #fff;
-      color: #3d4e64;
-    }
-    .report-set > button[aria-expanded="true"] { border-color: #b9d0fb; color: var(--blue); background: #f3f7ff; }
     .report-status { flex: 1; min-width: 0; margin: 0; font-size: 12px; color: #2f9e6b; }
     .report-go { border: 0; background: var(--blue); color: #fff; }
     .report-go:disabled { opacity: 0.45; cursor: default; }
-    .set-pop {
-      position: absolute;
-      left: 0;
-      bottom: calc(100% + 8px);
-      width: 280px;
-      padding: 12px;
-      display: grid;
-      gap: 10px;
-      background: #fff;
-      border: 1px solid #e6ebf2;
-      border-radius: 10px;
-      box-shadow: var(--shadow);
-    }
-    .set-pop[hidden] { display: none; }
-    .set-pop label { display: grid; gap: 4px; font-size: 12px; color: #6d7f95; }
-    .set-pop select {
-      height: 32px;
-      border: 1px solid #d7dee8;
-      border-radius: 6px;
-      padding: 0 8px;
-      color: #24364c;
-      background: #fff;
-    }
     .set-pop .check { font-size: 13px; color: #3d4e64; }
     .badge {
       display: inline-flex;
@@ -1055,7 +1014,7 @@
       font-size: 12px;
       font-weight: 600;
     }
-    .badge.mid { background: #fff7ed; color: #d97706; }
+    .badge.mid { background: var(--risk-mid-bg); color: var(--risk-mid-ink); }
     .facts { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
     .facts li {
       display: grid;
@@ -1213,23 +1172,6 @@
       white-space: nowrap;
       pointer-events: none;
     }
-    .warn-pin.mid {
-      border-color: #f3d7b0;
-      background: #fffaf4;
-      color: #e5922a;
-    }
-    .warn-pin.mid .sev { background: #ffd9a8; color: #e5922a; }
-    .warn-pin.mid b { color: #e5922a; }
-    .warn-pin.low {
-      border-color: #b7dfcc;
-      background: #f6fdf9;
-      color: #2f9e6b;
-    }
-    .warn-pin.low .sev { background: #b8e6cf; color: #2f9e6b; }
-    .warn-pin.low b { color: #2f9e6b; }
-    .warn-pin.on { box-shadow: 0 0 0 2px #d81e06; }
-    .warn-pin.mid.on { box-shadow: 0 0 0 2px #e5922a; }
-    .warn-pin.low.on { box-shadow: 0 0 0 2px #2f9e6b; }
     .warn-pin.has-stem::after {
       content: "";
       position: absolute;
@@ -1427,7 +1369,7 @@
         <h2 id="reportTitle">线索报告</h2>
         <button class="report-x" id="reportClose" type="button" aria-label="关闭">×</button>
       </div>
-      <section class="report-meta" aria-label="线索基本信息">
+      <section class="report-fixed-top" aria-label="线索报告固定信息">
         <div class="pair">
           <div class="field">
             <label class="lab" for="reportClueNo">线索编号</label>
@@ -1446,16 +1388,19 @@
             </div>
           </div>
         </div>
-      </section>
-      <section class="report-sec report-conclusion" id="reportConclusionBox">
-        <h3>描述及AI查办指引</h3>
-        <textarea id="reportConclusion" aria-label="描述及AI查办指引" placeholder="暂未能自动总结原因，请输入描述及查办指引"></textarea>
-        <button class="report-grip" id="reportGrip" type="button" aria-label="调整结论区域高度"></button>
+        <div class="field report-guidance-field">
+          <label class="lab" for="reportGuidance">办案指引</label>
+          <textarea id="reportGuidance" class="report-guidance-input" aria-label="办案指引" placeholder="将结合预警情形生成下一步建议及建议移交部门"></textarea>
+        </div>
       </section>
       <div class="report-body">
+        <section class="report-findings">
+          <h3>发现问题</h3>
+          <textarea id="reportFindings" class="report-findings-input" aria-label="发现问题" placeholder="添加预警卡片后，将自动综合预警内容"></textarea>
+        </section>
         <section class="report-process" id="reportProcess">
           <div class="process-head">
-            <h3>分析过程<b id="processCount">0</b></h3>
+            <h3>预警卡片<b id="processCount">0</b></h3>
             <button class="fold-all" id="foldAll" type="button">
               <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6.2l5 4.6 5-4.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span>全部展开</span>
@@ -1465,28 +1410,31 @@
         </section>
         <section class="report-sec report-files">
           <h3>附件</h3>
-          <label class="attach-pick">
-            上传附件
-            <input id="reportFiles" type="file" multiple accept=".pdf,.xls,.xlsx,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.avi,.mp3,.wav,.zip,.txt,.csv,.html,.htm" />
-          </label>
-          <p class="hint">可一次选择多个文件，也能继续追加</p>
-          <ul class="file-list" id="reportFileList"></ul>
+          <div class="report-attach-block">
+            <h4 class="report-attach-subhead">预警详情附件</h4>
+            <div class="report-attach-ref" id="reportAttachRef"></div>
+          </div>
+          <div class="report-attach-block report-attach-upload">
+            <h4 class="report-attach-subhead">补充上传</h4>
+            <label class="attach-pick">
+              上传附件
+              <input id="reportFiles" type="file" multiple accept=".pdf,.xls,.xlsx,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.avi,.mp3,.wav,.zip,.txt,.csv,.html,.htm" />
+            </label>
+            <p class="hint">可一次选择多个文件，也能继续追加</p>
+            <ul class="file-list" id="reportFileList"></ul>
+          </div>
         </section>
       </div>
       <div class="report-bar">
-        <div class="report-set">
-          <button id="reportSettings" type="button" aria-expanded="false" aria-controls="setPop">设置</button>
-          <div class="set-pop" id="setPop" hidden>
-            <label>格式
-              <select id="reportFormat">
-                <option value="pdf">pdf</option>
-                <option value="word">word</option>
-              </select>
-            </label>
-          </div>
+        <div class="report-handoff-meta">
+          <span class="report-handoff-lab">线索状态</span>
+          <span class="report-handoff-pill st-move" id="reportHandoffPill">待移交</span>
         </div>
         <p class="report-status" id="reportStatus"></p>
-        <button class="report-go" id="reportGo" type="button">生成报告</button>
+        <div class="report-bar-actions">
+          <button class="report-handoff-btn" type="button" id="reportHandoffBtn">移交</button>
+          <button class="report-go" id="reportGo" type="button">生成报告</button>
+        </div>
       </div>
     </aside>
   </main>
@@ -1607,6 +1555,26 @@
       </div>
     </form>
   </dialog>
+  <dialog class="report-format-dialog" id="reportFormatDialog" aria-labelledby="reportFormatDialogTitle">
+    <form id="reportFormatForm" method="dialog">
+      <div class="report-format-head">
+        <h3 id="reportFormatDialogTitle">选择导出格式</h3>
+        <button class="report-format-x" type="button" id="reportFormatClose" aria-label="关闭">×</button>
+      </div>
+      <p class="report-format-hint">可多选，将分别生成对应文件</p>
+      <label class="report-format-check report-format-check--all">
+        <input type="checkbox" id="reportFormatSelectAll" checked /> 全选
+      </label>
+      <div class="report-format-options">
+        <label class="report-format-check"><input type="checkbox" name="reportFormat" value="pdf" checked /> pdf</label>
+        <label class="report-format-check"><input type="checkbox" name="reportFormat" value="word" checked /> word</label>
+      </div>
+      <div class="report-format-actions">
+        <button class="report-format-cancel" type="button" id="reportFormatCancel">取消</button>
+        <button class="report-format-go" type="submit" id="reportFormatConfirm">确定生成</button>
+      </div>
+    </form>
+  </dialog>
   <dialog class="clue-pick-dialog" id="cluePickDialog" aria-labelledby="cluePickTitle">
     <div class="clue-pick-head">
       <h3 id="cluePickTitle">选择待移交线索</h3>
@@ -1617,7 +1585,6 @@
   </dialog>
 
   <script src="mock-data.js?v=135"></script>
-  <script src="level-utils.js?v=2"></script>
   <script>
     const params = new URLSearchParams(location.search);
     const from = params.get("from") || "project";
@@ -2143,27 +2110,25 @@
       state.catalogOpen = hit.group.id;
     }
 
-    function alertDetailPanelHtml(alert, subjectLabel) {
-      const tone = catalogPinTone(alert.levelFull || alert.level);
-      const who = (alert.whoNames || []).join("、") || subjectLabel || "—";
-      const steps = (alert.steps || []).map((step, index) => "<li>" + esc(step) + "</li>").join("");
-      const model = alert.model ? "<div class=\"catalog-block\"><h3>模型分析</h3><p>" + esc(alert.model) + "</p></div>" : "";
-      const stepsBlock = steps ? "<div class=\"catalog-block\"><h3>分析过程</h3><ol>" + steps + "</ol></div>" : "";
-      return (
-        "<div class=\"catalog-detail-head\"><h2>" + esc(alert.title) + "</h2><div class=\"catalog-detail-meta\">" +
-        "<span class=\"sev " + tone + "\">" + esc(alert.level) + "</span>" +
-        dealMark(alert.id) +
-        "<span>编号 " + esc(alert.id) + "</span></div></div>" +
-        "<dl class=\"catalog-facts\">" +
-        "<dt>涉及主体</dt><dd>" + esc(who) + "</dd>" +
-        "<dt>所属节点</dt><dd>" + esc(subjectLabel || "—") + "</dd>" +
-        "<dt>处置状态</dt><dd>" + esc(dealOf(alert.id)) + "</dd>" +
-        "<dt>事项说明</dt><dd>" + esc(alert.note || "暂无补充说明") + "</dd>" +
-        "</dl>" + model + stepsBlock +
-        "<div class=\"catalog-actions\">" +
-        (dealOf(alert.id) === "未处置" ? '<button type="button" class="clue-mini" data-catalog-add="' + esc(alert.id) + '">添加线索</button>' : "") +
-        "</div>"
-      );
+    function alertDetailPanelHtml(alert, subjectLabel, group) {
+      const ctx = {
+        subjectLabel: subjectLabel,
+        subjectRole: group && group.role,
+        subjectName: group && group.name,
+        subjectId: group && group.id,
+        projectName: project.name,
+        projectCode: params.get("code") || "",
+        projectDate: project.date,
+        dateTag: String(project.date || "").replace(/-/g, "")
+      };
+      return renderWarnEventDetailPanel(alert, ctx, {
+        esc: esc,
+        dealMarkHtml: (id) => dealMark(id),
+        actionsHtml: (item) =>
+          '<div class="catalog-actions">' +
+          (dealOf(item.id) === "未处置" ? '<button type="button" class="clue-mini" data-catalog-add="' + esc(item.id) + '">添加线索</button>' : "") +
+          "</div>"
+      });
     }
 
     const catalogAlertMeta = {};
@@ -2227,6 +2192,14 @@
       catalogClueReport = window.ClueReport.create({
         layout: "embed",
         getDefaultClueName: () => "概览视图归集线索",
+        getGraphAlerts: () => catalogAlertsForClueReport().map(enrichInsightAlert),
+        resolveAlert: (id) => graphAlerts().find((item) => item.id === id),
+        attachContext: reportAttachContext,
+        onGenerateReport: (formats, cr) => {
+          exportClueReportFiles(formats, clueReportLinesFromInstance(cr));
+          cr.generated = "已生成 " + formats.join("、") + " 报告 · " + stamp().text;
+          cr.render();
+        },
         onHandoffChange: (result, row) => {
           const alertId = row && row.id;
           if (alertId) {
@@ -2303,17 +2276,22 @@
       catalogIgnoreReasonInput.focus();
     }
 
+    function catalogCardDealKind(deal) {
+      if (deal === "已转线索") return "st-clue";
+      if (deal === "已忽略") return "st-ignore";
+      return "st-pending";
+    }
     function catalogCardActionsHtml(alertId) {
       const deal = dealOf(alertId);
       if (deal === "未处置") {
         return (
           '<div class="catalog-card-actions">' +
-          '<button type="button" class="catalog-card-link" data-catalog-ignore="' + esc(alertId) + '">忽略</button>' +
-          '<button type="button" class="catalog-card-link" data-catalog-add="' + esc(alertId) + '">添加为线索</button></div>'
+          '<button type="button" class="catalog-card-link" data-catalog-ignore="' + esc(alertId) + '"><img class="catalog-card-link-ico" src="assets/icon-pin-ignore.png" width="14" height="14" alt="" decoding="async" />忽略</button>' +
+          '<button type="button" class="catalog-card-link" data-catalog-add="' + esc(alertId) + '"><img class="catalog-card-link-ico" src="assets/icon-pin-add-clue.png" width="14" height="14" alt="" decoding="async" />添加线索</button></div>'
         );
       }
       if (deal === "已转线索") {
-        return '<div class="catalog-card-actions"><button type="button" class="catalog-card-link" data-catalog-view-clue="' + esc(alertId) + '">查看线索</button></div>';
+        return '<div class="catalog-card-actions"><button type="button" class="catalog-card-link" data-catalog-view-clue="' + esc(alertId) + '"><img class="catalog-card-link-ico" src="assets/icon-catalog-view-clue.png?v=1" width="14" height="14" alt="" decoding="async" />查看线索</button></div>';
       }
       return "";
     }
@@ -2370,9 +2348,9 @@
       const deal = dealOf(alert.id);
       return (
         '<li><div class="catalog-card ' + tone + on + '" data-catalog-alert="' + esc(alert.id) + '" data-catalog-subject="' + esc(group.id) + '" tabindex="0" role="button">' +
-        '<div class="catalog-card-row"><div class="catalog-card-sev" aria-hidden="true"><span>' + esc(alert.level) + "</span></div>" +
-        '<div class="catalog-card-main"><span class="catalog-card-node">' + esc(group.role) + " · " + esc(group.name) + '</span><b class="catalog-card-title">' + esc(alert.title) + '</b><div class="catalog-card-foot">' +
-        '<span class="catalog-card-status">状态：' + esc(deal) + "</span>" + catalogCardActionsHtml(alert.id) +
+        '<div class="catalog-card-row"><div class="catalog-card-sev" aria-hidden="true"><span>' + esc(riskLevelLabel(alert.level, alert.levelFull)) + "</span></div>" +
+        '<div class="catalog-card-main"><span class="catalog-card-node"><img class="catalog-card-node-ico" src="assets/icon-catalog-object.png?v=1" width="14" height="14" alt="" decoding="async" /><span class="catalog-card-node-text">' + esc(group.role) + " · " + esc(group.name) + '</span></span><b class="catalog-card-title">' + esc(alert.title) + '</b><div class="catalog-card-foot">' +
+        '<span class="catalog-card-status ' + catalogCardDealKind(deal) + '">' + esc(deal) + "</span>" + catalogCardActionsHtml(alert.id) +
         "</div></div></div></div></li>"
       );
     }
@@ -2479,10 +2457,12 @@
       const picked = ensureCatalogAlertInFiltered(flat);
       const aside = catalogWarnAsideHtml(flatAll, flat);
       const body = picked
-        ? alertDetailPanelHtml(picked.alert, picked.group.role + " · " + picked.group.name)
+        ? alertDetailPanelHtml(picked.alert, picked.group.role + " · " + picked.group.name, picked.group)
         : '<div class="catalog-detail-empty">无匹配预警</div>';
       detail.innerHTML = '<div class="catalog-warn-split"><aside class="catalog-warn-aside">' + aside + '</aside><div class="catalog-warn-main"><div class="catalog-warn-detail">' + body + "</div></div></div>";
       mountCatalogClueReportHost(detail.querySelector(".catalog-warn-main"));
+      if (window.CatalogAttach) CatalogAttach.bindRoot(detail);
+      refreshCatalogClueReport();
       if (searchFocus) {
         const input = document.getElementById("catalogWarnSearchInput");
         if (input) {
@@ -2804,6 +2784,114 @@
       return graphAlerts().filter((item) => !state.subject || item.subjects.includes(state.subject));
     }
 
+    function alertsForReport() {
+      if (state.alert) {
+        const one = graphAlerts().find((item) => item.id === state.alert);
+        return one ? [one] : [];
+      }
+      const visible = visibleAlerts();
+      if (visible.length) return visible;
+      if (state.catalogAlert) {
+        const one = graphAlerts().find((item) => item.id === state.catalogAlert);
+        if (one) return [one];
+      }
+      return visible;
+    }
+
+    function enrichInsightAlert(alert) {
+      return Object.assign({}, alert, { projectId: "project", projectName: project.name });
+    }
+
+    function reportAttachContext(alert) {
+      const groups = buildInsightCatalogGroups();
+      const group = groups.find((g) => (alert.subjects || []).indexOf(g.id) >= 0) || groups.find((g) => g.id === "project");
+      return {
+        subjectLabel: group && group.name,
+        subjectRole: group && group.role,
+        subjectName: group && group.name,
+        subjectId: group && group.id,
+        projectName: project.name,
+        projectDate: project.date,
+        dateTag: String(project.date || "").replace(/-/g, "")
+      };
+    }
+
+    function syncReportFromGraph() {
+      if (!report.open || state.mode === "table" || !window.ClueReport) return;
+      const seqRef = { n: clueSeq };
+      report.clues = ClueReport.buildCluesFromAlerts(alertsForReport().map(enrichInsightAlert), {
+        clueUi: report.clueUi,
+        excludedIds: report.excludedIds,
+        clueSeqRef: seqRef,
+        manualClues: report.manualClues,
+        clues: report.clues
+      });
+      clueSeq = seqRef.n;
+      syncReportHandoffFromMeta();
+      renderReport();
+      syncConclusion();
+    }
+
+    function reportHandoffTone(handoff) {
+      if (handoff === "线上移交") return "st-sent";
+      if (handoff === "线下移交") return "st-offline";
+      return "st-move";
+    }
+    function persistReportHandoffMeta() {
+      report.clues.forEach((clue) => {
+        if (!clue.alertId) return;
+        const meta = getCatalogAlertMeta(clue.alertId);
+        meta.handoff = report.handoff;
+        meta.dept = report.handoffDept;
+        meta.handle = report.handoffHandle;
+      });
+    }
+    function syncReportHandoffFromMeta() {
+      for (let i = 0; i < report.clues.length; i += 1) {
+        const id = report.clues[i].alertId;
+        if (!id) continue;
+        const meta = getCatalogAlertMeta(id);
+        if (meta.handoff && meta.handoff !== "待移交") {
+          report.handoff = meta.handoff;
+          report.handoffDept = meta.dept || "";
+          report.handoffHandle = meta.handle || "";
+          return;
+        }
+      }
+    }
+    function renderReportHandoffBar() {
+      const handoff = report.handoff || "待移交";
+      if (reportHandoffPill) {
+        reportHandoffPill.textContent = handoff;
+        reportHandoffPill.className = "report-handoff-pill " + reportHandoffTone(handoff);
+      }
+      const pending = handoff === "待移交";
+      if (reportHandoffBtn) {
+        reportHandoffBtn.hidden = !pending;
+        reportHandoffBtn.disabled = !pending;
+      }
+    }
+
+    function catalogAlertsForClueReport() {
+      const groups = buildInsightCatalogGroups();
+      const flatAll = flattenCatalogAlerts(groups);
+      const flat = filterCatalogWarnRows(flatAll);
+      if (state.catalogAlert) {
+        const hit = flat.find((row) => alertMatchesId(row.alert, state.catalogAlert));
+        return hit ? [hit.alert] : [];
+      }
+      return flat.map((row) => row.alert);
+    }
+
+    function refreshCatalogClueReport() {
+      const cr = catalogClueReport;
+      if (!cr) return;
+      cr.syncFromGraphAlerts(catalogAlertsForClueReport().map(enrichInsightAlert));
+      if (!cr.open) return;
+      cr.render();
+      cr.syncConclusion();
+    }
+
     function subjectCaption(id) {
       const map = {
         owner: "招标人 · " + project.bidder,
@@ -2906,6 +2994,7 @@
       document.getElementById("modeTable").classList.toggle("is-on", state.mode === "table");
       document.getElementById("modeGraph").setAttribute("aria-pressed", state.mode === "graph");
       document.getElementById("modeTable").setAttribute("aria-pressed", state.mode === "table");
+      if (report.open && state.mode !== "table") syncReportFromGraph();
     }
 
     function select(selection, openDetail) {
@@ -3036,12 +3125,6 @@
 
     document.addEventListener("keydown", (event) => {
       if (event.key !== "Escape") return;
-      const setPop = document.getElementById("setPop");
-      if (setPop && !setPop.hidden) {
-        setPop.hidden = true;
-        document.getElementById("reportSettings").setAttribute("aria-expanded", "false");
-        return;
-      }
       if (report.open) {
         report.open = false;
         renderReport();
@@ -3133,7 +3216,6 @@
       postGraphFocus();
       render();
     });
-    setViz("layers");
     window.addEventListener("message", (event) => {
       if (event.origin !== location.origin) return;
       if (event.data === "open-layers") setViz("layers");
@@ -3156,15 +3238,29 @@
       open: false,
       clues: [],
       files: [],
-      generated: ""
+      generated: "",
+      handoff: "待移交",
+      handoffDept: "",
+      handoffHandle: "",
+      projectFold: {},
+      excludedIds: new Set(),
+      manualClues: [],
+      clueUi: {}
     };
     const reportDrawer = document.getElementById("reportDrawer");
-    const reportConclusion = document.getElementById("reportConclusion");
+    const reportFindings = document.getElementById("reportFindings");
+    const reportGuidance = document.getElementById("reportGuidance");
     const processBody = document.getElementById("processBody");
     const processCount = document.getElementById("processCount");
-    const setPop = document.getElementById("setPop");
     const reportStatus = document.getElementById("reportStatus");
     const reportGo = document.getElementById("reportGo");
+    const reportFormatDialog = document.getElementById("reportFormatDialog");
+    const reportFormatForm = document.getElementById("reportFormatForm");
+    const reportFormatConfirm = document.getElementById("reportFormatConfirm");
+    const reportFormatSelectAll = document.getElementById("reportFormatSelectAll");
+    const reportHandoffPill = document.getElementById("reportHandoffPill");
+    const reportHandoffBtn = document.getElementById("reportHandoffBtn");
+    const reportAttachRef = document.getElementById("reportAttachRef");
     const reportFileList = document.getElementById("reportFileList");
     const reportFiles = document.getElementById("reportFiles");
     let clueSeq = 1;
@@ -3293,21 +3389,74 @@
     }
     seedReportClueMeta();
 
-    function canSummarize(item) {
-      return !!(item && (item.note || item.model || (item.steps && item.steps.length)));
+    function clueRiskBucket(level) {
+      const text = String(level || "");
+      if (text.indexOf("高") >= 0) return "high";
+      if (text.indexOf("中") >= 0) return "mid";
+      if (text.indexOf("低") >= 0) return "low";
+      return "other";
     }
-    function autoConclusion() {
-      const ready = report.clues.filter(canSummarize);
-      if (!ready.length) return "";
+    function autoFindings() {
+      if (!report.clues.length) return "";
       const names = [];
-      ready.forEach((item) => item.whoNames.forEach((name) => { if (!names.includes(name)) names.push(name); }));
-      const lines = ready.map((item, index) => (index + 1) + ". " + item.whoNames.join("与") + "：" + item.title + "。" + item.note);
-      return "围绕" + names.join("、") + "，本次归集 " + ready.length + " 条预警线索。\n" + lines.join("\n") + "\n综合上述情形，相关交易存在需核查的异常关联，建议责任部门结合关系图与模型分析过程开展核查。";
+      const themes = [];
+      const counts = { high: 0, mid: 0, low: 0, other: 0 };
+      report.clues.forEach((item) => {
+        item.whoNames.forEach((name) => { if (name && !names.includes(name)) names.push(name); });
+        const theme = String(item.title || item.note || "").trim();
+        if (theme && !themes.includes(theme)) themes.push(theme);
+        counts[clueRiskBucket(item.level)] += 1;
+      });
+      const levelParts = [];
+      if (counts.high) levelParts.push("高风险 " + counts.high + " 张");
+      if (counts.mid) levelParts.push("中风险 " + counts.mid + " 张");
+      if (counts.low) levelParts.push("低风险 " + counts.low + " 张");
+      if (counts.other) levelParts.push("其他 " + counts.other + " 张");
+      const nameText = !names.length
+        ? "相关主体"
+        : names.length <= 3
+          ? names.join("、")
+          : names.slice(0, 3).join("、") + "等 " + names.length + " 个主体";
+      const themeText = !themes.length
+        ? "多项异常预警"
+        : themes.length <= 4
+          ? themes.join("、")
+          : themes.slice(0, 4).join("、") + "等";
+      let text = "本次线索共归集 " + report.clues.length + " 张预警卡片";
+      if (levelParts.length) text += "（" + levelParts.join("、") + "）";
+      text += "，主要涉及" + nameText + "。";
+      text += "综合卡片预警内容，集中反映" + themeText + "等风险信号，相关交易环节存在需重点核查的合规与公平性问题。";
+      return text;
     }
-
-    function typewrite(text) {
-      const gen = ++typeGen;
-      reportConclusion.value = "";
+    function reportSuggestedDepts() {
+      const depts = [];
+      const add = (name) => {
+        const text = String(name || "").trim();
+        if (text && !depts.includes(text)) depts.push(text);
+      };
+      add("公共资源交易中心");
+      add("行业主管部门");
+      if (report.clues.some((item) => String(item.level || "").indexOf("高") >= 0)) add("纪检监察部门");
+      add("审计部门");
+      return depts;
+    }
+    function autoGuidance() {
+      if (!report.clues.length) return "";
+      const depts = reportSuggestedDepts();
+      const steps = [
+        "1. 对照预警卡片核实涉及主体、事项及模型分析结论，补充交易过程与关系图谱等佐证。",
+        "2. 结合发现问题开展交叉比对，确认是否存在围标串标、利益输送等需立案或移交的情形。",
+        "3. 按职责分工发起核查、约谈或线索移交，并在系统中登记处置进展与反馈结果。"
+      ];
+      return steps.join("\n") + "\n\n建议移交/协同部门：" + depts.join("、") + "。";
+    }
+    function typewriteInto(input, text, gen, done) {
+      if (!input || !text) {
+        if (input) input.value = "";
+        if (typeof done === "function") done();
+        return;
+      }
+      input.value = "";
       let index = 0;
       const timer = window.setInterval(() => {
         if (gen !== typeGen) {
@@ -3315,29 +3464,76 @@
           return;
         }
         index = Math.min(text.length, index + 1);
-        reportConclusion.value = text.slice(0, index);
-        reportConclusion.scrollTop = reportConclusion.scrollHeight;
-        if (index >= text.length) window.clearInterval(timer);
+        input.value = text.slice(0, index);
+        input.scrollTop = input.scrollHeight;
+        if (index >= text.length) {
+          window.clearInterval(timer);
+          if (typeof done === "function") done();
+        }
       }, 32);
     }
-
     function syncConclusion() {
-      const text = autoConclusion();
-      reportConclusion.placeholder = "暂未能自动总结原因，请输入描述及查办指引";
-      if (!text) {
+      const findings = autoFindings();
+      const guidance = autoGuidance();
+      if (!findings && !guidance) {
         typeGen += 1;
-        if (!report.userEdited) reportConclusion.value = "";
+        if (!report.userEditedFindings) reportFindings.value = "";
+        if (!report.userEditedGuidance) reportGuidance.value = "";
         return;
       }
-      report.userEdited = false;
+      const gen = ++typeGen;
+      function writeGuidance(onDone) {
+        if (report.userEditedGuidance) {
+          if (typeof onDone === "function") onDone();
+          return;
+        }
+        if (!guidance) {
+          reportGuidance.value = "";
+          if (typeof onDone === "function") onDone();
+          return;
+        }
+        if (!report.open) {
+          reportGuidance.value = guidance;
+          if (typeof onDone === "function") onDone();
+          return;
+        }
+        typewriteInto(reportGuidance, guidance, gen, onDone);
+      }
+      if (report.userEditedFindings) {
+        writeGuidance();
+        return;
+      }
+      report.userEditedFindings = false;
       if (!report.open) {
-        typeGen += 1;
-        reportConclusion.value = text;
+        reportFindings.value = findings;
+        writeGuidance();
         return;
       }
-      typewrite(text);
+      if (!findings) {
+        reportFindings.value = "";
+        writeGuidance();
+        return;
+      }
+      typewriteInto(reportFindings, findings, gen, () => writeGuidance());
     }
 
+    function reportAttachAlertPool() {
+      return graphAlerts();
+    }
+    function reportAttachAlertsForRender() {
+      return alertsForReport().map(enrichInsightAlert);
+    }
+    function renderReportAlertAttach() {
+      if (!reportAttachRef || !window.ClueReport) return;
+      reportAttachRef.innerHTML = ClueReport.renderAlertAttachHtml(report.clues, {
+        esc: esc,
+        alerts: reportAttachAlertsForRender(),
+        getGraphAlerts: reportAttachAlertPool,
+        resolveAlert: (id) => reportAttachAlertPool().find((item) => item.id === id),
+        attachContext: reportAttachContext
+      });
+      if (window.CatalogAttach) CatalogAttach.bindRoot(reportAttachRef);
+    }
     function renderAttach() {
       reportFileList.innerHTML = report.files.map((file, index) =>
         '<li><span title="' + esc(file.name) + '">' + esc(file.name) + '</span><button type="button" data-remove-file="' + index + '">删除</button></li>'
@@ -3357,17 +3553,14 @@
       foldAll.querySelector("span").textContent = allOpen ? "全部收起" : "全部展开";
       reportGo.disabled = report.clues.length === 0;
       reportStatus.textContent = report.generated;
-      if (!report.clues.length) {
-        processBody.innerHTML = '<p class="process-empty">尚未添加线索</p>';
-        return;
-      }
-      processBody.innerHTML = report.clues.map((item) => {
-        const tone = item.level === "中风险" ? " mid" : item.level === "低风险" ? " low" : "";
-        const folded = item.open ? "" : " is-folded";
-        const steps = (item.steps || []).map((step) => "<li>" + esc(step) + "</li>").join("");
-        const analysis = item.model ? '<div class="analysis-row"><p class="clue-line"><em>分析</em>' + esc(item.model) + '</p><button type="button" class="model-toggle" data-toggle-clue="' + esc(item.uid) + '" aria-expanded="' + (item.open ? "true" : "false") + '" aria-label="' + (item.open ? "收起分析" : "展开分析") + '"><i class="chev" aria-hidden="true"></i></button></div><div class="model-body"><ol>' + steps + "</ol></div>" : "";
-        return '<article class="clue-item' + tone + folded + '"><div class="clue-top"><span class="sev">' + esc(item.level) + "</span><strong>" + esc(item.title) + '</strong><button type="button" class="clue-del" data-remove-clue="' + esc(item.uid) + '">删除</button></div><p class="clue-line"><em>涉及主体</em>' + esc((item.whoNames || []).join("、")) + '</p><p class="clue-line"><em>事项</em>' + esc(item.note || "待补充原因") + "</p>" + analysis + "</article>";
-      }).join("");
+      renderReportHandoffBar();
+      processBody.innerHTML = ClueReport.renderProcessBodyHtml(report.clues, {
+        esc: esc,
+        projectFold: report.projectFold,
+        withModel: true
+      });
+      renderReportAlertAttach();
+      renderAttach();
     }
 
     function pushClue(item) {
@@ -3386,15 +3579,12 @@
 
     function addClues(ids) {
       ids.forEach((id) => { dealByAlert[id] = "已转线索"; });
-      const rows = ids.map((id) => graphAlerts().find((row) => row.id === id)).filter(Boolean);
-      if (!rows.length) return;
-      rows.forEach(pushClue);
+      if (!ids.length) return;
       report.open = true;
       ensureReportClueMeta();
       report.generated = "";
-      syncConclusion();
       render();
-      renderReport();
+      syncReportFromGraph();
     }
 
     function addClue(alertId) {
@@ -3431,12 +3621,14 @@
         return;
       }
       const name = subjectDisplayName(subjectId);
-      if (!report.clues.some((clue) => clue.manual && clue.nodeId === subjectId)) {
-        report.clues.push({
+      if (!report.manualClues.some((clue) => clue.manual && clue.nodeId === subjectId)) {
+        report.manualClues.push({
           uid: "c" + (clueSeq++),
           alertId: "",
           nodeId: subjectId,
           manual: true,
+          projectId: "manual",
+          projectName: project.name,
           level: "线索",
           title: name,
           note: "",
@@ -3449,13 +3641,14 @@
       report.open = true;
       ensureReportClueMeta();
       report.generated = "";
-      syncConclusion();
-      renderReport();
+      syncReportFromGraph();
     }
     document.getElementById("reportTab").addEventListener("click", () => {
       report.open = !report.open;
-      if (report.open) ensureReportClueMeta();
-      renderReport();
+      if (report.open) {
+        ensureReportClueMeta();
+        syncReportFromGraph();
+      } else renderReport();
     });
     document.getElementById("reportClose").addEventListener("click", () => {
       report.open = false;
@@ -3467,53 +3660,91 @@
       renderReport();
     });
     processBody.addEventListener("click", (event) => {
+      const projBtn = event.target.closest("[data-toggle-project]");
+      if (projBtn) {
+        const pid = projBtn.getAttribute("data-toggle-project");
+        report.projectFold[pid] = !report.projectFold[pid];
+        renderReport();
+        return;
+      }
       const toggle = event.target.closest("[data-toggle-clue]");
       if (toggle) {
-        const clue = report.clues.find((item) => item.uid === toggle.dataset.toggleClue);
+        const clue = report.clues.find((item) => item.uid === toggle.getAttribute("data-toggle-clue"));
         if (clue) clue.open = !clue.open;
         renderReport();
         return;
       }
+      const excludeBtn = event.target.closest("[data-exclude-clue]");
+      if (excludeBtn) {
+        report.excludedIds.add(excludeBtn.getAttribute("data-exclude-clue"));
+        report.generated = "";
+        syncReportFromGraph();
+        return;
+      }
       const button = event.target.closest("[data-remove-clue]");
       if (!button) return;
-      report.clues = report.clues.filter((item) => item.uid !== button.dataset.removeClue);
+      const uid = button.getAttribute("data-remove-clue");
+      report.manualClues = report.manualClues.filter((item) => item.uid !== uid);
+      report.clues = report.clues.filter((item) => item.uid !== uid);
       report.generated = "";
       syncConclusion();
       renderReport();
     });
-    document.getElementById("reportSettings").addEventListener("click", (event) => {
-      event.stopPropagation();
-      setPop.hidden = !setPop.hidden;
-      event.currentTarget.setAttribute("aria-expanded", setPop.hidden ? "false" : "true");
+    function selectedReportFormats() {
+      return [...reportFormatForm.querySelectorAll('input[name="reportFormat"]:checked')].map((input) => input.value);
+    }
+    function syncReportFormatConfirmState() {
+      reportFormatConfirm.disabled = selectedReportFormats().length === 0;
+    }
+    function resetReportFormatDialog() {
+      reportFormatForm.querySelectorAll('input[name="reportFormat"]').forEach((input) => {
+        input.checked = true;
+      });
+      if (reportFormatSelectAll) reportFormatSelectAll.checked = true;
+      syncReportFormatConfirmState();
+    }
+    reportFormatForm.querySelectorAll('input[name="reportFormat"]').forEach((input) => {
+      input.addEventListener("change", () => {
+        if (reportFormatSelectAll) {
+          const boxes = reportFormatForm.querySelectorAll('input[name="reportFormat"]');
+          reportFormatSelectAll.checked = [...boxes].every((box) => box.checked);
+        }
+        syncReportFormatConfirmState();
+      });
     });
-    document.addEventListener("click", (event) => {
-      if (setPop.hidden) return;
-      if (event.target.closest("#setPop") || event.target.closest("#reportSettings")) return;
-      setPop.hidden = true;
-      document.getElementById("reportSettings").setAttribute("aria-expanded", "false");
-    });
-    reportConclusion.addEventListener("input", () => { typeGen += 1; report.userEdited = true; });
-    const reportConclusionBox = document.getElementById("reportConclusionBox");
-    const reportGrip = document.getElementById("reportGrip");
-    reportGrip.addEventListener("pointerdown", (event) => {
-      event.preventDefault();
-      const startY = event.clientY;
-      const startH = reportConclusionBox.getBoundingClientRect().height;
-      const max = Math.max(160, reportDrawer.clientHeight - 180);
-      function move(nextEvent) {
-        const next = Math.min(max, Math.max(128, startH + nextEvent.clientY - startY));
-        reportConclusionBox.style.height = next + "px";
-      }
-      function end() {
-        reportGrip.removeEventListener("pointermove", move);
-        reportGrip.removeEventListener("pointerup", end);
-        reportGrip.removeEventListener("pointercancel", end);
-      }
-      reportGrip.setPointerCapture(event.pointerId);
-      reportGrip.addEventListener("pointermove", move);
-      reportGrip.addEventListener("pointerup", end);
-      reportGrip.addEventListener("pointercancel", end);
-    });
+    if (reportFormatSelectAll) {
+      reportFormatSelectAll.addEventListener("change", () => {
+        const on = reportFormatSelectAll.checked;
+        reportFormatForm.querySelectorAll('input[name="reportFormat"]').forEach((input) => {
+          input.checked = on;
+        });
+        syncReportFormatConfirmState();
+      });
+    }
+    if (reportHandoffBtn && window.ClueHandoff) {
+      reportHandoffBtn.addEventListener("click", () => {
+        if (report.handoff !== "待移交") return;
+        ClueHandoff.open({
+          handoff: report.handoff,
+          onComplete: (result) => {
+            report.handoff = result.handoff;
+            report.handoffDept = result.dept;
+            report.handoffHandle = result.handle;
+            persistReportHandoffMeta();
+            renderReportHandoffBar();
+            if (!report.userEditedGuidance && report.clues.length) {
+              const guidance = autoGuidance();
+              const gen = ++typeGen;
+              typewriteInto(reportGuidance, guidance, gen, null);
+            }
+          }
+        });
+      });
+    }
+    document.getElementById("reportFormatCancel").addEventListener("click", () => reportFormatDialog.close());
+    document.getElementById("reportFormatClose").addEventListener("click", () => reportFormatDialog.close());
+    reportFindings.addEventListener("input", () => { typeGen += 1; report.userEditedFindings = true; });
+    reportGuidance.addEventListener("input", () => { report.userEditedGuidance = true; });
     reportFiles.addEventListener("change", () => {
       [...reportFiles.files].forEach((file) => {
         const same = report.files.some((item) => item.name === file.name && item.size === file.size && item.lastModified === file.lastModified);
@@ -3542,8 +3773,11 @@
       if (report.generatedAt) lines.push("生成时间：" + report.generatedAt);
       lines.push.apply(lines, reportClueHeaderLines());
       lines.push("");
-      lines.push(reportConclusion.value || autoConclusion());
-      lines.push("", "分析过程");
+      lines.push("发现问题");
+      lines.push(reportFindings.value || autoFindings());
+      lines.push("", "办案指引");
+      lines.push(reportGuidance.value || autoGuidance());
+      lines.push("", "预警卡片");
       if (!report.clues.length) lines.push("尚未添加线索");
       report.clues.forEach((item, index) => {
         lines.push("", (index + 1) + ". " + item.title + "（" + item.level + "）");
@@ -3570,13 +3804,52 @@
       setTimeout(() => URL.revokeObjectURL(url), 1500);
     }
 
-    function paintReport() {
+    function clueReportLinesFromInstance(cr) {
+      const lines = ["线索报告"];
+      const header = cr.reportHeaderLines();
+      if (header.length) lines.push.apply(lines, header);
+      lines.push("", "发现问题");
+      lines.push(cr.findingsInput.value || cr.autoFindings());
+      lines.push("", "办案指引");
+      lines.push(cr.guidanceInput.value || cr.autoGuidance());
+      lines.push("", "预警卡片");
+      if (!cr.clues.length) lines.push("尚未添加线索");
+      cr.clues.forEach((item, index) => {
+        lines.push("", (index + 1) + ". " + item.title + "（" + item.level + "）");
+        lines.push("涉及主体：" + item.whoNames.join("、"));
+        lines.push("事项：" + item.note);
+        lines.push("模型：" + item.model);
+        item.steps.forEach((step, stepIndex) => lines.push((stepIndex + 1) + "）" + step));
+      });
+      lines.push("", "附件");
+      if (!cr.files.length) lines.push("无");
+      cr.files.forEach((file) => lines.push(file.name));
+      return lines;
+    }
+
+    function exportClueReportFiles(formats, lines) {
+      const when = stamp();
+      report.generatedAt = when.text;
+      const base = "线索报告-" + when.file;
+      const done = [];
+      if (formats.indexOf("pdf") >= 0) {
+        downloadBlob(jpegPdf(paintReportCanvas(lines)), base + ".pdf", "application/pdf");
+        done.push("pdf");
+      }
+      if (formats.indexOf("word") >= 0) {
+        downloadBlob(new TextEncoder().encode(wordHtmlFromLines(lines)), base + ".doc", "application/msword");
+        done.push("word");
+      }
+      return { when: when.text, done: done };
+    }
+
+    function paintReportCanvas(sourceLines) {
       const width = 900;
       const max = width - 96;
       const probe = document.createElement("canvas").getContext("2d");
       probe.font = "16px PingFang SC, Microsoft YaHei, sans-serif";
       const lines = [];
-      reportLines().forEach((text) => {
+      sourceLines.forEach((text) => {
         if (!text) { lines.push(""); return; }
         let line = "";
         for (const ch of text) {
@@ -3597,6 +3870,10 @@
       g.font = "16px PingFang SC, Microsoft YaHei, sans-serif";
       lines.forEach((line, index) => g.fillText(line, 48, 56 + index * 28));
       return canvas;
+    }
+
+    function paintReport() {
+      return paintReportCanvas(reportLines());
     }
 
     function jpegPdf(canvas) {
@@ -3636,20 +3913,23 @@
       return out;
     }
 
-    function wordHtml() {
-      const blocks = reportLines().map((line) => "<p>" + (line ? esc(line) : "&nbsp;") + "</p>").join("");
+    function wordHtmlFromLines(lines) {
+      const blocks = lines.map((line) => "<p>" + (line ? esc(line) : "&nbsp;") + "</p>").join("");
       return "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'><head><meta charset='utf-8'><title>线索报告</title></head><body>" + blocks + "</body></html>";
     }
 
     reportGo.addEventListener("click", () => {
       if (!report.clues.length) return;
-      const format = document.getElementById("reportFormat").value;
-      const when = stamp();
-      report.generatedAt = when.text;
-      const base = "线索报告-" + when.file;
-      if (format === "word") downloadBlob(new TextEncoder().encode(wordHtml()), base + ".doc", "application/msword");
-      else downloadBlob(jpegPdf(paintReport()), base + ".pdf", "application/pdf");
-      report.generated = "已生成 " + format + " 报告 · " + when.text;
+      resetReportFormatDialog();
+      reportFormatDialog.showModal();
+    });
+    reportFormatForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const formats = selectedReportFormats();
+      if (!formats.length) return;
+      const result = exportClueReportFiles(formats, reportLines());
+      report.generated = "已生成 " + result.done.join("、") + " 报告 · " + result.when;
+      reportFormatDialog.close();
       renderReport();
     });
     syncConclusion();
@@ -3797,6 +4077,7 @@
     });
 
     window.addEventListener("resize", () => { if (state.mode === "graph") fit(); });
+    setViz("layers");
     render();
   </script>
 </body>

@@ -1,0 +1,138 @@
+/* 全系统风险等级色（高 #F21818 / 中 #A639FD / 低 #FDA939） */
+:root {
+  --risk-high: #f21818;
+  --risk-mid: #a639fd;
+  --risk-low: #fda939;
+  --risk-none: #8b97a6;
+  /* 标签底：等级色 15% 透明度（与白底混合） */
+  --risk-high-bg: color-mix(in srgb, var(--risk-high) 15%, #fff);
+  --risk-mid-bg: color-mix(in srgb, var(--risk-mid) 15%, #fff);
+  --risk-low-bg: color-mix(in srgb, var(--risk-low) 15%, #fff);
+  --risk-none-bg: color-mix(in srgb, var(--risk-none) 15%, #fff);
+  --risk-high-ink: #f21818;
+  --risk-mid-ink: #a639fd;
+  --risk-low-ink: #c88400;
+  --risk: var(--risk-high-ink);
+}
+
+.tag.high,
+.risk-high,
+.lv-high,
+.badge.high,
+.sev.high,
+.catalog-card:not(.mid):not(.low) .catalog-card-sev,
+.catalog-detail-meta .sev:not(.mid):not(.low) {
+  color: var(--risk-high-ink);
+  background: var(--risk-high-bg);
+}
+
+.tag.mid,
+.risk-mid,
+.lv-mid,
+.badge.mid,
+.sev.mid,
+.catalog-card.mid .catalog-card-sev,
+.catalog-detail-meta .sev.mid {
+  color: var(--risk-mid-ink);
+  background: var(--risk-mid-bg);
+}
+
+.tag.low,
+.risk-low,
+.lv-low,
+.badge.low,
+.sev.low,
+.catalog-card.low .catalog-card-sev,
+.catalog-detail-meta .sev.low {
+  color: var(--risk-low-ink);
+  background: var(--risk-low-bg);
+}
+
+td.high, td.mid, td.low { font-weight: 650; }
+td.high { color: var(--risk-high-ink); }
+td.mid { color: var(--risk-mid-ink); }
+td.low { color: var(--risk-low-ink); }
+
+.entity-name.lv-high .glyph,
+.panel .entity-name.lv-high .glyph,
+.node.lv-high .mark { color: var(--risk-high-ink); }
+.entity-name.lv-mid .glyph,
+.panel .entity-name.lv-mid .glyph { color: var(--risk-mid-ink); }
+.entity-name.lv-low .glyph,
+.panel .entity-name.lv-low .glyph { color: var(--risk-low-ink); }
+.node.lv-high .mark { box-shadow: 0 0 0 4px var(--risk-high); }
+.node.lv-high.is-on .mark {
+  box-shadow: 0 0 0 4px var(--risk-high), 0 8px 16px rgba(16, 36, 68, 0.42);
+}
+
+.warn-card:not(.mid):not(.low) .sev,
+.clue-item:not(.mid):not(.low) .sev,
+.warn-pin:not(.mid):not(.low) .sev {
+  background: var(--risk-high-bg);
+  color: var(--risk-high-ink);
+}
+.warn-card:not(.mid):not(.low) h3,
+.warn-pin:not(.mid):not(.low) b { color: var(--risk-high-ink); }
+.warn-card.mid .sev, .clue-item.mid .sev, .warn-pin.mid .sev { background: var(--risk-mid-bg); color: var(--risk-mid-ink); }
+.warn-card.mid h3, .warn-pin.mid b { color: var(--risk-mid-ink); }
+.warn-card.low .sev, .clue-item.low .sev, .warn-pin.low .sev { background: var(--risk-low-bg); color: var(--risk-low-ink); }
+.warn-card.low h3, .warn-pin.low b { color: var(--risk-low-ink); }
+
+.warn-card.high.on, .warn-card:not(.mid):not(.low).on {
+  border-color: var(--risk-high-ink);
+  box-shadow: 0 0 0 1px var(--risk-high-ink), 0 10px 22px color-mix(in srgb, var(--risk-high) 35%, transparent);
+}
+.warn-card.mid.on {
+  border-color: var(--risk-mid-ink);
+  box-shadow: 0 0 0 1px var(--risk-mid-ink), 0 10px 22px color-mix(in srgb, var(--risk-mid) 35%, transparent);
+}
+.warn-card.low.on {
+  border-color: var(--risk-low-ink);
+  box-shadow: 0 0 0 1px var(--risk-low-ink), 0 10px 22px color-mix(in srgb, var(--risk-low) 35%, transparent);
+}
+.warn-pin.mid {
+  border-color: color-mix(in srgb, var(--risk-mid) 28%, #fff);
+  background: color-mix(in srgb, var(--risk-mid) 6%, #fff);
+  color: var(--risk-mid-ink);
+}
+.warn-pin.low {
+  border-color: color-mix(in srgb, var(--risk-low) 35%, #fff);
+  background: color-mix(in srgb, var(--risk-low) 8%, #fff);
+  color: var(--risk-low-ink);
+}
+.warn-pin.on { box-shadow: 0 0 0 2px var(--risk-high-ink); }
+.warn-pin.mid.on { box-shadow: 0 0 0 2px var(--risk-mid-ink); }
+.warn-pin.low.on { box-shadow: 0 0 0 2px var(--risk-low-ink); }
+
+.cell.is-risk { background: var(--risk-high-ink); }
+
+.tag.muted,
+.risk-none,
+.lv-none {
+  color: var(--risk-none);
+  background: var(--risk-none-bg);
+}
+
+.tag.high, .tag.mid, .tag.low, .tag.muted {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 650;
+  border: 1px solid transparent;
+}
+.tag.high { border-color: color-mix(in srgb, var(--risk-high) 28%, #fff); }
+.tag.mid { border-color: color-mix(in srgb, var(--risk-mid) 28%, #fff); }
+.tag.low { border-color: color-mix(in srgb, var(--risk-low) 28%, #fff); }
+.tag.muted { border-color: color-mix(in srgb, var(--risk-none) 22%, #fff); }
+
+.graph-legend .line.high,
+.legend .w.high { background: var(--risk-high); }
+.graph-legend .line.mid,
+.legend .w.mid { background: var(--risk-mid); }
+.graph-legend .line.low,
+.legend .w.low { background: var(--risk-low); }
