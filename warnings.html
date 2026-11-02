@@ -933,7 +933,6 @@
               <th>项目风险度</th>
               <th>项目风险点内容</th>
               <th>查看记录</th>
-              <th>可信度</th>
               <th class="pin r">操作</th>
             </tr>
           </thead>
@@ -1345,7 +1344,6 @@
 
     const params = new URLSearchParams(location.search);
     const regionOpts = ["全省", "贵阳市", "遵义市", "六盘水市", "安顺市", "毕节市", "铜仁市", "黔西南州", "黔东南州", "黔南州", "贵安新区"];
-    const sourceOpts = ["全部", "交易系统", "监管报送"];
     const dealOpts = ["全部", "未处置", "已忽略", "已转线索"];
     const riskStateOpts = ["全部", "高风险", "中风险", "低风险", "无风险"];
     const riskStateField = { key: "riskState", label: "风险状态", type: "select", all: "全部", options: riskStateOpts };
@@ -1364,7 +1362,6 @@
           { key: "region", label: "地区", type: "select", all: "全省", options: regionOpts },
           { key: "form", label: "组织形式", type: "select", all: "全部", options: ["全部", "公开招标", "邀请招标", "竞争性谈判"] },
           { key: "warnType", label: "预警类型", type: "select", all: "全部", options: ["全部", "投标人特征识别", "围标串标", "中标率异常", "拆分项目", "应进未进", "资格条件定制"] },
-          { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           dealField,
           { key: "stage", label: "项目进展时间", type: "select", all: "全部", options: ["全部", "进场前", "招标中", "已定标"] },
           { key: "range", label: "进场时间", type: "range" }
@@ -1381,7 +1378,6 @@
           dealCol,
           { key: "point", label: "项目风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
-          { key: "trust", label: "可信度", sort: true, rank: true },
           opsCol
         ]
       },
@@ -1392,7 +1388,6 @@
           { key: "region", label: "地区", type: "select", all: "全省", options: regionOpts },
           { key: "trade", label: "所属行业", type: "select", all: "全部", options: tradeOpts },
           { key: "handled", label: "经办项目数", type: "min", placeholder: "≥10" },
-          { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
           { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "中标集中", "倾向性条款", "任职关联", "需求代编"] },
           dealField
@@ -1407,7 +1402,6 @@
           dealCol,
           { key: "point", label: "风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
-          { key: "trust", label: "可信度", sort: true, rank: true },
           opsCol
         ]
       },
@@ -1418,7 +1412,6 @@
           { key: "region", label: "地区", type: "select", all: "全省", options: regionOpts },
           { key: "jobs", label: "承揽项目数", type: "min", placeholder: "≥50" },
           { key: "years", label: "机构成立年限", type: "select", all: "全部", options: ["全部", "1年以内", "1至3年", "3至8年", "8年以上"] },
-          { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
           { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "文件同源", "新成立承接", "投诉集中", "资格条件定制"] },
           dealField
@@ -1432,7 +1425,6 @@
           dealCol,
           { key: "point", label: "风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
-          { key: "trust", label: "可信度", sort: true, rank: true },
           opsCol
         ]
       },
@@ -1443,7 +1435,6 @@
           { key: "region", label: "地区", type: "select", all: "全部", options: regionOpts },
           { key: "qualify", label: "资质等级", type: "select", all: "全部", options: ["全部", "施工总承包一级", "施工总承包二级", "市政公用一级", "市政公用二级", "无"] },
           { key: "trade", label: "所属行业", type: "select", all: "全部", options: tradeOpts },
-          { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
           { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "机器码一致", "围标串标", "中标率异常", "实名制异常"] },
           dealField
@@ -1459,7 +1450,6 @@
           dealCol,
           { key: "point", label: "风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
-          { key: "trust", label: "可信度", sort: true, rank: true },
           opsCol
         ]
       },
@@ -1470,7 +1460,6 @@
           { key: "major", label: "评标专业", type: "select", all: "全部", options: ["全部", "工程造价", "市政工程", "房屋建筑", "水利水电", "政府采购"] },
           { key: "region", label: "抽取地区", type: "select", all: "全省", options: regionOpts },
           { key: "reviews", label: "参评次数", type: "min", placeholder: "≥100" },
-          { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
           { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "打分偏离", "单位关联"] },
           dealField
@@ -1485,7 +1474,6 @@
           dealCol,
           { key: "point", label: "风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
-          { key: "trust", label: "可信度", sort: true, rank: true },
           opsCol
         ]
       },
@@ -1496,7 +1484,6 @@
           { key: "unit", label: "所属单位", type: "select", all: "全部", options: ["全部", "贵州省公共资源交易中心", "遵义市公共资源交易中心", "贵州建工招标代理有限公司", "贵阳贵咨招标有限公司"] },
           { key: "post", label: "岗位", type: "select", all: "全部", options: ["全部", "交易系统运维", "评标场所管理", "项目负责人", "信息审核"] },
           { key: "region", label: "地区", type: "select", all: "全省", options: regionOpts },
-          { key: "source", label: "数据来源", type: "select", all: "全部", options: sourceOpts },
           { key: "viewState", label: "预警状况", type: "select", all: "全部", options: statusOpts },
           { key: "warnType", label: "预警内容", type: "select", all: "全部", options: ["全部", "异常登录", "异常访问", "任职关联"] },
           dealField
@@ -1510,7 +1497,6 @@
           dealCol,
           { key: "point", label: "风险点内容", filter: true },
           { key: "views", label: "查看记录", sort: true, num: true },
-          { key: "trust", label: "可信度", sort: true, rank: true },
           opsCol
         ]
       }
@@ -2157,7 +2143,6 @@
           if (col.wrap) bits.push("name");
           if (col.key === "point") bits.push("point");
           if (col.num) bits.push("num");
-          if (col.key === "trust") bits.push(tone(row.trust));
           const cls = bits.join(" ");
           if (col.key === "deal" && row.deal === "已忽略") {
             const reason = row.ignoreReason || "暂无忽略说明";
@@ -2363,7 +2348,7 @@
     function syncFilterOptions() {
       ["project", "owner", "agency", "bidder", "expert", "staff"].forEach((tab) => {
         views[tab].filters.forEach((field) => {
-          if (field.type !== "select" || field.key === "viewState" || field.key === "years" || field.key === "source" || field.key === "deal" || field.key === "riskState") return;
+          if (field.type !== "select" || field.key === "viewState" || field.key === "years" || field.key === "deal" || field.key === "riskState") return;
           const values = [];
           rows.forEach((row) => {
             if (row.tab !== tab) return;
