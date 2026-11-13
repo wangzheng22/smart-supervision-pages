@@ -1,0 +1,2584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>观山湖区第八小学扩建工程 · 分析</title>
+  <link rel="stylesheet" href="view-catalog.css" />
+  <style>
+    :root {
+      --ink: #24364c;
+      --muted: #8a97a8;
+      --sub: #5c6b80;
+      --line: #e6eaf0;
+      --blue: #2f78f6;
+      --bg: #f2f4f7;
+      --high: #f5222d;
+      --mid: #fa8c16;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    html { overflow-x: auto; overflow-y: hidden; }
+    body {
+      margin: 0;
+      min-width: 1180px;
+      height: 100vh;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      overflow: hidden;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      font-size: 13px;
+    }
+    .app {
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    button, input { font-family: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible {
+      outline: 2px solid rgba(47, 120, 246, 0.35);
+      outline-offset: 1px;
+    }
+
+    .topbar {
+      flex: none;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+    }
+    .add-tab {
+      width: 36px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid #d5dbe3;
+      border-radius: 6px;
+      background: #fff;
+      color: #24364c;
+    }
+    .add-tab:hover { border-color: #c5ceda; background: #f8fafc; }
+    .add-tab svg { display: block; }
+    .head-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .head-label {
+      color: #8a94a6;
+      font-size: 14px;
+      line-height: 1;
+    }
+    .head-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 12px;
+      border: 1px solid #d5dbe3;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1;
+    }
+    .head-chip:hover { border-color: #c5ceda; background: #f8fafc; }
+    .head-chip img,
+    .rep-open img {
+      display: block;
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+    }
+    .rep-open {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 10px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--blue);
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.3;
+    }
+    .rep-open:hover, .rep-open.is-on { background: #eef4ff; }
+
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      grid-template-rows: minmax(280px, 1fr) 268px;
+      column-gap: 12px;
+      row-gap: 12px;
+      padding: 12px;
+    }
+
+    .warn {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .warn-hd { flex: none; padding: 14px 14px 0; }
+    .warn-hd h1 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-weight: 650;
+      line-height: 1.4;
+    }
+    .seg {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      padding: 3px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      background: #f2f4f7;
+    }
+    .seg button {
+      height: 30px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--sub);
+      font-size: 13px;
+    }
+    .seg button.is-on {
+      background: #fff;
+      color: var(--ink);
+      font-weight: 650;
+      box-shadow: 0 1px 2px rgba(22, 40, 70, 0.08);
+    }
+    .search {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      margin-bottom: 12px;
+      padding: 0 10px;
+      border: 1px solid #e3e8ef;
+      border-radius: 6px;
+      color: var(--muted);
+      background: #fff;
+    }
+    .search input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      color: var(--ink);
+      font-size: 13px;
+      background: transparent;
+    }
+    .search input::placeholder { color: #b0b8c4; }
+    .warn-body {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 0 14px 16px;
+    }
+    .empty {
+      margin: 28px 0;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .phase { display: grid; grid-template-columns: 16px minmax(0, 1fr); column-gap: 8px; }
+    .phase + .phase { margin-top: 4px; }
+    .rail-line { position: relative; }
+    .rail-line::before {
+      content: "";
+      position: absolute;
+      left: 5px;
+      top: 16px;
+      bottom: -8px;
+      width: 1px;
+      background: #e3e8ef;
+    }
+    .phase:last-child .rail-line::before { display: none; }
+    .dot {
+      width: 8px;
+      height: 8px;
+      margin-top: 5px;
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 0 0 3px #e8f1ff;
+      position: relative;
+      z-index: 1;
+    }
+    .date { color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .phase-name { margin: 1px 0 8px; font-size: 13px; font-weight: 650; }
+    .phase-cards { display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px; }
+
+    .wcard {
+      --wc: #F21818;
+      display: flex;
+      align-items: stretch;
+      width: 100%;
+      padding: 0;
+      overflow: hidden;
+      border: 1px solid var(--wc);
+      border-radius: 8px;
+      background: rgba(242, 24, 24, 0.05);
+      color: inherit;
+      text-align: left;
+    }
+    .wcard.mid { --wc: #A639FD; background: rgba(166, 57, 253, 0.05); }
+    .wcard.low { --wc: #FDA939; background: rgba(253, 169, 57, 0.05); }
+    .wcard.is-off { opacity: 0.55; }
+    .wcard.is-pick { box-shadow: 0 0 0 2px rgba(47, 120, 246, 0.55); }
+    .wcard .lv {
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      padding: 8px 0;
+      writing-mode: vertical-rl;
+      letter-spacing: 2px;
+      font-size: 12px;
+      font-weight: 650;
+      line-height: 1;
+      color: var(--wc);
+      background: rgba(242, 24, 24, 0.2);
+    }
+    .wcard.mid .lv { background: rgba(166, 57, 253, 0.2); }
+    .wcard.low .lv { background: rgba(253, 169, 57, 0.2); }
+    .wcard .main { flex: 1; min-width: 0; padding: 8px 10px; }
+    .wcard .t {
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 650;
+      line-height: 1.45;
+      color: var(--ink);
+    }
+    .wcard .go { flex: none; display: flex; margin-top: 2px; color: var(--ink); }
+    .wcard .s { margin-top: 2px; font-size: 12px; font-weight: 650; line-height: 1.45; color: var(--wc); }
+    .wcard .ft {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .ig {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 0;
+      background: none;
+      padding: 0;
+      color: var(--blue);
+      font-size: 12px;
+    }
+    .warn.is-open {
+      position: fixed;
+      z-index: 40;
+      left: 12px;
+      right: 12px;
+      top: calc(48px + 12px);
+      bottom: 12px;
+      width: auto;
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr);
+      box-shadow: 0 16px 48px rgba(22, 40, 70, 0.18);
+    }
+    .warn.is-open .warn-hd { grid-column: 1; grid-row: 1; }
+    .warn.is-open .warn-body { grid-column: 1; grid-row: 2; }
+    .warn-detail { display: none; }
+    .warn.is-open .warn-detail {
+      display: flex;
+      flex-direction: column;
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      min-width: 0;
+      min-height: 0;
+      border-left: 1px solid var(--line);
+      background: #fff;
+    }
+    .warn-detail-bd {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 48px 24px 24px;
+    }
+    .warn-fold {
+      display: none;
+      position: absolute;
+      z-index: 2;
+      top: 12px;
+      right: 16px;
+      height: 28px;
+      padding: 0 4px;
+      border: 0;
+      background: none;
+      color: var(--blue);
+      font-size: 13px;
+    }
+    .warn.is-open .warn-fold { display: inline-flex; align-items: center; }
+    .warn-fold:hover { text-decoration: underline; }
+    .warn-detail-bd.is-file {
+      display: flex;
+      flex-direction: column;
+      padding: 48px 0 0;
+      overflow: hidden;
+    }
+    .warn-file-preview-hd {
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 24px 12px;
+    }
+    .warn-file-preview-hd h2 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 650;
+      line-height: 1.4;
+      color: var(--ink);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .warn-file-open {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: #f2f4f7;
+    }
+    .warn-file-open:hover { background: #e8ecf2; }
+    .warn-file-preview-bd {
+      flex: 1;
+      min-height: 0;
+      margin: 0 24px 24px;
+      display: flex;
+      flex-direction: column;
+    }
+    .warn-file-preview-bd.is-pdf,
+    .warn-file-preview-bd.is-image {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+    .warn-file-preview-bd .catalog-attach-dialog-frame {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      border: 0;
+      border-radius: 8px;
+    }
+    .warn-file-preview-bd.is-image {
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+    }
+    .warn-file-preview-bd .catalog-attach-dialog-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .warn-file-preview-bd.is-meta {
+      overflow: auto;
+    }
+    .ft-ops { display: inline-flex; align-items: center; gap: 10px; }
+
+    .file-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      margin: 0 0 4px;
+      min-height: 36px;
+      padding: 8px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--ink);
+      text-align: left;
+      font-size: 13px;
+    }
+    .file-row:hover { background: #f6f8fb; }
+    .file-row.is-on { background: #eef4ff; color: var(--blue); }
+    .file-ic { flex: none; color: var(--blue); display: flex; }
+
+    .mid {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+      min-height: 0;
+    }
+    .graph {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      min-width: 0;
+    }
+    .stage {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .graph-bar {
+      position: absolute;
+      z-index: 5;
+      left: 10px;
+      top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      max-width: calc(100% - 20px);
+    }
+    .graph-bar button, .graph-bar select {
+      height: 28px;
+      padding: 0 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 12px;
+    }
+    .graph-toast {
+      position: absolute;
+      z-index: 6;
+      left: 50%;
+      bottom: 12px;
+      transform: translateX(-50%);
+      max-width: calc(100% - 24px);
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 12px;
+      box-shadow: 0 8px 20px rgba(22, 40, 70, 0.12);
+    }
+    .graph-menu {
+      position: fixed;
+      z-index: 40;
+      min-width: 168px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(22, 40, 70, 0.14);
+    }
+    .graph-menu button {
+      display: block;
+      width: 100%;
+      height: 30px;
+      padding: 0 8px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--ink);
+      text-align: left;
+      font-size: 12px;
+    }
+    .graph-menu button:hover { background: #f4f7fb; }
+    .member-pop {
+      position: fixed;
+      z-index: 35;
+      max-width: 240px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 12px;
+      line-height: 1.5;
+      box-shadow: 0 10px 28px rgba(22, 40, 70, 0.14);
+    }
+    .graph-error {
+      position: absolute;
+      left: 16px;
+      top: 84px;
+      color: var(--sub);
+      font-size: 13px;
+    }
+    .wires {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .wires line { stroke: #8eb6f2; stroke-width: 1.5; }
+    .node {
+      position: absolute;
+      width: 36px;
+      height: 36px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+    }
+    .node.kind-project { width: 46px; height: 46px; }
+    .ball {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 650;
+      box-shadow: 0 4px 10px rgba(28, 52, 90, 0.12);
+    }
+    .node.kind-project .ball { font-size: 16px; background: #f5a623; }
+    .node.kind-owner .ball { background: #12a3b0; }
+    .node.kind-expert .ball { background: #8b6cf6; }
+    .node.kind-agency .ball { background: #2fbe74; }
+    .node.kind-staff .ball { background: #c9842a; }
+    .node.kind-section .ball { background: #e25b78; }
+    .node.kind-bidder .ball { background: #3d8bfd; }
+    .ball::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      pointer-events: none;
+    }
+    .node.warn-high .ball::after { border-color: #F21818; }
+    .node.warn-mid .ball::after { border-color: #A639FD; }
+    .node.warn-low .ball::after { border-color: #FDA939; }
+    .node.is-on .ball { box-shadow: 0 0 0 4px rgba(47, 120, 246, 0.28), 0 4px 10px rgba(28, 52, 90, 0.12); }
+    .nm {
+      position: absolute;
+      left: 50%;
+      top: calc(100% + 4px);
+      width: 78px;
+      transform: translateX(-50%);
+      padding: 0 2px;
+      color: #3d4e64;
+      font-size: 12px;
+      line-height: 1.35;
+      text-align: center;
+      background: var(--bg);
+    }
+    .node.kind-project .nm { width: 88px; }
+
+    body.is-deep { min-width: 1580px; }
+    .deep {
+      flex: none;
+      width: 392px;
+      margin-left: 8px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 4px 16px rgba(22, 50, 90, 0.04);
+    }
+    .deep[hidden] { display: none; }
+    .deep-hd {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 20px 0 14px;
+      min-width: 0;
+    }
+    .deep-hd .lab { flex: none; color: var(--muted); font-size: 13px; }
+    .deep-mark {
+      flex: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 12px;
+      font-style: normal;
+      font-weight: 650;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .deep-hd b {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.4;
+    }
+    .deep-body {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 12px 20px 14px 14px;
+    }
+    .deep-reset {
+      flex: none;
+      margin-left: auto;
+      border: 0;
+      background: none;
+      padding: 0;
+      color: var(--blue);
+      font-size: 13px;
+    }
+    .deep-reset:hover { text-decoration: underline; }
+    .deep-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .deep-row .k {
+      flex: none;
+      width: 128px;
+      color: var(--ink);
+      font-size: 13px;
+      white-space: nowrap;
+      text-align: right;
+    }
+    .deep-row .v { flex: 1; min-width: 0; }
+    .deep-row select,
+    .date-range input {
+      width: 100%;
+      height: 32px;
+      border: 1px solid #dfe4ec;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .date-range {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .date-range input { min-width: 0; padding: 0 4px; }
+    .date-range span { flex: none; color: var(--muted); font-size: 12px; }
+    .msel { position: relative; width: 100%; }
+    .msel-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #dfe4ec;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 13px;
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .msel-btn[aria-expanded="true"] { border-color: #b9cffb; }
+    .msel-txt {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .msel-txt.is-empty { color: var(--muted); }
+    .msel-caret {
+      flex: none;
+      width: 12px;
+      height: 12px;
+      color: #8a97a8;
+    }
+    .msel-pop {
+      position: fixed;
+      z-index: 40;
+      overflow: auto;
+      padding: 4px 0;
+      border: 1px solid #dfe4ec;
+      border-radius: 6px;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(22, 50, 90, 0.12);
+    }
+    .msel-pop .deep-check {
+      display: flex;
+      width: 100%;
+      padding: 7px 12px;
+      font-size: 13px;
+      box-sizing: border-box;
+    }
+    .msel-pop .deep-check span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .msel-pop .deep-check:hover { background: #f5f8ff; }
+    .msel-pop .is-all { border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+    .deep-cut { height: 1px; margin: 14px 0 12px; background: var(--line); }
+    .deep-sum {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .deep-sum span { font-size: 13px; font-weight: 650; }
+    .deep-add {
+      border: 0;
+      background: none;
+      padding: 0;
+      color: var(--blue);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .deep-add:hover { text-decoration: underline; }
+    .deep-add:disabled {
+      color: #c5cdd8;
+      text-decoration: none;
+      cursor: default;
+    }
+    .deep-tip {
+      margin: 6px 0 0;
+      color: #d48806;
+      font-size: 12px;
+      text-align: right;
+    }
+    .deep-cards { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .deep-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .deep-check {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #24364c;
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+      user-select: none;
+    }
+    .deep-check input {
+      appearance: none;
+      -webkit-appearance: none;
+      flex: none;
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      border: 1px solid #d5dbe3;
+      border-radius: 4px;
+      background: #fff;
+      display: inline-grid;
+      place-content: center;
+      cursor: pointer;
+    }
+    .deep-check input:checked,
+    .deep-check input:indeterminate {
+      border-color: #2f78f6;
+      background: #2f78f6;
+    }
+    .deep-check input:checked::before {
+      content: "";
+      width: 5px;
+      height: 9px;
+      margin-top: -2px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    .deep-check input:indeterminate::before {
+      content: "";
+      width: 10px;
+      height: 2px;
+      background: #fff;
+    }
+    .deep-check input:focus-visible {
+      outline: 2px solid rgba(47, 120, 246, 0.35);
+      outline-offset: 2px;
+    }
+    .deep-bar select {
+      width: auto;
+      height: 22px;
+      padding: 0 16px 0 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%238a94a6' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right center / 12px 12px;
+      color: #8a94a6;
+      font-size: 14px;
+      font-family: inherit;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+    .deep-card {
+      padding: 12px 14px 10px;
+      border: 1px solid #e4e8ef;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .deep-card .ttl-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .deep-card .ttl-row .deep-check { margin-top: 2px; }
+    .deep-card .ttl {
+      flex: 1;
+      min-width: 0;
+      color: var(--blue);
+      font-size: 16px;
+      font-weight: 650;
+      line-height: 1.4;
+    }
+    .deep-card .kvline {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-top: 8px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .deep-card .kvline span {
+      flex: none;
+      width: 52px;
+      color: #c5cdd8;
+    }
+    .deep-card .kvline b {
+      flex: 1;
+      min-width: 0;
+      color: #3d4c60;
+      font-weight: 500;
+    }
+    .deep-card .kvfoot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 10px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .deep-card .kvfoot .warns,
+    .deep-card .kvfoot .when {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .deep-card .kvfoot .when { flex: none; }
+    .deep-card .kvfoot .lab { color: #c5cdd8; }
+    .deep-card .kvfoot .dt { color: #24364c; font-weight: 650; }
+    .deep-card .pills { display: flex; align-items: center; gap: 6px; }
+    .deep-card .pill {
+      display: inline-flex;
+      align-items: center;
+      height: 22px;
+      padding: 0 7px;
+      border-radius: 6px;
+      font-style: normal;
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .deep-card .pill.high { color: #f5222d; background: #fff1f0; }
+    .deep-card .pill.mid { color: #722ed1; background: #f9f0ff; }
+    .deep-card .pill.low { color: #d48806; background: #fff7e6; }
+    .deep-card .pill.none { color: var(--muted); background: #f4f6f9; font-weight: 500; }
+    .deep-empty { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+
+    .prop {
+      flex: none;
+      height: 145px;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .prop-hd {
+      flex: none;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 14px 16px 0;
+    }
+    .prop-hd b { font-size: 14px; font-weight: 650; line-height: 1.3; }
+    .prop-hd .sel { color: var(--muted); font-size: 13px; }
+    .prop-hd .who {
+      min-width: 0;
+      color: var(--blue);
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .prop-bd { flex: 1; min-height: 0; overflow: auto; padding: 14px 16px 16px; }
+    .kv {
+      display: grid;
+      grid-template-columns: repeat(3, 96px minmax(0, 1fr));
+      gap: 12px 24px;
+      margin: 0;
+    }
+    .kv dt { margin: 0; color: var(--muted); font-size: 13px; }
+    .kv dd { margin: 0; min-width: 0; color: var(--ink); font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+
+    .report {
+      flex: 0 0 0px;
+      width: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #fff;
+      border-left: 0 solid var(--line);
+      transition: flex-basis 0.28s ease, width 0.28s ease, border-left-width 0.28s ease;
+    }
+    body.is-report .report {
+      flex-basis: 600px;
+      width: 600px;
+      border-left-width: 1px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .report { transition: none; }
+    }
+    .report-inner {
+      width: 600px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .report-hd {
+      flex: none;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .report-hd h2 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      font-size: 16px;
+      font-weight: 650;
+      line-height: 1.3;
+    }
+    .report-hd h2 svg { color: var(--blue); }
+    .report-x {
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1;
+    }
+    .report-x:hover { background: #f4f6f9; color: var(--ink); }
+    .report-bd {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 12px 16px 14px;
+    }
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { min-width: 0; }
+    .lab { margin-bottom: 6px; color: var(--ink); font-size: 13px; font-weight: 650; line-height: 1.4; }
+    .inp, .box {
+      width: 100%;
+      border: 1px solid #d9e1ea;
+      border-radius: 4px;
+      background: #fff;
+      color: #3d4e64;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .inp { height: 32px; padding: 0 10px; color: var(--ink); }
+    .name-line { display: flex; gap: 8px; }
+    .name-line .inp { flex: 1; min-width: 0; }
+    .icon-btn {
+      flex: none;
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #d9e1ea;
+      border-radius: 4px;
+      background: #fff;
+      color: var(--sub);
+    }
+    .icon-btn:hover { color: var(--blue); border-color: #b9d0fb; }
+    .box { padding: 8px 10px; }
+    .guide p { margin: 0 0 6px; }
+    .guide p:last-child { margin: 0; }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .attach { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+    .file-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
+      border: 0;
+      background: none;
+      color: var(--blue);
+      font-size: 13px;
+    }
+    .file-link:hover { text-decoration: underline; }
+    .report-ft {
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px 12px;
+      border-top: 1px solid var(--line);
+    }
+    .clue-state { color: var(--sub); font-size: 13px; }
+    .clue-state b { margin-left: 8px; color: var(--ink); font-weight: 650; }
+    .primary {
+      height: 32px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 4px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 13px;
+    }
+    .primary:hover { background: #1f6feb; }
+    .primary:disabled { background: #9ebdf8; cursor: default; }
+    .pick-mask {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      background: rgba(22, 40, 70, 0.28);
+    }
+    .pick-mask[hidden] { display: none; }
+    .pick {
+      display: flex;
+      flex-direction: column;
+      width: min(1480px, calc(100% - 48px));
+      height: min(760px, calc(100% - 48px));
+      border-radius: 8px;
+      background: #f3f5f8;
+      box-shadow: 0 16px 48px rgba(22, 40, 70, 0.18);
+      overflow: hidden;
+    }
+    .pick-hd {
+      flex: none;
+      display: flex;
+      align-items: center;
+      height: 48px;
+      padding: 0 8px 0 16px;
+      background: #fff;
+      border-bottom: 1px solid #e6eaf0;
+    }
+    .pick-hd b { font-size: 16px; font-weight: 650; }
+    .pick-x {
+      margin-left: auto;
+      width: 32px;
+      height: 32px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #8a97a8;
+      font-size: 20px;
+      line-height: 1;
+    }
+    .pick-x:hover { background: #f4f6f9; color: var(--ink); }
+    .pick-cols {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 280px 300px minmax(0, 1fr);
+      gap: 10px;
+      padding: 10px;
+    }
+    .pick-col {
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border: 1px solid #e6eaf0;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .pick-col-hd {
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 0 12px;
+      border-bottom: 1px solid #eef1f5;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .pick-col-hd .sub { margin-left: auto; color: #8a97a8; font-weight: 500; }
+    .pick-reset {
+      margin-left: auto;
+      border: 0;
+      background: none;
+      padding: 0;
+      color: var(--blue);
+      font-size: 13px;
+    }
+    .pick-reset:hover { text-decoration: underline; }
+    .pick-side, .pick-opts, .pick-main { flex: 1; min-height: 0; overflow: auto; }
+    #pickMid { flex: 1; min-height: 0; overflow: auto; }
+    .pick-time, .pick-cond { padding: 12px; border-bottom: 1px solid #f2f4f7; }
+    .pick-cond.is-on { box-shadow: inset 0 0 0 1px #2f78f6; }
+    .pick-lab {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .pick-lab b { font-weight: 500; }
+    .pick-lab span { color: #8a97a8; }
+    .pick-dates { display: flex; align-items: center; gap: 6px; }
+    .pick-dates input {
+      width: 100%;
+      min-width: 0;
+      height: 32px;
+      padding: 0 4px;
+      border: 1px solid #dfe4ec;
+      border-radius: 4px;
+      color: var(--ink);
+      font-size: 12px;
+      font-family: inherit;
+    }
+    .pick-dates span { flex: none; color: var(--muted); font-size: 12px; }
+    .pick-add {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      width: 100%;
+      height: 32px;
+      border: 1px dashed #d5dbe3;
+      border-radius: 4px;
+      background: #fff;
+      color: var(--blue);
+      font-size: 13px;
+    }
+    .pick-add:hover { border-color: #b9cffb; background: #f7faff; }
+    .pick-search {
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 10px 12px;
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #dfe4ec;
+      border-radius: 4px;
+      color: #8a97a8;
+    }
+    .pick-search input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      color: var(--ink);
+      font-size: 13px;
+      font-family: inherit;
+      background: transparent;
+    }
+    .pick-opt { display: flex; padding: 0 12px 8px; }
+    .pick-opt .deep-check { width: 100%; }
+    .pick-empty { margin: 28px 12px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .pick-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .pick-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      padding: 10px 8px;
+      background: #fafbfc;
+      color: #8a97a8;
+      font-weight: 500;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .pick-table td {
+      padding: 10px 8px;
+      border-top: 1px solid #f0f2f5;
+      color: var(--ink);
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .pick-table .name { min-width: 180px; line-height: 1.45; white-space: normal; }
+    .pick-go {
+      height: 28px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 4px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .pick-go:hover { background: #1f6feb; }
+
+    .pop {
+      position: fixed;
+      z-index: 30;
+      width: 248px;
+      max-height: 320px;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border: 1px solid #e3e8ef;
+      border-radius: 8px;
+      box-shadow: 0 10px 28px rgba(22, 40, 70, 0.14);
+    }
+    .pop[hidden] { display: none; }
+    .pop-hd {
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 10px 8px 12px;
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .pop-search {
+      flex: none;
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--sub);
+    }
+    .pop-search:hover, .pop-search.is-on { background: #f4f6f9; color: var(--blue); }
+    .pop-q {
+      flex: none;
+      height: 30px;
+      margin: 0 10px 8px;
+      padding: 0 8px;
+      border: 1px solid #e3e8ef;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    .pop-list { overflow: auto; padding: 0 6px 8px; }
+    .pop-item {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      min-height: 32px;
+      padding: 0 8px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--ink);
+      text-align: left;
+      font-size: 13px;
+    }
+    .pop-item:hover, .pop-item.is-on { background: #f4f7fb; }
+    .pop-empty { margin: 8px; color: var(--muted); text-align: center; }
+
+    .scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+    .scroll::-webkit-scrollbar-thumb { background: #d5dbe3; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+  <header class="topbar">
+    <button class="add-tab" id="addProject" type="button" aria-label="选择项目" aria-haspopup="dialog" aria-expanded="false" aria-controls="pickPop">
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+        <path d="M7 1.2v11.6M1.2 7h11.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div class="head-actions">
+      <span class="head-label">分析</span>
+      <button class="head-chip" type="button">
+        <img src="icons/tool.png" alt="" width="16" height="16">
+        雷同性分析
+      </button>
+      <button class="head-chip" type="button">
+        <img src="icons/tool.png" alt="" width="16" height="16">
+        股权穿透分析
+      </button>
+      <button class="rep-open" id="reportToggle" type="button" aria-expanded="false" aria-controls="report">
+        <img src="icons/link.png" alt="" width="16" height="16">
+        <span>线索报告</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="workspace" id="workspace">
+    <aside class="warn" aria-label="预警及文件查看">
+      <div class="warn-hd">
+        <h1 id="panelTitle">观山湖区第八小学扩建工程</h1>
+        <div class="seg" role="tablist">
+          <button type="button" id="tabWarn" class="is-on" role="tab" aria-selected="true">预警信息</button>
+          <button type="button" id="tabFile" role="tab" aria-selected="false">文件查看</button>
+        </div>
+        <label class="search">
+          <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+            <circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.4"/>
+            <path d="M10.4 10.4L13.5 13.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          <input id="search" type="search" placeholder="请输入预警名称" autocomplete="off" />
+        </label>
+      </div>
+      <div class="warn-body scroll" id="warnBody"></div>
+      <div class="warn-body scroll" id="fileBody" hidden></div>
+      <div class="warn-detail" id="warnDetail" hidden>
+        <div class="warn-detail-bd scroll" id="warnDetailBody"></div>
+      </div>
+      <button class="warn-fold" id="warnFold" type="button" hidden>收起</button>
+    </aside>
+
+    <div class="mid">
+      <div class="graph">
+        <div class="stage" id="stage" aria-label="项目簇状图">
+          <div class="graph-bar">
+            <button type="button" id="resetGraph">回到初始项目</button>
+          </div>
+          <div class="graph-toast" id="graphToast" hidden></div>
+          <div class="graph-menu" id="graphMenu" hidden>
+            <button type="button" data-act="expand">展开关联</button>
+            <button type="button" data-act="agg">收起此分支（聚合）</button>
+            <button type="button" data-act="remove">收起此分支（移除）</button>
+          </div>
+        </div>
+        <div class="member-pop" id="memberPop" hidden></div>
+        <aside class="deep" id="deepPanel" hidden aria-label="深度分析"></aside>
+      </div>
+      <section class="prop" aria-label="属性">
+        <div class="prop-hd">
+          <b>属性</b>
+          <span class="sel">选中</span>
+          <span class="who" id="propWho">观山湖区第八小学扩建工程</span>
+        </div>
+        <div class="prop-bd scroll">
+          <dl class="kv" id="propBody"></dl>
+        </div>
+      </section>
+    </div>
+  </main>
+  </div>
+
+  <aside class="report" id="report" aria-labelledby="reportTitle" aria-hidden="true" inert>
+      <div class="report-inner">
+        <div class="report-hd">
+          <h2 id="reportTitle">
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+              <rect x="3" y="2" width="10" height="12" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+              <path d="M5.5 6h5M5.5 8.5h5M5.5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+            线索报告
+          </h2>
+          <button class="report-x" id="reportClose" type="button" aria-label="收起线索报告">×</button>
+        </div>
+        <div class="report-bd scroll">
+          <div class="pair">
+            <div class="field">
+              <div class="lab">线索编号</div>
+              <input class="inp" id="clueNo" type="text" readonly value="XD-20261111-323434" />
+            </div>
+            <div class="field">
+              <div class="lab">线索名称</div>
+              <div class="name-line">
+                <input class="inp" id="clueName" type="text" readonly value="观山湖区第八小学扩建工程" />
+                <button class="icon-btn" id="copyNo" type="button" aria-label="复制线索编号" title="复制线索编号">
+                  <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 5.5h7.5M3 8h7.5M3 10.5h5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                    <path d="M11 3.5v9" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="lab">发现问题</div>
+            <div class="box" id="findings">本次线索中归集 7 张预警卡片（高风险 5 条、中风险 2 条），主要涉及跨阶段、围串标、数字证书、投标等 8 个主体。综合卡片预警内容，集中反映 CA 锁联系人相同、投标人特征码相同、投标文件异常下载上传、投标报价异常等风险信号，相关交易环节存在需要后续综合研判的合规与公平性问题。</div>
+          </div>
+          <div class="field">
+            <div class="lab">法律法规依据</div>
+            <div class="box">《中华人民共和国招标投标法》第二十一条</div>
+          </div>
+          <div class="field">
+            <div class="lab">办案指引</div>
+            <div class="box guide">
+              <p>1. 对预警卡片涉及的主体、事项及模型分析结论进行核实，补充交易过程与关系图谱等佐证。</p>
+              <p>2. 结合发现的围串标交叉情况，确认是否存在陪标串标、利益输送等需进一步核查的情形。</p>
+              <p>3. 按核查分工发起调查，约谈线索涉及主体，并在系统中登记处置进度与反馈结果。</p>
+              <p>建议移交部门：公共资源交易中心、行业主管部门、纪检监察部门、审计部门。</p>
+            </div>
+          </div>
+          <div class="field">
+            <div class="lab">预警卡片</div>
+            <div class="card-grid" id="reportCards"></div>
+          </div>
+          <div class="field">
+            <div class="lab">附件</div>
+            <div class="attach" id="attachList"></div>
+          </div>
+        </div>
+        <div class="report-ft">
+          <div class="clue-state">线索状态<b id="clueState"></b></div>
+          <button class="primary" id="genBtn" type="button">生成线索报告</button>
+        </div>
+      </div>
+    </aside>
+
+  <div class="pick-mask" id="pickPop" hidden>
+    <div class="pick" role="dialog" aria-modal="true" aria-labelledby="pickTitle">
+      <div class="pick-hd">
+        <b id="pickTitle">项目筛选</b>
+        <button class="pick-x" id="pickClose" type="button" aria-label="关闭">×</button>
+      </div>
+      <div class="pick-cols">
+        <section class="pick-col" aria-label="筛选条件">
+          <div class="pick-col-hd">筛选条件<button class="pick-reset" id="pickReset" type="button">重置</button></div>
+          <div class="pick-side scroll" id="pickSide"></div>
+        </section>
+        <section class="pick-col" aria-label="可选内容">
+          <div class="pick-col-hd"><span id="pickOptTitle">可选内容</span><span class="sub" id="pickOptCount"></span></div>
+          <div id="pickMid"></div>
+        </section>
+        <section class="pick-col" aria-label="符合条件项目">
+          <div class="pick-col-hd"><span id="pickResultTitle">符合条件项目（0）</span></div>
+          <div class="pick-main scroll" id="pickMain"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="pop" id="othersPop" hidden>
+    <div class="pop-hd">
+      <span>其他投标单位 (83)</span>
+      <button class="pop-search" id="popSearchBtn" type="button" aria-label="搜索投标单位" aria-expanded="false">
+        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+          <circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M10.4 10.4L13.5 13.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <input class="pop-q" id="popQuery" type="search" placeholder="搜索单位名称" hidden autocomplete="off" />
+    <div class="pop-list scroll" id="popList"></div>
+  </div>
+  <script src="level-utils.js"></script>
+  <script src="catalog-attach.js"></script>
+  <script>
+    const nodes = [
+      { id: "owner", mark: "招", name: "贵州省教育局", kind: "owner", x: 46, y: 12,
+        fields: [["名称", "贵州省教育局"], ["角色", "招标人"], ["关联项目", "观山湖区第八小学扩建工程"]] },
+      { id: "agency", mark: "代", name: "贵州恒信招标有限公司", kind: "agency", x: 24, y: 20,
+        fields: [["名称", "贵州恒信招标有限公司"], ["角色", "招标代理"], ["关联预警", "代理与中标人沟通过密"], ["风险", "高风险"]] },
+      { id: "staff", mark: "工", name: "梁辉", kind: "staff", x: 14, y: 38,
+        fields: [["姓名", "梁辉"], ["角色", "项目人员"], ["关联预警", "跨项目人员关联"]] },
+      { id: "project", mark: "项", name: "观山湖区第八小学扩建工程", kind: "project", x: 46, y: 40,
+        fields: [["招标单位", "贵州省教育局"], ["招标代理", "贵州恒信招标有限公司"], ["监管部门", "贵州省教育厅"], ["交易中心", "贵州省公共资源交易中心"], ["中标单位", "恒基建设发展有限公司、华宇建工集团有限公司"], ["项目规模", "8650万"], ["是否远程异地", "是"], ["是否暗标评审", "是"]] },
+      { id: "exp1", mark: "专", name: "刘诗涵", kind: "expert", x: 64, y: 14,
+        fields: [["姓名", "刘诗涵"], ["角色", "评标专家"], ["关联预警", "专家打分异常"], ["风险", "高风险"]] },
+      { id: "exp2", mark: "专", name: "胡静", kind: "expert", x: 84, y: 22,
+        fields: [["姓名", "胡静"], ["角色", "评标专家"], ["所属项目", "观山湖区第八小学扩建工程"]] },
+      { id: "exp3", mark: "专", name: "张明", kind: "expert", x: 76, y: 40,
+        fields: [["姓名", "张明"], ["角色", "评标专家"], ["所属项目", "观山湖区第八小学扩建工程"]] },
+      { id: "sec1", mark: "标", name: "设计标段", kind: "section", x: 28, y: 62,
+        fields: [["标段名称", "设计标段"], ["所属项目", "观山湖区第八小学扩建工程"], ["投标人家数", "3"]] },
+      { id: "sec2", mark: "标", name: "施工标段", kind: "section", x: 66, y: 58,
+        fields: [["标段名称", "施工标段"], ["所属项目", "观山湖区第八小学扩建工程"], ["投标人家数", "3 + 其他 83"]] },
+      { id: "b1", mark: "投", name: "恒基建设发展有限公司", kind: "bidder", x: 10, y: 80,
+        fields: [["企业名称", "恒基建设发展有限公司"], ["角色", "投标人"], ["所属标段", "设计标段"], ["风险", "高风险"]] },
+      { id: "b2", mark: "投", name: "瑞达建设工程有限公司", kind: "bidder", x: 28, y: 86,
+        fields: [["企业名称", "瑞达建设工程有限公司"], ["角色", "投标人"], ["所属标段", "设计标段"]] },
+      { id: "b3", mark: "投", name: "云诚云启科技有限公司", kind: "bidder", x: 34, y: 74,
+        fields: [["企业名称", "云诚云启科技有限公司"], ["角色", "投标人"], ["所属标段", "设计标段"]] },
+      { id: "b4", mark: "投", name: "华宇建工集团有限公司", kind: "bidder", x: 78, y: 78,
+        fields: [["企业名称", "华宇建工集团有限公司"], ["角色", "投标人"], ["所属标段", "施工标段"]] },
+      { id: "b5", mark: "投", name: "黔中建设集团有限公司", kind: "bidder", x: 72, y: 86,
+        fields: [["企业名称", "黔中建设集团有限公司"], ["角色", "投标人"], ["所属标段", "施工标段"]] },
+      { id: "b6", mark: "投", name: "林城工程有限公司", kind: "bidder", x: 88, y: 74,
+        fields: [["企业名称", "林城工程有限公司"], ["角色", "投标人"], ["所属标段", "施工标段"]] },
+      { id: "others", mark: "投", name: "其他投标单位", kind: "bidder", more: true, x: 84, y: 64,
+        fields: [["名称", "其他投标单位"], ["数量", "83"], ["角色", "投标人"], ["所属标段", "施工标段"]] }
+    ];
+    const links = [
+      ["owner", "agency"], ["agency", "project"], ["project", "staff"],
+      ["project", "exp1"], ["project", "exp2"], ["project", "exp3"],
+      ["project", "sec1"], ["project", "sec2"],
+      ["sec1", "b1"], ["sec1", "b2"], ["sec1", "b3"],
+      ["sec2", "b4"], ["sec2", "b5"], ["sec2", "b6"], ["sec2", "others"]
+    ];
+    const phases = [
+      { date: "2026.4.27", name: "项目进场登记", cards: [] },
+      { date: "2026.4.27", name: "开标", cards: [
+        { id: "w1", level: "high", title: "观山湖区第八小学扩建工程", sub: "CA锁联系人相同", nodeId: "project",
+          note: "设计标段、施工标段多家投标人办理 CA 时联系人信息一致。",
+          who: ["恒基建设发展有限公司", "瑞达建设工程有限公司", "云诚云启科技有限公司"],
+          supervisoryModel: "场景21-1 投标人CA经办人相同", anomalyType: "围标串标（子类型：CA联系人相同）", eventNo: "21-1-20260427-001",
+          steps: ["指标：联系人手机号 138****2618、经办人身份证号一致", "证据：CA锁办理流水显示三家单位经办人均为同一联系人", "判定：命中场景21-1 投标人CA经办人相同"] },
+      ]},
+      { date: "2026.4.27", name: "评标", cards: [
+        { id: "w2", level: "high", title: "刘诗涵", sub: "专家打分异常", nodeId: "exp1",
+          note: "评标专家刘诗涵对恒基建设发展有限公司的评分显著偏离其他专家。",
+          who: ["刘诗涵"],
+          supervisoryModel: "场景07-2 专家打分异常", anomalyType: "评标异常（子类型：专家打分偏离）", eventNo: "07-2-20260427-002",
+          steps: ["指标：刘诗涵对恒基建设发展有限公司的技术标评分高出专家均值 18 分", "证据：评标系统打分记录", "判定：单一专家评分偏离度超过阈值"] },
+        { id: "w3", level: "high", title: "贵州恒信招标有限公司", sub: "代理与中标人沟通过密", nodeId: "agency",
+          note: "招标代理与中标单位在开标前存在密集通讯。",
+          who: ["贵州恒信招标有限公司", "华宇建工集团有限公司"],
+          supervisoryModel: "场景16-4 代理与中标人沟通过密", anomalyType: "程序异常（子类型：开标前密集通讯）", eventNo: "16-4-20260427-003",
+          steps: ["指标：开标前 7 日内代理项目负责人与中标单位联系人通话 23 次", "证据：通讯记录与项目人员名册交叉比对", "判定：开标前沟通频次超过正常代理服务范围"] }
+      ]}
+    ];
+    const reportCards = [
+      { id: "r1", level: "high", title: "观山湖区第八小学扩建工程", sub: "CA锁联系人相同", nodeId: "project" },
+      { id: "r2", level: "high", title: "观山湖区第八小学扩建工程", sub: "投标人特征码相同", nodeId: "b1" },
+      { id: "r3", level: "high", title: "刘诗涵", sub: "专家打分异常", nodeId: "exp1" },
+      { id: "r4", level: "high", title: "贵州恒信招标有限公司", sub: "代理与中标人沟通过密", nodeId: "agency" },
+      { id: "r5", level: "high", title: "观山湖区第八小学扩建工程", sub: "投标报价异常", nodeId: "project" },
+      { id: "r6", level: "mid", title: "观山湖区第八小学扩建工程", sub: "投标文件下载异常", nodeId: "project" },
+      { id: "r7", level: "mid", title: "梁辉", sub: "跨项目人员关联", nodeId: "staff" }
+    ];
+    const files = [
+      { name: "项目立项文件.pdf" },
+      { name: "项目招标公告.pdf" }
+    ];
+    const others = [
+      "广联达科技股份有限公司",
+      "鑫达机电工程有限公司",
+      "致远建设集团有限公司",
+      "华夏建筑装饰工程有限公司",
+      "华建装饰工程有限公司",
+      "鑫源机电安装有限公司"
+    ];
+    const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
+    const ignored = new Set();
+    let tab = "warn";
+    let selected = { type: "node", id: "project" };
+    let popCompany = "";
+
+    const workspace = document.getElementById("workspace");
+    const report = document.getElementById("report");
+    const reportToggle = document.getElementById("reportToggle");
+    const stage = document.getElementById("stage");
+    const search = document.getElementById("search");
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+    function warnLabel(level) {
+      return { high: "高风险", mid: "中风险", low: "低风险" }[level] || "高风险";
+    }
+    let warnDetailId = "";
+    let warnDetailFile = "";
+    function cardHtml(card, withDetail) {
+      const off = ignored.has(card.id);
+      const picked = selected.type === "node" && selected.id === card.nodeId;
+      const level = card.level === "mid" || card.level === "low" ? card.level : "high";
+      const ops =
+        (withDetail ? '<button class="ig" type="button" data-detail="' + card.id + '">查看详情</button>' : "") +
+        '<button class="ig" type="button" data-ignore="' + card.id + '"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 8h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>' + (off ? "撤销" : "忽略") + "</button>";
+      return (
+        '<article class="wcard ' + level + (off ? " is-off" : "") + (picked ? " is-pick" : "") + '" data-card="' + card.id + '" data-node="' + card.nodeId + '">' +
+          '<div class="lv">' + warnLabel(level) + "</div>" +
+          '<div class="main">' +
+            '<div class="t"><span class="go" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" fill="currentColor"/><path d="M6.5 4.9L10.1 8 6.5 11.1" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>' + esc(card.title) + "</span></div>" +
+            '<div class="s">' + esc(card.sub) + "</div>" +
+            '<div class="ft"><span>状态：' + (off ? "已忽略" : "未处置") + '</span><span class="ft-ops">' + ops + "</span></div>" +
+          "</div>" +
+        "</article>"
+      );
+    }
+    function renderWarnings() {
+      const q = tab === "warn" ? search.value.trim() : "";
+      const body = document.getElementById("warnBody");
+      const html = phases.map((phase) => {
+        const cards = phase.cards.filter((c) => !q || (c.title + c.sub).indexOf(q) >= 0);
+        const headHit = !q || (phase.date + phase.name).indexOf(q) >= 0;
+        if (q && !headHit && !cards.length) return "";
+        const showCards = q && headHit && !cards.length ? phase.cards : cards;
+        return (
+          '<section class="phase">' +
+            '<div class="rail-line"><i class="dot"></i></div>' +
+            "<div>" +
+              '<div class="date">' + esc(phase.date) + "</div>" +
+              '<div class="phase-name">' + esc(phase.name) + "</div>" +
+              (showCards.length ? '<div class="phase-cards">' + showCards.map((card) => cardHtml(card, true)).join("") + "</div>" : "") +
+            "</div>" +
+          "</section>"
+        );
+      }).join("");
+      body.innerHTML = html || '<p class="empty">没有匹配的预警</p>';
+    }
+    function renderFiles() {
+      const q = tab === "file" ? search.value.trim() : "";
+      const list = files.filter((f) => !q || f.name.indexOf(q) >= 0);
+      const body = document.getElementById("fileBody");
+      body.innerHTML = list.length ? list.map((f) => {
+        const on = selected.type === "file" && selected.name === f.name;
+        return '<button class="file-row' + (on ? " is-on" : "") + '" type="button" data-file="' + esc(f.name) + '">' +
+          '<span class="file-ic"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.2 5v9.2H4V1.8z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M9 1.8V5h3.2" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></span>' +
+          "<span>" + esc(f.name) + "</span></button>";
+      }).join("") : '<p class="empty">没有匹配的文件</p>';
+    }
+    function renderReportCards() {
+      document.getElementById("reportCards").innerHTML = reportCards.map((card) => cardHtml(card)).join("");
+    }
+    function renderAttach() {
+      document.getElementById("attachList").innerHTML = files.map((f) =>
+        '<button class="file-link" type="button" data-file="' + esc(f.name) + '">' +
+          '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.2 5v9.2H4V1.8z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M9 1.8V5h3.2" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>' +
+          esc(f.name) +
+        "</button>"
+      ).join("");
+    }
+    function nodeWarn(id) {
+      const rank = { low: 1, mid: 2, high: 3 };
+      let best = "";
+      phases.forEach((phase) => phase.cards.forEach(take));
+      reportCards.forEach(take);
+      function take(card) {
+        if (card.nodeId !== id || ignored.has(card.id) || !rank[card.level]) return;
+        if (!best || rank[card.level] > rank[best]) best = card.level;
+      }
+      return best;
+    }
+    function renderNodes() {
+      stage.querySelectorAll(".node").forEach((el) => el.remove());
+      nodes.forEach((n) => {
+        const warn = nodeWarn(n.id);
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "node kind-" + n.kind + (warn ? " warn-" + warn : "") + (selected.type === "node" && selected.id === n.id ? " is-on" : "");
+        btn.dataset.id = n.id;
+        btn.dataset.label = n.label || "bottom";
+        btn.style.left = n.x + "%";
+        btn.style.top = n.y + "%";
+        btn.title = n.name;
+        btn.innerHTML = '<span class="ball">' + esc(n.mark) + '</span><span class="nm">' + esc(n.name) + "</span>";
+        stage.appendChild(btn);
+      });
+    }
+    function drawLines() {
+      const svg = document.getElementById("wires");
+      const rect = stage.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      svg.setAttribute("viewBox", "0 0 " + rect.width + " " + rect.height);
+      const pos = {};
+      stage.querySelectorAll(".node").forEach((el) => {
+        const ball = el.querySelector(".ball").getBoundingClientRect();
+        pos[el.dataset.id] = {
+          x: ball.left - rect.left + ball.width / 2,
+          y: ball.top - rect.top + ball.height / 2
+        };
+      });
+      svg.innerHTML = links.map(([a, b]) => {
+        const p = pos[a];
+        const q = pos[b];
+        if (!p || !q) return "";
+        return '<line x1="' + p.x + '" y1="' + p.y + '" x2="' + q.x + '" y2="' + q.y + '" />';
+      }).join("");
+    }
+    function showProp(name, fields) {
+      document.getElementById("propWho").textContent = name;
+      document.getElementById("propBody").innerHTML = fields.map(([k, v]) => "<dt>" + esc(k) + "</dt><dd>" + esc(v) + "</dd>").join("");
+    }
+    function showNode(id, extra) {
+      const known = nodeMap[id];
+      const name = known ? known.name : extra && extra.name;
+      const rows = known ? known.fields : (extra && extra.fields) || [];
+      if (!name) return;
+      selected = { type: "node", id: id };
+      popCompany = "";
+      showProp(name, rows);
+      renderWarnings();
+      renderReportCards();
+      renderFiles();
+      if (id !== "others") closeOthers();
+      const kind = (known && known.kind) || (extra && extra.kind) || "";
+      if (kind === "agency") {
+        tab = "warn";
+        applyTab();
+        const pick = document.querySelector("#warnBody .wcard.is-pick");
+        if (pick) pick.scrollIntoView({ block: "nearest" });
+      }
+      if (showsDeep(kind)) openDeep(id, known || extra);
+      else closeDeep();
+    }
+    function selectNode(id) {
+      const node = nodeMap[id];
+      if (!node) return;
+      showNode(id, node);
+      const graph = window.clusterGraph;
+      if (!graph) return;
+      graph.locate(id).then(() => { if (id === "others") openOthers(); });
+    }
+    function selectFile(name) {
+      selected = { type: "file", name };
+      popCompany = "";
+      closeOthers();
+      closeDeep();
+      showProp(name, [["文件名称", name], ["格式", "PDF"], ["所属项目", "观山湖区第八小学扩建工程"]]);
+      renderWarnings();
+      renderReportCards();
+      renderFiles();
+      tab = "file";
+      applyTab();
+      showFileDetail(name);
+    }
+    function applyTab() {
+      const warnOn = tab === "warn";
+      document.getElementById("tabWarn").classList.toggle("is-on", warnOn);
+      document.getElementById("tabFile").classList.toggle("is-on", !warnOn);
+      document.getElementById("tabWarn").setAttribute("aria-selected", warnOn ? "true" : "false");
+      document.getElementById("tabFile").setAttribute("aria-selected", warnOn ? "false" : "true");
+      document.getElementById("warnBody").hidden = !warnOn;
+      document.getElementById("fileBody").hidden = warnOn;
+      search.placeholder = warnOn ? "请输入预警名称" : "请输入文件名称";
+    }
+    function setReport(open) {
+      document.body.classList.toggle("is-report", open);
+      reportToggle.classList.toggle("is-on", open);
+      reportToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      report.setAttribute("aria-hidden", open ? "false" : "true");
+      report.inert = !open;
+      if (!open) closeOthers();
+    }
+    function renderPop() {
+      const q = (document.getElementById("popQuery").value || "").trim();
+      const list = others.filter((name) => !q || name.indexOf(q) >= 0);
+      const box = document.getElementById("popList");
+      box.innerHTML = list.length
+        ? list.map((name) => '<button class="pop-item' + (popCompany === name ? " is-on" : "") + '" type="button" data-company="' + esc(name) + '">' + esc(name) + "</button>").join("")
+        : '<p class="pop-empty">无匹配单位</p>';
+    }
+    function openOthers() {
+      const pop = document.getElementById("othersPop");
+      const anchor = window.clusterGraph && window.clusterGraph.clientOf("others");
+      if (!anchor) return;
+      pop.hidden = false;
+      const width = 248;
+      let left = anchor.left - width - 10;
+      if (left < 12) left = anchor.right + 10;
+      let top = anchor.top - 12;
+      const maxTop = window.innerHeight - 340;
+      if (top > maxTop) top = Math.max(12, maxTop);
+      pop.style.left = left + "px";
+      pop.style.top = Math.max(12, top) + "px";
+      renderPop();
+    }
+    function closeOthers() {
+      document.getElementById("othersPop").hidden = true;
+    }
+
+    document.getElementById("tabWarn").addEventListener("click", () => { tab = "warn"; applyTab(); });
+    document.getElementById("tabFile").addEventListener("click", () => { tab = "file"; applyTab(); });
+    search.addEventListener("input", () => { renderWarnings(); renderFiles(); });
+    reportToggle.addEventListener("click", () => setReport(!document.body.classList.contains("is-report")));
+    document.getElementById("reportClose").addEventListener("click", () => setReport(false));
+
+    function findWarnCard(id) {
+      let found = null;
+      phases.forEach((phase) => phase.cards.forEach((card) => { if (card.id === id) found = card; }));
+      if (!found) reportCards.forEach((card) => { if (card.id === id) found = card; });
+      return found;
+    }
+    function renderWarnDetail(card) {
+      const phase = phases.filter((item) => item.cards.some((row) => row.id === card.id))[0];
+      const when = phase ? phase.date.replace(/\./g, "-") : "2026-04-27";
+      const alert = {
+        id: card.id,
+        title: card.sub,
+        level: card.level,
+        levelFull: warnLabel(card.level),
+        note: card.note || card.sub,
+        steps: card.steps || [],
+        whoNames: card.who || [],
+        supervisoryModel: card.supervisoryModel || "",
+        anomalyType: card.anomalyType || "",
+        eventNo: card.eventNo || "",
+        generatedAt: when + " 14:32:08"
+      };
+      const ctx = {
+        projectName: "观山湖区第八小学扩建工程",
+        projectDate: "2026-04-27",
+        subjectName: card.title,
+        dateTag: "20260427"
+      };
+      const body = document.getElementById("warnDetailBody");
+      body.classList.remove("is-file");
+      warnDetailFile = "";
+      if (!window.renderWarnEventDetailPanel) {
+        body.textContent = card.sub;
+        return;
+      }
+      body.innerHTML = window.renderWarnEventDetailPanel(alert, ctx, {
+        esc: esc,
+        dealMarkHtml: function () {
+          return '<span class="catalog-event-hint">' + (ignored.has(card.id) ? "已忽略" : "未处置") + "</span>";
+        },
+        actionsHtml: function () { return ""; }
+      });
+    }
+    function renderFileDetail(name) {
+      const body = document.getElementById("warnDetailBody");
+      const project = document.getElementById("panelTitle").textContent || "观山湖区第八小学扩建工程";
+      body.classList.add("is-file");
+      if (window.CatalogAttach && typeof window.CatalogAttach.buildInlineFilePreviewHtml === "function") {
+        body.innerHTML = window.CatalogAttach.buildInlineFilePreviewHtml(name, project);
+        return;
+      }
+      body.innerHTML = "<p>" + esc(name) + "</p>";
+    }
+    function showFileDetail(name) {
+      warnDetailFile = name;
+      warnDetailId = "";
+      document.querySelector(".warn").classList.add("is-open");
+      document.getElementById("warnDetail").hidden = false;
+      document.getElementById("warnFold").hidden = false;
+      renderFileDetail(name);
+    }
+    function openWarnDetail(id) {
+      const card = findWarnCard(id);
+      if (!card) return;
+      warnDetailId = id;
+      warnDetailFile = "";
+      document.querySelector(".warn").classList.add("is-open");
+      document.getElementById("warnDetail").hidden = false;
+      document.getElementById("warnFold").hidden = false;
+      renderWarnDetail(card);
+      selectNode(card.nodeId);
+    }
+    function closeWarnDetail() {
+      if (!warnDetailId && !warnDetailFile && !document.querySelector(".warn").classList.contains("is-open")) return;
+      warnDetailId = "";
+      warnDetailFile = "";
+      document.querySelector(".warn").classList.remove("is-open");
+      document.getElementById("warnDetail").hidden = true;
+      document.getElementById("warnFold").hidden = true;
+      const body = document.getElementById("warnDetailBody");
+      body.classList.remove("is-file");
+      body.innerHTML = "";
+      renderWarnings();
+    }
+    document.getElementById("warnFold").addEventListener("click", closeWarnDetail);
+    document.getElementById("warnBody").addEventListener("click", onCardClick);
+    document.getElementById("reportCards").addEventListener("click", onCardClick);
+    function onCardClick(event) {
+      const ignore = event.target.closest("[data-ignore]");
+      if (ignore) {
+        event.stopPropagation();
+        const id = ignore.dataset.ignore;
+        if (ignored.has(id)) ignored.delete(id);
+        else ignored.add(id);
+        renderWarnings();
+        renderReportCards();
+        if (warnDetailId === id) {
+          const openCard = findWarnCard(id);
+          if (openCard) renderWarnDetail(openCard);
+        }
+        return;
+      }
+      const detail = event.target.closest("[data-detail]");
+      if (detail) {
+        event.stopPropagation();
+        openWarnDetail(detail.dataset.detail);
+        return;
+      }
+      const card = event.target.closest("[data-card]");
+      if (!card) return;
+      selectNode(card.dataset.node);
+    }
+    document.getElementById("fileBody").addEventListener("click", (event) => {
+      const row = event.target.closest("[data-file]");
+      if (row) selectFile(row.dataset.file);
+    });
+    document.getElementById("attachList").addEventListener("click", (event) => {
+      const row = event.target.closest("[data-file]");
+      if (row) selectFile(row.dataset.file);
+    });
+
+    const DEEP_MARK = {
+      agency: { t: "代", c: "#2fbe74" },
+      owner: { t: "招", c: "#12a3b0" },
+      expert: { t: "专", c: "#8b6cf6" },
+      bidder: { t: "投", c: "#3d8bfd" },
+      section: { t: "标", c: "#e25b78" },
+      staff: { t: "工", c: "#c9842a" }
+    };
+    let deepId = "";
+    let deepNode = null;
+    let deepFilters = blankDeepFilters();
+    let deepPicked = null;
+    function blankDeepFilters() {
+      const today = new Date();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+      return {
+        start: today.getFullYear() + "-01-01",
+        end: today.getFullYear() + "-" + month + "-" + day,
+        industry: null,
+        category: null,
+        warn: null,
+        owner: "",
+        expert: "",
+        bidder: "",
+        sort: "time"
+      };
+    }
+    function dotDate(iso) {
+      const parts = String(iso || "").split("-");
+      if (parts.length !== 3) return iso || "";
+      return Number(parts[0]) + "." + Number(parts[1]) + "." + Number(parts[2]);
+    }
+    function wanText(n) {
+      const wan = (Number(n) || 0) / 10000;
+      const text = Math.abs(wan - Math.round(wan)) < 0.05 ? String(Math.round(wan)) : String(Math.round(wan * 10) / 10);
+      return text + "万";
+    }
+    function cardPicked(id) {
+      return !deepPicked || deepPicked.has(id);
+    }
+    function chosenDeep(list) {
+      return list.filter((card) => cardPicked(card.id));
+    }
+    function toggleCardPick(id, on) {
+      const list = sortedDeep(filteredDeep(deepCards()));
+      const next = deepPicked ? new Set(deepPicked) : new Set(list.map((card) => card.id));
+      if (on) next.add(id);
+      else next.delete(id);
+      const visible = list.filter((card) => next.has(card.id)).length;
+      deepPicked = visible === list.length ? null : next;
+    }
+    function sortedDeep(list) {
+      const rows = list.slice();
+      if (deepFilters.sort === "amount") {
+        rows.sort((a, b) => (b.amount || 0) - (a.amount || 0) || String(b.date).localeCompare(String(a.date)));
+      } else {
+        rows.sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.amount || 0) - (a.amount || 0));
+      }
+      return rows;
+    }
+    function pillHtml(card) {
+      const count = { high: 0, mid: 0, low: 0 };
+      (card.alerts || []).forEach((item) => {
+        if (count[item.level] != null) count[item.level] += 1;
+      });
+      const bits = [];
+      if (count.high) bits.push('<i class="pill high">高' + count.high + "</i>");
+      if (count.mid) bits.push('<i class="pill mid">中' + count.mid + "</i>");
+      if (count.low) bits.push('<i class="pill low">低' + count.low + "</i>");
+      if (!bits.length) bits.push('<i class="pill none">无</i>');
+      return bits.join("");
+    }
+    function bidderValue(list) {
+      if (!list || !list.length) return "—";
+      if (list.length === 1) return list[0];
+      return list[0] + "等" + list.length + "家企业";
+    }
+    function uniqueNames(cards, pick) {
+      const out = [];
+      cards.forEach((card) => {
+        pick(card).forEach((name) => {
+          if (name && out.indexOf(name) < 0) out.push(name);
+        });
+      });
+      return out;
+    }
+    function deepCards() {
+      if (!window.GraphAPI || !window.GraphAPI.relatedProjects) return [];
+      return window.GraphAPI.relatedProjects(deepId);
+    }
+    function filteredDeep(cards) {
+      return cards.filter((card) => {
+        if (deepFilters.start && card.date < deepFilters.start) return false;
+        if (deepFilters.end && card.date > deepFilters.end) return false;
+        if (!passMulti(deepFilters.industry, card.industry)) return false;
+        if (!passMulti(deepFilters.category, card.category)) return false;
+        if (!passMulti(deepFilters.warn, card.warn)) return false;
+        if (deepFilters.owner && card.owner !== deepFilters.owner) return false;
+        if (deepFilters.expert && card.experts.indexOf(deepFilters.expert) < 0) return false;
+        if (deepFilters.bidder && card.bidders.indexOf(deepFilters.bidder) < 0) return false;
+        return true;
+      });
+    }
+    function passMulti(picked, value) {
+      if (!Array.isArray(picked)) return true;
+      return picked.indexOf(value) >= 0;
+    }
+    function multiText(picked, names, blank) {
+      if (!Array.isArray(picked) || (names.length && picked.length === names.length)) return blank;
+      return picked.length ? picked.join("、") : "请选择";
+    }
+    function multiHtml(key, label, names, blank, filters) {
+      const bag = filters || deepFilters;
+      const picked = bag[key];
+      const allOn = !Array.isArray(picked);
+      const text = multiText(picked, names, blank);
+      const opts = names.map((name) => {
+        const on = allOn || picked.indexOf(name) >= 0 ? " checked" : "";
+        return '<label class="deep-check"><input type="checkbox" value="' + esc(name) + '"' + on + "><span>" + esc(name) + "</span></label>";
+      }).join("");
+      return '<div class="msel" data-msel="' + esc(key) + '">' +
+        '<button type="button" class="msel-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="' + esc(label) + '">' +
+          '<span class="msel-txt' + (text === "请选择" ? " is-empty" : "") + '">' + esc(text) + "</span>" +
+          '<svg class="msel-caret" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+        "</button>" +
+        '<div class="msel-pop" hidden>' +
+          '<label class="deep-check is-all"><input type="checkbox" data-all' + (allOn ? " checked" : "") + "><span>" + esc(blank) + "</span></label>" +
+          opts +
+        "</div></div>";
+    }
+    function closeMultis(except) {
+      document.querySelectorAll(".msel").forEach((box) => {
+        if (box === except) return;
+        box.querySelector(".msel-pop").hidden = true;
+        box.querySelector(".msel-btn").setAttribute("aria-expanded", "false");
+      });
+    }
+    function placeMulti(box) {
+      const btn = box.querySelector(".msel-btn");
+      const pop = box.querySelector(".msel-pop");
+      const rect = btn.getBoundingClientRect();
+      const below = window.innerHeight - rect.bottom - 8;
+      const above = rect.top - 8;
+      const openUp = below < 160 && above > below;
+      const room = Math.max(120, Math.min(240, openUp ? above : below));
+      pop.style.left = rect.left + "px";
+      pop.style.width = rect.width + "px";
+      pop.style.maxHeight = room + "px";
+      if (openUp) {
+        pop.style.top = "auto";
+        pop.style.bottom = (window.innerHeight - rect.top + 4) + "px";
+      } else {
+        pop.style.bottom = "auto";
+        pop.style.top = (rect.bottom + 4) + "px";
+      }
+    }
+    function syncMulti(box, fromAll) {
+      const key = box.getAttribute("data-msel");
+      const all = box.querySelector("[data-all]");
+      const opts = [...box.querySelectorAll('.msel-pop input[type="checkbox"][value]')];
+      if (fromAll) opts.forEach((el) => { el.checked = all.checked; });
+      const picked = opts.filter((el) => el.checked).map((el) => el.value);
+      const every = opts.length > 0 && picked.length === opts.length;
+      all.checked = every;
+      all.indeterminate = picked.length > 0 && !every;
+      deepFilters[key] = every ? null : picked;
+      const blank = all.parentElement.querySelector("span").textContent;
+      const text = multiText(deepFilters[key], opts.map((el) => el.value), blank);
+      const label = box.querySelector(".msel-txt");
+      label.textContent = text;
+      label.classList.toggle("is-empty", text === "请选择");
+      renderDeepResult();
+    }
+    function optionHtml(names, current, blank) {
+      const head = '<option value="">' + esc(blank) + "</option>";
+      return head + names.map((name) => {
+        const on = name === current ? " selected" : "";
+        return '<option value="' + esc(name) + '"' + on + ">" + esc(name) + "</option>";
+      }).join("");
+    }
+    function renderDeep() {
+      const panel = document.getElementById("deepPanel");
+      const mark = DEEP_MARK[(deepNode && deepNode.kind) || ""] || { t: "项", c: "#8aa0b8" };
+      const name = (deepNode && deepNode.name) || "未选择";
+      const cards = deepCards();
+      const owners = uniqueNames(cards, (card) => [card.owner]);
+      const experts = uniqueNames(cards, (card) => card.experts || []);
+      const bidders = uniqueNames(cards, (card) => card.bidders || []);
+      const industries = uniqueNames(cards, (card) => [card.industry]);
+      const warns = uniqueNames(cards, (card) => [card.warn]);
+      panel.innerHTML =
+        '<div class="deep-hd"><span class="lab">选中</span><i class="deep-mark" style="background:' + mark.c + '">' + esc(mark.t) + "</i><b>" + esc(name) + '</b><button class="deep-reset" id="deepReset" type="button">重置</button></div>' +
+        '<div class="deep-body scroll">' +
+          '<div class="deep-row"><span class="k">时间筛选：</span><div class="v date-range">' +
+            '<input type="date" data-f="start" aria-label="开始时间" value="' + esc(deepFilters.start) + '">' +
+            "<span>至</span>" +
+            '<input type="date" data-f="end" aria-label="结束时间" value="' + esc(deepFilters.end) + '">' +
+          "</div></div>" +
+          '<div class="deep-row"><span class="k">项目类别：</span><div class="v">' + multiHtml("category", "项目类别", ["高标准农田", "国企采购"], "全部") + "</div></div>" +
+          '<div class="deep-row"><span class="k">行业类别：</span><div class="v">' + multiHtml("industry", "行业类别", industries, "全部") + "</div></div>" +
+          '<div class="deep-row"><span class="k">预警类型：</span><div class="v">' + multiHtml("warn", "预警类型", warns, "全部") + "</div></div>" +
+          '<div class="deep-row"><span class="k">相关招标人（' + owners.length + '）</span><div class="v"><select data-f="owner" aria-label="相关招标人">' + optionHtml(owners, deepFilters.owner, "请选择") + "</select></div></div>" +
+          '<div class="deep-row"><span class="k">相关专家（' + experts.length + '）</span><div class="v"><select data-f="expert" aria-label="相关专家">' + optionHtml(experts, deepFilters.expert, "请选择") + "</select></div></div>" +
+          '<div class="deep-row"><span class="k">相关投标人（' + bidders.length + '）</span><div class="v"><select data-f="bidder" aria-label="相关投标人">' + optionHtml(bidders, deepFilters.bidder, "请选择") + "</select></div></div>" +
+          '<div id="deepResult"></div>' +
+        "</div>";
+      panel.querySelectorAll("[data-msel]").forEach((box) => {
+        const picked = deepFilters[box.getAttribute("data-msel")];
+        const all = box.querySelector("[data-all]");
+        const total = box.querySelectorAll('.msel-pop input[value]').length;
+        if (all && Array.isArray(picked) && picked.length > 0 && picked.length < total) all.indeterminate = true;
+      });
+      renderDeepResult(cards);
+    }
+    function renderDeepResult(cards) {
+      const box = document.getElementById("deepResult");
+      if (!box) return;
+      const scroller = box.closest(".deep-body");
+      const scrollTop = scroller ? scroller.scrollTop : 0;
+      const list = sortedDeep(filteredDeep(cards || deepCards()));
+      const chosen = chosenDeep(list);
+      const ready = chosen.length > 0 && chosen.length <= 10;
+      const tooMany = chosen.length > 10;
+      const sort = deepFilters.sort === "amount" ? "amount" : "time";
+      const pickedCount = chosen.length;
+      const allOn = list.length > 0 && pickedCount === list.length;
+      const cardsHtml = list.map((card) =>
+        '<article class="deep-card">' +
+          '<div class="ttl-row"><label class="deep-check"><input type="checkbox" data-pick="' + esc(card.id) + '"' + (cardPicked(card.id) ? " checked" : "") + '></label>' +
+          '<div class="ttl">' + esc(card.name) + "</div></div>" +
+          '<div class="kvline"><span>规模</span><b>' + esc(wanText(card.amount)) + "</b></div>" +
+          '<div class="kvline"><span>招标人</span><b>' + esc(card.owner || "—") + "</b></div>" +
+          '<div class="kvline"><span>投标人</span><b>' + esc(bidderValue(card.bidders)) + "</b></div>" +
+          '<div class="kvline"><span>专家</span><b>' + esc((card.experts || []).join(" ") || "—") + "</b></div>" +
+          '<div class="kvfoot"><span class="warns"><span class="lab">预警</span><span class="pills">' + pillHtml(card) + '</span></span><span class="when"><span class="lab">进场时间</span><b class="dt">' + esc(dotDate(card.date)) + "</b></span></div>" +
+        "</article>"
+      ).join("");
+      box.innerHTML =
+        '<div class="deep-cut"></div>' +
+        '<div class="deep-sum"><span>符合条件项目（' + list.length + '）</span>' +
+          '<button class="deep-add" id="deepAdd" type="button"' + (ready ? "" : " disabled") + ">添加图示</button></div>" +
+        (tooMany ? '<p class="deep-tip">节点过多，请保留至（10以下）</p>' : "") +
+        (list.length ? '<div class="deep-bar"><label class="deep-check"><input type="checkbox" id="deepAll"' + (allOn ? " checked" : "") + '><span>全选</span></label>' +
+          '<select data-f="sort" aria-label="排序方式">' +
+          '<option value="time"' + (sort === "time" ? " selected" : "") + ">按时间倒序</option>" +
+          '<option value="amount"' + (sort === "amount" ? " selected" : "") + ">按金额大小</option>" +
+        "</select></div>" : "") +
+        (list.length ? '<div class="deep-cards">' + cardsHtml + "</div>" : '<p class="deep-empty">没有符合条件的项目</p>');
+      const allBox = document.getElementById("deepAll");
+      if (allBox) allBox.indeterminate = pickedCount > 0 && pickedCount < list.length;
+      if (scroller) scroller.scrollTop = scrollTop;
+    }
+    function showsDeep(kind) {
+      return kind === "agency" || kind === "owner" || kind === "expert" || kind === "bidder" || kind === "staff";
+    }
+    function openDeep(id, extra) {
+      const node = (id && nodeMap[id]) || extra;
+      const kind = node && node.kind;
+      if (!node || !showsDeep(kind)) {
+        closeDeep();
+        return;
+      }
+      if (deepId !== id) {
+        deepFilters = blankDeepFilters();
+        deepPicked = null;
+      }
+      deepId = id;
+      deepNode = node;
+      const panel = document.getElementById("deepPanel");
+      panel.hidden = false;
+      document.body.classList.add("is-deep");
+      renderDeep();
+      setTimeout(() => {
+        if (window.clusterGraph && window.clusterGraph.resize) window.clusterGraph.resize();
+      }, 60);
+    }
+    function closeDeep() {
+      const panel = document.getElementById("deepPanel");
+      if (panel.hidden) return;
+      panel.hidden = true;
+      document.body.classList.remove("is-deep");
+      setTimeout(() => {
+        if (window.clusterGraph && window.clusterGraph.resize) window.clusterGraph.resize();
+      }, 60);
+    }
+    document.getElementById("deepPanel").addEventListener("change", (event) => {
+      const multi = event.target.closest("[data-msel]");
+      if (multi && event.target.matches('input[type="checkbox"]')) {
+        syncMulti(multi, event.target.hasAttribute("data-all"));
+        return;
+      }
+      const pick = event.target.getAttribute("data-pick");
+      if (pick != null) {
+        toggleCardPick(pick, event.target.checked);
+        renderDeepResult();
+        return;
+      }
+      if (event.target.id === "deepAll") {
+        deepPicked = event.target.checked ? null : new Set();
+        renderDeepResult();
+        return;
+      }
+      const key = event.target.getAttribute("data-f");
+      if (!key) return;
+      deepFilters[key] = event.target.value;
+      renderDeepResult();
+    });
+    document.getElementById("deepPanel").addEventListener("scroll", () => closeMultis(), true);
+    document.getElementById("deepPanel").addEventListener("click", async (event) => {
+      const multiBtn = event.target.closest(".msel-btn");
+      if (multiBtn) {
+        const box = multiBtn.closest(".msel");
+        const pop = box.querySelector(".msel-pop");
+        const willOpen = pop.hidden;
+        closeMultis(willOpen ? box : null);
+        pop.hidden = !willOpen;
+        multiBtn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+        if (willOpen) placeMulti(box);
+        return;
+      }
+      if (!event.target.closest(".msel")) closeMultis();
+      if (event.target.closest("#deepReset")) {
+        deepFilters = blankDeepFilters();
+        deepPicked = null;
+        renderDeep();
+        return;
+      }
+      const add = event.target.closest("#deepAdd");
+      if (!add || add.disabled) return;
+      const list = chosenDeep(sortedDeep(filteredDeep(deepCards())));
+      if (!list.length || list.length > 10 || !window.clusterGraph) return;
+      add.disabled = true;
+      await window.clusterGraph.addProjects(deepId, list.map((card) => card.id));
+      renderDeepResult();
+    });
+
+    const PICK_CONDS = [
+      { key: "industry", label: "项目行业" },
+      { key: "scale", label: "项目规模" },
+      { key: "owner", label: "项目招标人" },
+      { key: "expert", label: "项目专家" },
+      { key: "bidder", label: "项目投标人" },
+      { key: "agency", label: "项目招标代理" },
+      { key: "warn", label: "项目预警" }
+    ];
+    let pickDates = blankDeepFilters();
+    let pickChosen = {};
+    let pickActive = "";
+    let pickQuery = "";
+    const pickPop = document.getElementById("pickPop");
+    const addProjectBtn = document.getElementById("addProject");
+    function blankPickChosen() {
+      const bag = {};
+      PICK_CONDS.forEach((item) => { bag[item.key] = []; });
+      return bag;
+    }
+    pickChosen = blankPickChosen();
+    function allPickCards() {
+      if (!window.GraphAPI || !window.GraphAPI.allProjects) return [];
+      return window.GraphAPI.allProjects();
+    }
+    function scaleText(amount) {
+      return wanText(amount);
+    }
+    function pickValues(card, key) {
+      if (key === "industry") return [card.industry];
+      if (key === "scale") return [scaleText(card.amount)];
+      if (key === "owner") return [card.owner];
+      if (key === "agency") return [card.agency || ""];
+      if (key === "warn") return [card.warn];
+      if (key === "expert") return card.experts || [];
+      if (key === "bidder") return card.bidders || [];
+      return [];
+    }
+    function pickOptions(key) {
+      const names = [];
+      allPickCards().forEach((card) => {
+        pickValues(card, key).forEach((name) => {
+          if (name && names.indexOf(name) < 0) names.push(name);
+        });
+      });
+      if (key === "scale") {
+        names.sort((a, b) => parseFloat(b) - parseFloat(a));
+      } else {
+        names.sort((a, b) => a.localeCompare(b, "zh"));
+      }
+      return names;
+    }
+    function filteredPick(cards) {
+      return cards.filter((card) => {
+        if (pickDates.start && card.date < pickDates.start) return false;
+        if (pickDates.end && card.date > pickDates.end) return false;
+        return PICK_CONDS.every((item) => {
+          const picked = pickChosen[item.key] || [];
+          if (!picked.length) return true;
+          const values = pickValues(card, item.key);
+          return picked.some((name) => values.indexOf(name) >= 0);
+        });
+      });
+    }
+    function sortedPick(list) {
+      return list.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.amount || 0) - (a.amount || 0));
+    }
+    function renderPickSide() {
+      const time =
+        '<div class="pick-time"><div class="pick-lab"><b>时间筛选</b></div><div class="pick-dates">' +
+          '<input type="date" data-date="start" aria-label="开始时间" value="' + esc(pickDates.start) + '">' +
+          "<span>至</span>" +
+          '<input type="date" data-date="end" aria-label="结束时间" value="' + esc(pickDates.end) + '">' +
+        "</div></div>";
+      const conds = PICK_CONDS.map((item) => {
+        const count = (pickChosen[item.key] || []).length;
+        return '<div class="pick-cond' + (pickActive === item.key ? " is-on" : "") + '">' +
+          '<div class="pick-lab"><b>' + esc(item.label) + '</b><span>（' + count + "）</span></div>" +
+          '<button class="pick-add" type="button" data-cond="' + item.key + '">+ 添加条件</button></div>';
+      }).join("");
+      document.getElementById("pickSide").innerHTML = time + conds;
+    }
+    function renderPickMid() {
+      const title = document.getElementById("pickOptTitle");
+      const count = document.getElementById("pickOptCount");
+      const mid = document.getElementById("pickMid");
+      const item = PICK_CONDS.filter((row) => row.key === pickActive)[0];
+      if (!item) {
+        title.textContent = "可选内容";
+        count.textContent = "";
+        mid.innerHTML = '<p class="pick-empty">在左侧点击「+ 添加条件」，这里显示可勾选的内容。</p>';
+        return;
+      }
+      const names = pickOptions(item.key);
+      const chosen = pickChosen[item.key] || [];
+      const shown = names.filter((name) => !pickQuery || name.indexOf(pickQuery) >= 0);
+      const shownOn = shown.filter((name) => chosen.indexOf(name) >= 0).length;
+      title.textContent = item.label;
+      count.textContent = "已选（" + chosen.length + "/" + names.length + "）";
+      const opts = shown.map((name) =>
+        '<label class="pick-opt deep-check"><input type="checkbox" data-opt="' + esc(name) + '"' + (chosen.indexOf(name) >= 0 ? " checked" : "") + "><span>" + esc(name) + "</span></label>"
+      ).join("");
+      mid.innerHTML =
+        '<label class="pick-search"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.4 10.4L13.5 13.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>' +
+          '<input id="pickQuery" type="search" placeholder="请输入关键词" value="' + esc(pickQuery) + '"></label>' +
+        (shown.length ? '<label class="pick-opt deep-check"><input type="checkbox" id="pickOptAll"' + (shown.length && shownOn === shown.length ? " checked" : "") + "><span>全选</span></label>" + opts : '<p class="pick-empty">没有匹配的内容</p>');
+      const all = document.getElementById("pickOptAll");
+      if (all) all.indeterminate = shownOn > 0 && shownOn < shown.length;
+    }
+    function renderPickMain() {
+      const list = sortedPick(filteredPick(allPickCards()));
+      document.getElementById("pickResultTitle").textContent = "符合条件项目（" + list.length + "）";
+      const rows = list.map((card) =>
+        "<tr>" +
+          '<td class="name">' + esc(card.name) + "</td>" +
+          "<td>" + esc(card.owner || "—") + "</td>" +
+          "<td>" + esc(card.agency || "—") + "</td>" +
+          "<td>" + esc(scaleText(card.amount)) + "</td>" +
+          "<td>" + esc(card.industry || "—") + "</td>" +
+          "<td>" + esc(card.warn || "—") + "</td>" +
+          '<td><button class="pick-go" type="button" data-analyze="' + esc(card.id) + '">添加图示</button></td>' +
+        "</tr>"
+      ).join("");
+      document.getElementById("pickMain").innerHTML = list.length
+        ? '<table class="pick-table"><thead><tr>' +
+            "<th>项目名称</th><th>招标人</th><th>招标代理</th><th>项目规模</th><th>所属行业</th><th>预警</th><th>操作</th>" +
+          "</tr></thead><tbody>" + rows + "</tbody></table>"
+        : '<p class="pick-empty">没有符合条件的项目</p>';
+    }
+    function renderPick() {
+      renderPickSide();
+      renderPickMid();
+      renderPickMain();
+    }
+    function openPick() {
+      pickPop.hidden = false;
+      addProjectBtn.setAttribute("aria-expanded", "true");
+      renderPick();
+    }
+    function closePick() {
+      if (pickPop.hidden) return;
+      pickPop.hidden = true;
+      addProjectBtn.setAttribute("aria-expanded", "false");
+    }
+    async function analyzeProjects(ids) {
+      if (!ids.length || !window.clusterGraph) return;
+      await window.clusterGraph.addProjects("project", ids);
+    }
+    addProjectBtn.addEventListener("click", () => {
+      if (pickPop.hidden) openPick();
+      else closePick();
+    });
+    document.getElementById("pickClose").addEventListener("click", closePick);
+    document.getElementById("pickReset").addEventListener("click", () => {
+      pickDates = blankDeepFilters();
+      pickChosen = blankPickChosen();
+      pickQuery = "";
+      renderPick();
+    });
+    pickPop.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      if (event.target === pickPop) {
+        closePick();
+        return;
+      }
+      const cond = event.target.closest("[data-cond]");
+      if (cond) {
+        pickActive = cond.getAttribute("data-cond");
+        pickQuery = "";
+        renderPickSide();
+        renderPickMid();
+        return;
+      }
+      const one = event.target.closest("[data-analyze]");
+      if (one) await analyzeProjects([one.getAttribute("data-analyze")]);
+    });
+    pickPop.addEventListener("input", (event) => {
+      if (event.target.id !== "pickQuery") return;
+      pickQuery = event.target.value.trim();
+      const caret = event.target.selectionStart;
+      renderPickMid();
+      const input = document.getElementById("pickQuery");
+      if (input) {
+        input.focus();
+        if (caret != null) input.setSelectionRange(caret, caret);
+      }
+    });
+    pickPop.addEventListener("change", (event) => {
+      const dateKey = event.target.getAttribute("data-date");
+      if (dateKey) {
+        pickDates[dateKey] = event.target.value;
+        renderPickMain();
+        return;
+      }
+      const opt = event.target.getAttribute("data-opt");
+      if (opt != null && pickActive) {
+        const next = (pickChosen[pickActive] || []).slice();
+        const at = next.indexOf(opt);
+        if (event.target.checked && at < 0) next.push(opt);
+        if (!event.target.checked && at >= 0) next.splice(at, 1);
+        pickChosen[pickActive] = next;
+        renderPickSide();
+        renderPickMid();
+        renderPickMain();
+        return;
+      }
+      if (event.target.id === "pickOptAll" && pickActive) {
+        const names = pickOptions(pickActive).filter((name) => !pickQuery || name.indexOf(pickQuery) >= 0);
+        const next = (pickChosen[pickActive] || []).slice();
+        names.forEach((name) => {
+          const at = next.indexOf(name);
+          if (event.target.checked && at < 0) next.push(name);
+          if (!event.target.checked && at >= 0) next.splice(at, 1);
+        });
+        pickChosen[pickActive] = next;
+        renderPickSide();
+        renderPickMid();
+        renderPickMain();
+      }
+    });
+    document.addEventListener("click", (event) => {
+      if (pickPop.hidden) return;
+      if (pickPop.contains(event.target) || event.target.closest("#addProject")) return;
+      closePick();
+    });
+
+    document.getElementById("popSearchBtn").addEventListener("click", () => {
+      const input = document.getElementById("popQuery");
+      const open = input.hidden;
+      input.hidden = !open;
+      document.getElementById("popSearchBtn").classList.toggle("is-on", open);
+      document.getElementById("popSearchBtn").setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) input.focus();
+    });
+    document.getElementById("popQuery").addEventListener("input", renderPop);
+    document.getElementById("popList").addEventListener("click", (event) => {
+      const item = event.target.closest("[data-company]");
+      if (!item) return;
+      popCompany = item.dataset.company;
+      selected = { type: "node", id: "others" };
+      showProp(popCompany, [["企业名称", popCompany], ["角色", "投标人"], ["来源", "其他投标单位"], ["所属标段", "施工标段"]]);
+      renderWarnings();
+      renderReportCards();
+      renderPop();
+    });
+    document.addEventListener("click", (event) => {
+      const pop = document.getElementById("othersPop");
+      if (pop.hidden) return;
+      if (pop.contains(event.target)) return;
+      if (stage.contains(event.target) && selected.id === "others") return;
+      closeOthers();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      if (!pickPop.hidden) closePick();
+      else if (!document.getElementById("othersPop").hidden) closeOthers();
+      else if (document.querySelector(".warn").classList.contains("is-open")) closeWarnDetail();
+      else if (document.body.classList.contains("is-report")) setReport(false);
+    });
+
+    document.getElementById("copyNo").addEventListener("click", async () => {
+      const text = document.getElementById("clueNo").value;
+      try { await navigator.clipboard.writeText(text); } catch (err) { /* 浏览器未授权剪贴板时忽略 */ }
+      const btn = document.getElementById("copyNo");
+      btn.title = "已复制";
+      setTimeout(() => { btn.title = "复制线索编号"; }, 1200);
+    });
+    document.getElementById("genBtn").addEventListener("click", () => {
+      document.getElementById("clueState").textContent = "已生成";
+      const btn = document.getElementById("genBtn");
+      btn.disabled = true;
+      btn.textContent = "已生成";
+    });
+
+    renderWarnings();
+    renderReportCards();
+    renderFiles();
+    renderAttach();
+    showProp(nodeMap.project.name, nodeMap.project.fields);
+    applyTab();
+    window.ClusterPage = {
+      stage: stage,
+      showNode: showNode,
+      openOthers: openOthers,
+      warn: nodeWarn
+    };
+    window.addEventListener("resize", () => {
+      if (!document.getElementById("othersPop").hidden) openOthers();
+    });
+  </script>
+  <script src="https://unpkg.com/@antv/g6@5.0.49/dist/g6.min.js"></script>
+  <script src="graph-api.js?v=prop1"></script>
+  <script src="cluster-graph.js?v=prop1"></script>
+</body>
+</html>

@@ -134,9 +134,65 @@
     return viewerDialog;
   }
 
-  function openFilePreview(fileName, objectTitle) {
+  function buildFilePreviewPane(fileName, objectTitle) {
     const kind = fileKind(fileName);
     const previewUrl = resolvePreviewUrl(fileName);
+    if (previewUrl && kind === "pdf") {
+      return {
+        bodyClass: "catalog-attach-dialog-body is-pdf",
+        html:
+          '<iframe class="catalog-attach-dialog-frame" src="' +
+          escapeAttr(previewUrl) +
+          '#toolbar=1&navpanes=0" title="' +
+          escapeAttr(fileName) +
+          '"></iframe>',
+        openUrl: previewUrl
+      };
+    }
+    if (previewUrl && kind === "image") {
+      return {
+        bodyClass: "catalog-attach-dialog-body is-image",
+        html:
+          '<img class="catalog-attach-dialog-img" src="' +
+          escapeAttr(previewUrl) +
+          '" alt="' +
+          escapeAttr(fileName) +
+          '" decoding="async" />',
+        openUrl: previewUrl
+      };
+    }
+    return {
+      bodyClass: "catalog-attach-dialog-body is-meta",
+      html: buildMetaOnlyHtml(fileName, objectTitle),
+      openUrl: ""
+    };
+  }
+
+  function buildInlineFilePreviewHtml(fileName, objectTitle) {
+    const pane = buildFilePreviewPane(fileName, objectTitle);
+    const openBtn =
+      pane.openUrl
+        ? '<a class="warn-file-open" href="' +
+          escapeAttr(pane.openUrl) +
+          '" target="_blank" rel="noopener" title="新窗口打开">' +
+          '<img src="assets/icon-open-new-window.png?v=1" width="16" height="16" alt="" decoding="async" /></a>'
+        : "";
+    return (
+      '<header class="warn-file-preview-hd">' +
+      "<h2>" +
+      escapeHtml(fileName) +
+      "</h2>" +
+      openBtn +
+      "</header>" +
+      '<div class="warn-file-preview-bd ' +
+      escapeAttr(pane.bodyClass.replace("catalog-attach-dialog-body ", "")) +
+      '">' +
+      pane.html +
+      "</div>"
+    );
+  }
+
+  function openFilePreview(fileName, objectTitle) {
     const dlg = ensureViewerDialog();
     const title = dlg.querySelector("#catalogAttachViewerTitle");
     const body = dlg.querySelector("#catalogAttachViewerBody");
@@ -144,34 +200,16 @@
     if (title) title.textContent = fileName;
     if (!body) return;
 
-    if (previewUrl && kind === "pdf") {
-      body.className = "catalog-attach-dialog-body is-pdf";
-      body.innerHTML =
-        '<iframe class="catalog-attach-dialog-frame" src="' +
-        escapeAttr(previewUrl) +
-        '#toolbar=1&navpanes=0" title="' +
-        escapeAttr(fileName) +
-        '"></iframe>';
-      if (openLink) {
-        openLink.href = previewUrl;
+    const pane = buildFilePreviewPane(fileName, objectTitle);
+    body.className = pane.bodyClass;
+    body.innerHTML = pane.html;
+    if (openLink) {
+      if (pane.openUrl) {
+        openLink.href = pane.openUrl;
         openLink.hidden = false;
+      } else {
+        openLink.hidden = true;
       }
-    } else if (previewUrl && kind === "image") {
-      body.className = "catalog-attach-dialog-body is-image";
-      body.innerHTML =
-        '<img class="catalog-attach-dialog-img" src="' +
-        escapeAttr(previewUrl) +
-        '" alt="' +
-        escapeAttr(fileName) +
-        '" decoding="async" />';
-      if (openLink) {
-        openLink.href = previewUrl;
-        openLink.hidden = false;
-      }
-    } else {
-      body.className = "catalog-attach-dialog-body is-meta";
-      body.innerHTML = buildMetaOnlyHtml(fileName, objectTitle);
-      if (openLink) openLink.hidden = true;
     }
 
     if (typeof dlg.showModal === "function") dlg.showModal();
@@ -216,6 +254,7 @@
   g.CatalogAttach = {
     bindRoot: bindRoot,
     openFilePreview: openFilePreview,
+    buildInlineFilePreviewHtml: buildInlineFilePreviewHtml,
     resolvePreviewUrl: resolvePreviewUrl
   };
 })(typeof window !== "undefined" ? window : globalThis);
