@@ -16,6 +16,7 @@
    http://127.0.0.1:8777/
 
    常用页面：
+   - 分析工作台：http://127.0.0.1:8777/analysis-board.html
    - 驾驶舱：http://127.0.0.1:8777/cockpit.html?desk=fg
    - 预警列表：http://127.0.0.1:8777/warnings.html
    - 线索列表：http://127.0.0.1:8777/clues.html
