@@ -1,0 +1,43 @@
+公共资源交易智能监管 — 可编辑源码包
+====================================
+
+这是完整可改的静态页面源码（HTML / CSS / JS），不是只读演示。
+
+一、解压
+--------
+解压后得到文件夹「智能监管页面」。
+用 Cursor / VS Code / 记事本 打开该文件夹即可改。
+
+二、本地预览（改完刷新浏览器）
+--------
+在「智能监管页面」目录执行：
+
+  python3 -m http.server 8777
+
+或：
+
+  npm start
+
+浏览器打开（不要双击 html）：
+
+  http://127.0.0.1:8777/analysis-board.html
+
+三、常改文件
+--------
+  analysis-board.html   分析工作台（线索报告、预警、关系图入口）
+  cluster-graph.js      簇状图逻辑
+  graph-api.js          图数据接口
+  DESIGN.md             分析工作台界面规范
+  shell.js / shell.css  公共壳层导航
+
+四、给同事回传改动
+--------
+把改过的文件发回即可；或双方都用同一 GitHub 仓库：
+
+  https://github.com/wangzheng22/smart-supervision-pages
+
+五、注意
+--------
+- 必须用本地服务打开，直接双击 html 可能导致样式/脚本异常
+- 不要改坏相对路径（图片、js、css 引用）
+- 设计规范以 DESIGN.md 为准
