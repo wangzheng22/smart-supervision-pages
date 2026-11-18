@@ -1002,17 +1002,26 @@
       line-height: 1.3;
     }
     .report-hd h2 svg { color: var(--blue); }
-    .report-x {
-      width: 28px;
-      height: 28px;
+    .report-fold {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 8px;
       border: 0;
       border-radius: 6px;
       background: transparent;
-      color: var(--muted);
-      font-size: 18px;
-      line-height: 1;
+      color: var(--blue);
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.3;
     }
-    .report-x:hover { background: #f4f6f9; color: var(--ink); }
+    .report-fold:hover { background: #eef4ff; }
+    .report-fold svg {
+      display: block;
+      flex: none;
+      color: var(--blue);
+    }
     .report-bd {
       flex: 1;
       min-height: 0;
@@ -1053,9 +1062,14 @@
     .guide p { margin: 0 0 6px; }
     .guide p:last-child { margin: 0; }
     .card-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
       gap: 8px;
+    }
+    .card-grid .wcard {
+      flex: 1 1 0;
+      min-width: 0;
     }
     .attach { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
     .file-link {
@@ -1337,7 +1351,7 @@
     .scroll::-webkit-scrollbar-thumb { background: #d5dbe3; border-radius: 8px; }
   </style>
 </head>
-<body>
+<body class="is-report">
   <div class="app">
   <header class="topbar">
     <button class="add-tab" id="addProject" type="button" aria-label="选择项目" aria-haspopup="dialog" aria-expanded="false" aria-controls="pickPop">
@@ -1355,7 +1369,7 @@
         <img src="icons/tool.png" alt="" width="16" height="16">
         股权穿透分析
       </button>
-      <button class="rep-open" id="reportToggle" type="button" aria-expanded="false" aria-controls="report">
+      <button class="rep-open is-on" id="reportToggle" type="button" aria-expanded="true" aria-controls="report">
         <img src="icons/link.png" alt="" width="16" height="16">
         <span>线索报告</span>
       </button>
@@ -1416,7 +1430,7 @@
   </main>
   </div>
 
-  <aside class="report" id="report" aria-labelledby="reportTitle" aria-hidden="true" inert>
+  <aside class="report" id="report" aria-labelledby="reportTitle" aria-hidden="false">
       <div class="report-inner">
         <div class="report-hd">
           <h2 id="reportTitle">
@@ -1426,7 +1440,13 @@
             </svg>
             线索报告
           </h2>
-          <button class="report-x" id="reportClose" type="button" aria-label="收起线索报告">×</button>
+          <button class="report-fold" id="reportClose" type="button" aria-label="收起线索报告">
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M9.2 3.5L13.2 8 9.2 12.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3.5 3.2v9.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            收起线索报告
+          </button>
         </div>
         <div class="report-bd scroll">
           <div class="pair">
@@ -1674,7 +1694,8 @@
       }).join("") : '<p class="empty">没有匹配的文件</p>';
     }
     function renderReportCards() {
-      document.getElementById("reportCards").innerHTML = reportCards.map((card) => cardHtml(card)).join("");
+      const cards = phases.flatMap((phase) => phase.cards).slice(0, 3);
+      document.getElementById("reportCards").innerHTML = cards.map((card) => cardHtml(card)).join("");
     }
     function renderAttach() {
       document.getElementById("attachList").innerHTML = files.map((f) =>
@@ -2567,6 +2588,7 @@
     renderAttach();
     showProp(nodeMap.project.name, nodeMap.project.fields);
     applyTab();
+    setReport(true);
     window.ClusterPage = {
       stage: stage,
       showNode: showNode,
