@@ -35,6 +35,15 @@
 - 线索回传：https://wangzheng22.github.io/smart-supervision-pages/clue-return.html  
 - 线索列表：https://wangzheng22.github.io/smart-supervision-pages/clues.html  
 
+## 发给同事（演示包）
+
+仓库根目录有压缩包：[`smart-supervision-pages-demo.zip`](https://github.com/wangzheng22/smart-supervision-pages/raw/main/smart-supervision-pages-demo.zip)
+
+1. 下载并解压  
+2. 进入解压后的 `智能监管页面` 目录  
+3. 执行 `python3 -m http.server 8777`  
+4. 浏览器打开：http://127.0.0.1:8777/analysis-board.html  
+
 ## 本地运行
 
 ```bash
