@@ -35,14 +35,16 @@
 - 线索回传：https://wangzheng22.github.io/smart-supervision-pages/clue-return.html  
 - 线索列表：https://wangzheng22.github.io/smart-supervision-pages/clues.html  
 
-## 发给同事（演示包）
+## 发给同事（可编辑源码包）
 
-仓库根目录有压缩包：[`smart-supervision-pages-demo.zip`](https://github.com/wangzheng22/smart-supervision-pages/raw/main/smart-supervision-pages-demo.zip)
+下载：[`smart-supervision-pages-editable.zip`](https://github.com/wangzheng22/smart-supervision-pages/raw/main/smart-supervision-pages-editable.zip)
 
-1. 下载并解压  
-2. 进入解压后的 `智能监管页面` 目录  
-3. 执行 `python3 -m http.server 8777`  
-4. 浏览器打开：http://127.0.0.1:8777/analysis-board.html  
+这是完整 HTML/CSS/JS 源码，解压后可直接改。包内有 `请先读-编辑说明.txt`。
+
+1. 解压，用编辑器打开文件夹 `智能监管页面`  
+2. 修改例如 `analysis-board.html`、`cluster-graph.js`、`DESIGN.md`  
+3. 在该目录执行 `python3 -m http.server 8777`  
+4. 浏览器打开：http://127.0.0.1:8777/analysis-board.html（改完刷新即可）  
 
 ## 本地运行
 
