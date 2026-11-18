@@ -30,6 +30,7 @@
 ## 正式演示地址（开启 Pages 后）
 
 - 首页（跳转驾驶舱）：https://wangzheng22.github.io/smart-supervision-pages/  
+- 分析工作台：https://wangzheng22.github.io/smart-supervision-pages/analysis-board.html  
 - 驾驶舱（发改）：https://wangzheng22.github.io/smart-supervision-pages/cockpit.html?desk=fg  
 - 线索回传：https://wangzheng22.github.io/smart-supervision-pages/clue-return.html  
 - 线索列表：https://wangzheng22.github.io/smart-supervision-pages/clues.html  
@@ -41,4 +42,4 @@ cd 智能监管页面
 python3 -m http.server 8777
 ```
 
-浏览器打开：http://127.0.0.1:8777/clue-return.html
+浏览器打开：http://127.0.0.1:8777/analysis-board.html
